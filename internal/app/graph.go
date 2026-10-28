@@ -101,3 +101,20 @@ func (a *App) emitGraphProgress(path string, p session.GraphProgress) {
 	}
 	a.emit("graph:progress", ev)
 }
+
+// maxSearchRows caps how many match positions are returned; the total is still exact.
+const maxSearchRows = 10000
+
+// SearchGraph finds commits whose subject or author contains query, or whose ID starts
+// with it.
+func (a *App) SearchGraph(path, query string) (graph.SearchResult, error) {
+	r, err := a.openRepo(path)
+	if err != nil {
+		return graph.SearchResult{}, err
+	}
+	g, _ := r.Graph()
+	if g == nil {
+		return graph.SearchResult{Rows: []int{}}, nil
+	}
+	return g.Search(query, maxSearchRows), nil
+}

@@ -407,6 +407,20 @@ export namespace graph {
 		    return a;
 		}
 	}
+	export class SearchResult {
+	    rows: number[];
+	    total: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SearchResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rows = source["rows"];
+	        this.total = source["total"];
+	    }
+	}
 
 }
 
