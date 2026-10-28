@@ -3,6 +3,7 @@
   import { Environment, Version } from '../wailsjs/go/app/App.js'
   import type { app } from '../wailsjs/go/models'
   import { BrowserOpenURL } from '../wailsjs/runtime/runtime.js'
+  import GraphView from './lib/graph/GraphView.svelte'
   import OperationBanner from './lib/OperationBanner.svelte'
   import { session } from './lib/session.svelte'
   import StartPage from './lib/StartPage.svelte'
@@ -53,14 +54,9 @@
     {/if}
     <main>
       {#if session.activeTab}
-        <!-- Placeholder until the commit graph lands (#17). -->
-        <div class="center">
-          <div>
-            <h2>{session.activeTab.name}</h2>
-            <p class="muted">{session.activeTab.path}</p>
-            <p>On <strong>{session.activeTab.head || '(no commits)'}</strong></p>
-          </div>
-        </div>
+        {#key session.activeTab.path}
+          <GraphView path={session.activeTab.path} />
+        {/key}
       {:else}
         <StartPage />
       {/if}
@@ -90,6 +86,7 @@
 
   main {
     flex: 1;
+    min-height: 0;
     overflow: auto;
   }
 

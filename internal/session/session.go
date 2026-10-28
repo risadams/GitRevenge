@@ -15,6 +15,7 @@ import (
 
 	"github.com/risadams/gitrevenge/internal/fsutil"
 	"github.com/risadams/gitrevenge/internal/git"
+	"github.com/risadams/gitrevenge/internal/graph"
 	"github.com/risadams/gitrevenge/internal/settings"
 	"github.com/risadams/gitrevenge/internal/watch"
 )
@@ -34,7 +35,11 @@ type Repo struct {
 	Git     *git.Repo
 	Objects *git.ObjectReader
 	watcher *watch.Watcher
+	graph   *graphLoader
 }
+
+// Graph returns the commit graph to display and whether a (re)load is in progress.
+func (r *Repo) Graph() (*graph.Graph, bool) { return r.graph.Graph() }
 
 // Name is the folder name shown on the tab.
 func (r *Repo) Name() string { return filepath.Base(r.Path) }
@@ -43,6 +48,7 @@ func (r *Repo) close() {
 	if r.watcher != nil {
 		r.watcher.Close()
 	}
+	r.graph.stop()
 	_ = r.Objects.Close()
 }
 
@@ -55,6 +61,15 @@ type Manager struct {
 	mu       sync.Mutex
 	repos    []*Repo // tab order
 	onChange func(path string, k watch.Kind)
+	onGraph  func(path string, p GraphProgress)
+}
+
+// OnGraph registers fn to receive commit graph loading progress for open repositories.
+// Call it before opening repositories.
+func (m *Manager) OnGraph(fn func(path string, p GraphProgress)) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.onGraph = fn
 }
 
 // OnChange registers fn to be called (from a background goroutine) when an open
@@ -142,6 +157,13 @@ func (m *Manager) Open(ctx context.Context, path string) (*Repo, error) {
 			Git:     git.OpenRepo(m.runner, root),
 			Objects: git.NewObjectReader(m.runner, root),
 		}
+		onGraph := m.onGraph
+		r.graph = &graphLoader{repo: r.Git, onProgress: func(p GraphProgress) {
+			if onGraph != nil {
+				onGraph(root, p)
+			}
+		}}
+		r.graph.reload()
 		r.watcher = m.watchLocked(r)
 		m.repos = append(m.repos, r)
 	}
@@ -269,6 +291,9 @@ func (m *Manager) watchLocked(r *Repo) *watch.Watcher {
 			return kept
 		},
 		OnChange: func(k watch.Kind) {
+			if k.Has(watch.Head) || k.Has(watch.Refs) {
+				r.graph.reload()
+			}
 			if onChange != nil {
 				onChange(r.Path, k)
 			}

@@ -5,6 +5,8 @@
   --fg: #d4d4d4;
   --fg-muted: #8a8a8a;
   --border: #3c3c3c;
+  --bg-selected: #264f78;
+  --bg-hover: #2a2d2e;
   --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace;
 

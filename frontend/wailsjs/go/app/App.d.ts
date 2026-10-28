@@ -8,6 +8,8 @@ export function CloseRepo(arg1:string):Promise<void>;
 
 export function Environment():Promise<app.Environment>;
 
+export function GraphRows(arg1:string,arg2:number,arg3:number):Promise<app.GraphPage>;
+
 export function OpenRepo(arg1:string):Promise<app.RepoTab>;
 
 export function RecentRepos():Promise<Array<app.RecentRepo>>;

@@ -65,6 +65,7 @@ func (a *App) sessions() (*session.Manager, error) {
 			return
 		}
 		a.sess = session.NewManager(git.NewRunner(env.GitPath), store)
+		a.sess.OnGraph(a.emitGraphProgress)
 		a.sess.OnChange(func(path string, k watch.Kind) {
 			a.emit("repo:changed", RepoChange{Path: path, Kinds: k.Names()})
 		})
