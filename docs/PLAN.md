@@ -90,7 +90,18 @@ The reference repo is the Linux kernel (about 1.3M commits and 90k files).
 | Switching repo tabs | Instant |
 | Memory with the kernel repo open | < 500MB |
 
-The benchmark suite is opt-in: set `GITREVENGE_BENCH_REPO=/path/to/linux` and run `go test -bench`. It does not run in CI. Run it before tagging each milestone.
+The performance check is opt-in and does not run in CI. Run it before tagging each milestone:
+
+```sh
+GITREVENGE_BENCH_REPO=/path/to/linux go test ./internal/perf -v -count=1 -timeout 30m
+```
+
+It reports time to the first 100 rows, full load, heap in use, window reads, search and refs, and fails if a target is missed.
+
+**What the measurements so far show:**
+- **Commit-graph file.** `git log --topo-order` only produces its first commits quickly when the repo has a commit-graph file (`git commit-graph write --reachable`, or `fetch.writeCommitGraph=true`). The check warns when it's missing.
+- **Ref short names.** `%(refname:short)` is quadratic in the number of refs, so the app strips ref prefixes itself.
+- **Loose refs.** A repo with thousands of loose (unpacked) refs reads them slowly on Windows. `git pack-refs --all` fixes this, and git does it during `gc`.
 
 ## Milestones
 

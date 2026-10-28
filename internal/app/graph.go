@@ -21,10 +21,12 @@ type GraphPage struct {
 
 // GraphProgress is the payload of the "graph:progress" event.
 type GraphProgress struct {
-	Path  string `json:"path"`
-	Rows  int    `json:"rows"`
-	Done  bool   `json:"done"`
-	Error string `json:"error"`
+	Path string `json:"path"`
+	Rows int    `json:"rows"`
+	Done bool   `json:"done"`
+	// RefsReady means refs just arrived during a first load; re-fetch rows for labels.
+	RefsReady bool   `json:"refsReady"`
+	Error     string `json:"error"`
 }
 
 // GraphRows returns up to count rows of the commit graph starting at start.
@@ -95,7 +97,7 @@ func (a *App) openRepo(path string) (*session.Repo, error) {
 }
 
 func (a *App) emitGraphProgress(path string, p session.GraphProgress) {
-	ev := GraphProgress{Path: path, Rows: p.Rows, Done: p.Done}
+	ev := GraphProgress{Path: path, Rows: p.Rows, Done: p.Done, RefsReady: p.RefsReady}
 	if p.Err != nil {
 		ev.Error = p.Err.Error()
 	}

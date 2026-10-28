@@ -13,7 +13,10 @@ import (
 type GraphProgress struct {
 	Rows int
 	Done bool
-	Err  error
+	// RefsReady is set on the update sent when refs finish loading during a first load,
+	// so the UI can re-fetch rows to pick up their labels.
+	RefsReady bool
+	Err       error
 }
 
 // graphLoader owns a repository's commit graph and reloads it on demand.
@@ -78,14 +81,28 @@ func (l *graphLoader) reload() {
 	l.mu.Unlock()
 
 	go func() {
-		// Refs are quick to read; load them first so labels appear with the first rows.
-		refList, refErr := l.repo.Refs(ctx)
-		refs := newRefIndex(refList)
-		l.mu.Lock()
-		if l.refs == nil && ctx.Err() == nil {
-			l.refs = refs
+		// Read refs alongside the log rather than before it: with thousands of refs they can
+		// take longer than the first screen of history.
+		type refResult struct {
+			idx *RefIndex
+			err error
 		}
-		l.mu.Unlock()
+		refsCh := make(chan refResult, 1)
+		go func() {
+			list, err := l.repo.Refs(ctx)
+			idx := newRefIndex(list)
+			first := false
+			l.mu.Lock()
+			if l.refs == nil && ctx.Err() == nil {
+				l.refs = idx
+				first = true
+			}
+			l.mu.Unlock()
+			if first && l.onProgress != nil {
+				l.onProgress(GraphProgress{Rows: g.Len(), RefsReady: true})
+			}
+			refsCh <- refResult{idx, err}
+		}()
 
 		const every = 100 * time.Millisecond
 		last := time.Now()
@@ -99,15 +116,16 @@ func (l *graphLoader) reload() {
 			}
 			return nil
 		})
+		refs := <-refsCh
 		if ctx.Err() != nil {
 			return // superseded or closed; the newer load reports
 		}
 		if err == nil {
-			err = refErr
+			err = refs.err
 		}
 		l.mu.Lock()
 		l.current = g
-		l.refs = refs
+		l.refs = refs.idx
 		l.loading = false
 		l.cancel = nil
 		l.mu.Unlock()
