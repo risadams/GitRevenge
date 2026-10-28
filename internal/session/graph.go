@@ -23,8 +23,33 @@ type graphLoader struct {
 
 	mu      sync.Mutex
 	current *graph.Graph
+	refs    *RefIndex
 	loading bool
 	cancel  context.CancelFunc
+}
+
+// RefIndex holds a repository's refs, indexed by the commit they point at.
+type RefIndex struct {
+	All      []git.Ref
+	ByCommit map[string][]git.Ref
+}
+
+func newRefIndex(refs []git.Ref) *RefIndex {
+	idx := &RefIndex{All: refs, ByCommit: make(map[string][]git.Ref, len(refs))}
+	for _, r := range refs {
+		idx.ByCommit[r.Commit] = append(idx.ByCommit[r.Commit], r)
+	}
+	return idx
+}
+
+// Refs returns the refs matching the displayed graph.
+func (l *graphLoader) Refs() *RefIndex {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.refs == nil {
+		return newRefIndex(nil)
+	}
+	return l.refs
 }
 
 // Graph returns the graph to display and whether a load is in progress. The graph may be
@@ -53,6 +78,15 @@ func (l *graphLoader) reload() {
 	l.mu.Unlock()
 
 	go func() {
+		// Refs are quick to read; load them first so labels appear with the first rows.
+		refList, refErr := l.repo.Refs(ctx)
+		refs := newRefIndex(refList)
+		l.mu.Lock()
+		if l.refs == nil && ctx.Err() == nil {
+			l.refs = refs
+		}
+		l.mu.Unlock()
+
 		const every = 100 * time.Millisecond
 		last := time.Now()
 		err := l.repo.Log(ctx, git.LogOptions{}, func(c git.LogCommit) error {
@@ -68,8 +102,12 @@ func (l *graphLoader) reload() {
 		if ctx.Err() != nil {
 			return // superseded or closed; the newer load reports
 		}
+		if err == nil {
+			err = refErr
+		}
 		l.mu.Lock()
 		l.current = g
+		l.refs = refs
 		l.loading = false
 		l.cancel = nil
 		l.mu.Unlock()

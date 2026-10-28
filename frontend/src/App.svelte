@@ -3,8 +3,8 @@
   import { Environment, Version } from '../wailsjs/go/app/App.js'
   import type { app } from '../wailsjs/go/models'
   import { BrowserOpenURL } from '../wailsjs/runtime/runtime.js'
-  import GraphView from './lib/graph/GraphView.svelte'
   import OperationBanner from './lib/OperationBanner.svelte'
+  import RepoView from './lib/RepoView.svelte'
   import { session } from './lib/session.svelte'
   import StartPage from './lib/StartPage.svelte'
   import TabBar from './lib/TabBar.svelte'
@@ -55,7 +55,7 @@
     <main>
       {#if session.activeTab}
         {#key session.activeTab.path}
-          <GraphView path={session.activeTab.path} />
+          <RepoView path={session.activeTab.path} />
         {/key}
       {:else}
         <StartPage />

@@ -41,6 +41,9 @@ type Repo struct {
 // Graph returns the commit graph to display and whether a (re)load is in progress.
 func (r *Repo) Graph() (*graph.Graph, bool) { return r.graph.Graph() }
 
+// Refs returns the refs matching the displayed graph.
+func (r *Repo) Refs() *RefIndex { return r.graph.Refs() }
+
 // Name is the folder name shown on the tab.
 func (r *Repo) Name() string { return filepath.Base(r.Path) }
 

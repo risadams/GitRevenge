@@ -10,6 +10,10 @@ export function CloseRepo(arg1) {
   return window['go']['app']['App']['CloseRepo'](arg1);
 }
 
+export function CommitRow(arg1, arg2) {
+  return window['go']['app']['App']['CommitRow'](arg1, arg2);
+}
+
 export function Environment() {
   return window['go']['app']['App']['Environment']();
 }
@@ -24,6 +28,10 @@ export function OpenRepo(arg1) {
 
 export function RecentRepos() {
   return window['go']['app']['App']['RecentRepos']();
+}
+
+export function Refs(arg1) {
+  return window['go']['app']['App']['Refs'](arg1);
 }
 
 export function RemoveRecentRepo(arg1) {

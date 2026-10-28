@@ -36,6 +36,7 @@ export namespace app {
 	}
 	export class GraphPage {
 	    rows: graph.Row[];
+	    refs: Record<string, Array<git.Ref>>;
 	    total: number;
 	    loading: boolean;
 	
@@ -46,6 +47,7 @@ export namespace app {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.rows = this.convertValues(source["rows"], graph.Row);
+	        this.refs = this.convertValues(source["refs"], Array<git.Ref>, true);
 	        this.total = source["total"];
 	        this.loading = source["loading"];
 	    }
@@ -174,6 +176,41 @@ export namespace app {
 		    }
 		    return a;
 		}
+	}
+
+}
+
+export namespace git {
+	
+	export class Ref {
+	    name: string;
+	    short: string;
+	    kind: string;
+	    commit: string;
+	    head: boolean;
+	    upstream: string;
+	    ahead: number;
+	    behind: number;
+	    gone: boolean;
+	    subject?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Ref(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.short = source["short"];
+	        this.kind = source["kind"];
+	        this.commit = source["commit"];
+	        this.head = source["head"];
+	        this.upstream = source["upstream"];
+	        this.ahead = source["ahead"];
+	        this.behind = source["behind"];
+	        this.gone = source["gone"];
+	        this.subject = source["subject"];
+	    }
 	}
 
 }
