@@ -1,0 +1,23 @@
+# 0004 — Credential prompts via an askpass bridge
+
+- Status: Accepted
+- Date: 2026-10-28
+
+## Context
+
+A GUI has no terminal. If git or ssh needs a password, a passphrase or a host-key confirmation, it would either hang or fail. The maintainer uses both SSH keys and HTTPS with Git Credential Manager (GCM), and no hardware keys.
+
+## Decision
+
+1. **Existing credential helpers come first.** These are GCM, `osxkeychain` and `ssh-agent`. In the common case, no prompt ever reaches the app.
+2. **Git never prompts on a terminal.** Every git invocation sets `GIT_TERMINAL_PROMPT=0`.
+3. **Remaining prompts go through an askpass bridge.** `GIT_ASKPASS` and `SSH_ASKPASS` (with `SSH_ASKPASS_REQUIRE=force`) point at the `gitrevenge` binary in a helper mode. The helper relays each prompt to the running app over a local socket, which only the current user can access. The app shows a dialog and passes the answer back to git.
+4. **Unknown SSH host keys get their own confirmation dialog**, which shows the key's fingerprint. They are never accepted silently.
+5. **Git Revenge never stores credentials itself.**
+
+The same helper-mode mechanism will later serve as `GIT_SEQUENCE_EDITOR` and `GIT_EDITOR` for interactive rebase.
+
+## Consequences
+
+- Behavior matches the user's command-line setup.
+- The helper mode and the local socket protocol need tests on Windows and macOS.
