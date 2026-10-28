@@ -7,6 +7,10 @@ export function ChooseAndOpenRepo():Promise<app.RepoTab>;
 
 export function CloseRepo(arg1:string):Promise<void>;
 
+export function CommitDetail(arg1:string,arg2:string):Promise<app.CommitInfo>;
+
+export function CommitFileDiff(arg1:string,arg2:string,arg3:string,arg4:string):Promise<git.FileDiff>;
+
 export function CommitRow(arg1:string,arg2:string):Promise<number>;
 
 export function Environment():Promise<app.Environment>;

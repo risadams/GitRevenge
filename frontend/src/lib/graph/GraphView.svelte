@@ -27,6 +27,7 @@
     () => {
       total = cache.total
       loading = cache.loading
+      selectHeadOnce()
       schedule()
     },
   )
@@ -92,6 +93,21 @@
     scroller.scrollTop = Math.max(0, i * ROW_HEIGHT - scroller.clientHeight / 2)
     select(i)
     scroller.focus()
+  }
+
+  let autoSelected = false
+
+  /** On first load, select the checked-out commit (or the top row) so details show. */
+  function selectHeadOnce() {
+    if (autoSelected || selected >= 0 || !cache.get(0)) return
+    autoSelected = true
+    for (let i = 0; i < 200 && cache.get(i); i++) {
+      if (cache.refsFor(cache.get(i)!.id).some((r) => r.head)) {
+        select(i)
+        return
+      }
+    }
+    select(0)
   }
 
   function select(i: number) {

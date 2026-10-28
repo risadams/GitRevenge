@@ -1,0 +1,174 @@
+package git
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"strconv"
+	"strings"
+)
+
+// Signature is an author or committer line.
+type Signature struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	// Time is a Unix timestamp in seconds.
+	Time int64 `json:"time"`
+	// TZ is the offset as written by git, e.g. "+0200".
+	TZ string `json:"tz"`
+}
+
+// CommitDetail is a commit's metadata and full message.
+type CommitDetail struct {
+	ID        string    `json:"id"`
+	Parents   []string  `json:"parents"`
+	Author    Signature `json:"author"`
+	Committer Signature `json:"committer"`
+	// Subject is the first line of the message; Body is the rest, trimmed.
+	Subject string `json:"subject"`
+	Body    string `json:"body"`
+	Signed  bool   `json:"signed"`
+}
+
+// ReadCommit reads a commit through the persistent object reader.
+func ReadCommit(o *ObjectReader, rev string) (CommitDetail, error) {
+	info, data, err := o.Contents(rev)
+	if err != nil {
+		return CommitDetail{}, err
+	}
+	if info.Type != "commit" {
+		return CommitDetail{}, fmt.Errorf("%s is a %s, not a commit", rev, info.Type)
+	}
+	c := parseCommit(data)
+	c.ID = info.ID
+	return c, nil
+}
+
+func parseCommit(data []byte) CommitDetail {
+	c := CommitDetail{Parents: []string{}}
+	header, msg, _ := bytes.Cut(data, []byte("\n\n"))
+	for line := range strings.SplitSeq(string(header), "\n") {
+		key, val, _ := strings.Cut(line, " ")
+		switch key {
+		case "parent":
+			c.Parents = append(c.Parents, val)
+		case "author":
+			c.Author = parseSignature(val)
+		case "committer":
+			c.Committer = parseSignature(val)
+		case "gpgsig", "gpgsig-sha256":
+			c.Signed = true
+		}
+	}
+	subject, body, _ := strings.Cut(string(msg), "\n")
+	c.Subject = strings.TrimSpace(subject)
+	c.Body = strings.TrimSpace(body)
+	return c
+}
+
+// parseSignature parses "Name <email> 1700000000 +0200".
+func parseSignature(s string) Signature {
+	var sig Signature
+	lt, gt := strings.LastIndex(s, "<"), strings.LastIndex(s, ">")
+	if lt < 0 || gt < lt {
+		sig.Name = s
+		return sig
+	}
+	sig.Name = strings.TrimSpace(s[:lt])
+	sig.Email = s[lt+1 : gt]
+	f := strings.Fields(s[gt+1:])
+	if len(f) > 0 {
+		sig.Time, _ = strconv.ParseInt(f[0], 10, 64)
+	}
+	if len(f) > 1 {
+		sig.TZ = f[1]
+	}
+	return sig
+}
+
+// FileChange is one file changed by a commit.
+type FileChange struct {
+	// Status is A (added), M (modified), D (deleted), R (renamed), C (copied) or T (type change).
+	Status string `json:"status"`
+	Path   string `json:"path"`
+	// OldPath is set for renames and copies.
+	OldPath string `json:"oldPath,omitempty"`
+}
+
+// ChangedFiles lists the files a commit changed relative to its first parent (or, for a
+// root commit, everything it added). Renames are detected.
+func (r *Repo) ChangedFiles(ctx context.Context, c CommitDetail) ([]FileChange, error) {
+	args := []string{"diff-tree", "-r", "-z", "--name-status", "-M", "--no-commit-id"}
+	if len(c.Parents) == 0 {
+		args = append(args, "--root", c.ID)
+	} else {
+		args = append(args, c.Parents[0], c.ID)
+	}
+	out, err := r.Read(ctx, args...)
+	if err != nil {
+		return nil, err
+	}
+	return parseNameStatus(out), nil
+}
+
+// parseNameStatus parses `--name-status -z` output: STATUS NUL path NUL, or for renames
+// and copies STATUS NUL old NUL new NUL.
+func parseNameStatus(out []byte) []FileChange {
+	f := strings.Split(strings.TrimSuffix(string(out), "\x00"), "\x00")
+	changes := []FileChange{}
+	for i := 0; i < len(f); {
+		status := f[i]
+		if status == "" {
+			i++
+			continue
+		}
+		code := status[:1] // R100 → R
+		if (code == "R" || code == "C") && i+2 < len(f) {
+			changes = append(changes, FileChange{Status: code, OldPath: f[i+1], Path: f[i+2]})
+			i += 3
+			continue
+		}
+		if i+1 < len(f) {
+			changes = append(changes, FileChange{Status: code, Path: f[i+1]})
+		}
+		i += 2
+	}
+	return changes
+}
+
+// MaxDiffBytes caps a single file diff; larger diffs are truncated and flagged.
+const MaxDiffBytes = 1 << 20
+
+// FileDiff is the patch for one file in a commit.
+type FileDiff struct {
+	Patch     string `json:"patch"`
+	Binary    bool   `json:"binary"`
+	Truncated bool   `json:"truncated"`
+}
+
+// CommitFileDiff returns the patch for path in commit c, relative to its first parent.
+func (r *Repo) CommitFileDiff(ctx context.Context, c CommitDetail, path, oldPath string) (FileDiff, error) {
+	var args []string
+	if len(c.Parents) == 0 {
+		// A root commit has nothing to diff against; show its additions.
+		args = []string{"show", "--no-color", "--no-ext-diff", "--format=", c.ID, "--"}
+	} else {
+		args = []string{"diff", "--no-color", "--no-ext-diff", "-M", c.Parents[0], c.ID, "--"}
+	}
+	args = append(args, path)
+	if oldPath != "" && oldPath != path {
+		args = append(args, oldPath)
+	}
+	out, err := r.Read(ctx, args...)
+	if err != nil {
+		return FileDiff{}, err
+	}
+	d := FileDiff{}
+	if len(out) > MaxDiffBytes {
+		out = out[:MaxDiffBytes]
+		d.Truncated = true
+	}
+	d.Patch = string(out)
+	d.Binary = bytes.Contains(out, []byte("\nBinary files ")) || bytes.HasPrefix(out, []byte("Binary files "))
+	return d, nil
+}
