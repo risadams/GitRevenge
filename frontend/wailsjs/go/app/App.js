@@ -14,6 +14,10 @@ export function Environment() {
   return window['go']['app']['App']['Environment']();
 }
 
+export function GraphRows(arg1, arg2, arg3) {
+  return window['go']['app']['App']['GraphRows'](arg1, arg2, arg3);
+}
+
 export function OpenRepo(arg1) {
   return window['go']['app']['App']['OpenRepo'](arg1);
 }

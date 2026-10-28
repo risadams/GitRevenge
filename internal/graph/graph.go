@@ -190,7 +190,8 @@ func (g *Graph) Rows(start, count int) []Row {
 			step(&st, g.ids[i], ps, nil)
 			continue
 		}
-		r := Row{Index: i}
+		// Empty, not nil: the frontend iterates these, and nil marshals to JSON null.
+		r := Row{Index: i, Up: []Seg{}, Down: []Seg{}}
 		r.Col, r.Color = step(&st, g.ids[i], ps, &r)
 		r.ID = hex.EncodeToString(g.ids[i][:g.hashLen])
 		r.Parents = len(ps)

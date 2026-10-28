@@ -192,3 +192,46 @@ func TestOnChangeReportsRepoChanges(t *testing.T) {
 		}
 	}
 }
+
+// waitGraph waits until the repo's graph has finished loading with want rows.
+func waitGraph(t *testing.T, r *Repo, want int) {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		g, loading := r.Graph()
+		if g != nil && !loading && g.Len() == want {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	g, loading := r.Graph()
+	t.Fatalf("graph never reached %d rows (have %d, loading %v)", want, g.Len(), loading)
+}
+
+func TestGraphLoadsAndReloadsOnCommit(t *testing.T) {
+	m, _ := newManager(t)
+	done := make(chan GraphProgress, 64)
+	m.OnGraph(func(_ string, p GraphProgress) {
+		if p.Done {
+			done <- p
+		}
+	})
+	fx := gittest.New(t)
+	fx.Linear(3)
+	r, err := m.Open(context.Background(), fx.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitGraph(t, r, 3)
+	select {
+	case p := <-done:
+		if p.Err != nil || p.Rows != 3 {
+			t.Fatalf("progress = %+v", p)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("no done progress event")
+	}
+
+	fx.CommitFile("more.txt", "x", "fourth")
+	waitGraph(t, r, 4)
+}

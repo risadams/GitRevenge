@@ -2,10 +2,12 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand/v2"
 	"os/exec"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/risadams/gitrevenge/internal/git"
@@ -233,5 +235,16 @@ func BenchmarkRowsWindow(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; b.Loop(); i++ {
 		g.Rows((i*7919)%99_000, 100)
+	}
+}
+
+func TestRowsJSONHasNoNullSegments(t *testing.T) {
+	g := build(t, [][]int{{1}, {}})
+	b, err := json.Marshal(g.Rows(0, 2))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(b), "null") {
+		t.Fatalf("rows JSON contains null: %s", b)
 	}
 }

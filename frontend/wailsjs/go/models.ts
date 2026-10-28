@@ -34,6 +34,40 @@ export namespace app {
 	        this.error = source["error"];
 	    }
 	}
+	export class GraphPage {
+	    rows: graph.Row[];
+	    total: number;
+	    loading: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new GraphPage(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rows = this.convertValues(source["rows"], graph.Row);
+	        this.total = source["total"];
+	        this.loading = source["loading"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class RecentRepo {
 	    path: string;
 	    name: string;
@@ -121,6 +155,77 @@ export namespace app {
 	        this.tabs = this.convertValues(source["tabs"], RepoTab);
 	        this.active = source["active"];
 	        this.failed = this.convertValues(source["failed"], FailedRepo);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+
+export namespace graph {
+	
+	export class Seg {
+	    from: number;
+	    to: number;
+	    color: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Seg(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.from = source["from"];
+	        this.to = source["to"];
+	        this.color = source["color"];
+	    }
+	}
+	export class Row {
+	    index: number;
+	    col: number;
+	    color: number;
+	    up: Seg[];
+	    down: Seg[];
+	    width: number;
+	    id: string;
+	    parents: number;
+	    author: string;
+	    authorTime: number;
+	    subject: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Row(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.index = source["index"];
+	        this.col = source["col"];
+	        this.color = source["color"];
+	        this.up = this.convertValues(source["up"], Seg);
+	        this.down = this.convertValues(source["down"], Seg);
+	        this.width = source["width"];
+	        this.id = source["id"];
+	        this.parents = source["parents"];
+	        this.author = source["author"];
+	        this.authorTime = source["authorTime"];
+	        this.subject = source["subject"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
