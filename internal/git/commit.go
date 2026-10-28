@@ -3,6 +3,7 @@ package git
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -160,6 +161,40 @@ func (r *Repo) CommitFileDiff(ctx context.Context, c CommitDetail, path, oldPath
 		args = append(args, oldPath)
 	}
 	out, err := r.Read(ctx, args...)
+	if err != nil {
+		return FileDiff{}, err
+	}
+	d := FileDiff{}
+	if len(out) > MaxDiffBytes {
+		out = out[:MaxDiffBytes]
+		d.Truncated = true
+	}
+	d.Patch = string(out)
+	d.Binary = bytes.Contains(out, []byte("\nBinary files ")) || bytes.HasPrefix(out, []byte("Binary files "))
+	return d, nil
+}
+
+// WorkTreeDiff returns the patch for one uncommitted file: staged changes (index vs HEAD),
+// unstaged changes (work tree vs index), or a whole untracked file.
+func (r *Repo) WorkTreeDiff(ctx context.Context, f FileStatus, staged bool) (FileDiff, error) {
+	var args []string
+	switch {
+	case f.Untracked:
+		// --no-index exits 1 when the files differ, which they always do here.
+		args = []string{"diff", "--no-index", "--no-color", "--no-ext-diff", "--", "/dev/null", f.Path}
+	case staged:
+		args = []string{"diff", "--cached", "--no-color", "--no-ext-diff", "-M", "--", f.Path}
+		if f.OrigPath != "" {
+			args = append(args, f.OrigPath)
+		}
+	default:
+		args = []string{"diff", "--no-color", "--no-ext-diff", "--", f.Path}
+	}
+	out, err := r.runner.Run(ctx, Cmd{Dir: r.dir, Args: args, ReadOnly: true, Env: []string{"GIT_LITERAL_PATHSPECS=1"}})
+	var gerr *Error
+	if f.Untracked && errors.As(err, &gerr) && gerr.ExitCode == 1 {
+		err = nil
+	}
 	if err != nil {
 		return FileDiff{}, err
 	}
