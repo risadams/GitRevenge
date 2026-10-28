@@ -108,7 +108,9 @@ func (r *Runner) Stream(ctx context.Context, c Cmd, consume func(io.Reader) erro
 	return runErr
 }
 
-func (r *Runner) run(ctx context.Context, c Cmd, stdout io.Writer) error {
+// command builds the exec.Cmd for c without starting it. Stdin is set from c; the caller
+// wires up stdout and stderr.
+func (r *Runner) command(ctx context.Context, c Cmd) *exec.Cmd {
 	args := append(append(make([]string, 0, len(baseArgs)+len(c.Args)), baseArgs...), c.Args...)
 	cmd := exec.CommandContext(ctx, r.bin, args...)
 	cmd.Dir = c.Dir
@@ -117,13 +119,18 @@ func (r *Runner) run(ctx context.Context, c Cmd, stdout io.Writer) error {
 		cmd.Env = append(cmd.Env, "GIT_OPTIONAL_LOCKS=0")
 	}
 	cmd.Stdin = c.Stdin
-	cmd.Stdout = stdout
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
 	hideWindow(cmd)
 	// After cancellation, don't wait forever on pipes held open by git's own children
 	// (e.g. git-remote-https).
 	cmd.WaitDelay = 2 * time.Second
+	return cmd
+}
+
+func (r *Runner) run(ctx context.Context, c Cmd, stdout io.Writer) error {
+	cmd := r.command(ctx, c)
+	cmd.Stdout = stdout
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 
 	err := cmd.Run()
 	if err == nil {
