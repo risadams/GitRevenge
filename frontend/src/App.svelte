@@ -1,11 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { Version } from '../wailsjs/go/app/App.js'
+  import { Environment, Version } from '../wailsjs/go/app/App.js'
+  import type { app } from '../wailsjs/go/models'
+  import { BrowserOpenURL } from '../wailsjs/runtime/runtime.js'
 
   let version = $state('')
+  let env = $state<app.Environment | null>(null)
 
   onMount(async () => {
-    version = await Version()
+    ;[version, env] = await Promise.all([Version(), Environment()])
   })
 </script>
 
@@ -13,9 +16,24 @@
   <header>
     <strong>Git Revenge</strong>
     <span class="muted">{version}</span>
+    {#if env && !env.problem}
+      <span class="muted right">git {env.gitVersion}{env.lfsVersion ? '' : ' · git-lfs not found'}</span>
+    {/if}
   </header>
   <main>
-    <p class="muted">No repository open.</p>
+    {#if env?.problem}
+      <div class="problem">
+        <h2>Git is required</h2>
+        <p>{env.problem}</p>
+        <p class="muted">
+          Install git {env.minVersion} or newer, then restart Git Revenge.
+          {#if env.gitPath}Found: <code>{env.gitPath}</code>{/if}
+        </p>
+        <button onclick={() => BrowserOpenURL('https://git-scm.com/downloads')}>Download git</button>
+      </div>
+    {:else if env}
+      <p class="muted">No repository open.</p>
+    {/if}
   </main>
 </div>
 
@@ -35,13 +53,25 @@
     border-bottom: 1px solid var(--border);
   }
 
+  .right {
+    margin-left: auto;
+  }
+
   main {
     flex: 1;
     display: grid;
     place-items: center;
   }
 
+  .problem {
+    max-width: 480px;
+  }
+
   .muted {
     color: var(--fg-muted);
+  }
+
+  code {
+    font-family: var(--font-mono);
   }
 </style>
