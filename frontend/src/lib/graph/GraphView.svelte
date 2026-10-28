@@ -4,13 +4,16 @@
   import { session } from '../session.svelte'
   import { EventsOn } from '../../../wailsjs/runtime/runtime.js'
   import { drawRow, graphWidth, layoutColumns, ROW_HEIGHT, type Theme } from './draw'
-  import { RowCache, type Page, type Row } from './rowCache'
+  import { RowCache, type Page, type Ref, type Row } from './rowCache'
 
   let {
     path,
     onSelect,
+    onContext,
   }: {
     path: string
+    /** Right-click on a row, with the refs pointing at it and the mouse position. */
+    onContext?: (row: Row, refs: Ref[], x: number, y: number) => void
     /** auto is true for the automatic selection of HEAD when the graph first loads. */
     onSelect?: (row: Row | undefined, auto: boolean) => void
   } = $props()
@@ -291,7 +294,15 @@
           schedule()
         }
       }}
-      onmouseleave={() => {
+      oncontextmenu={(e) => {
+      const i = rowAt(e)
+      const row = i >= 0 ? cache.get(i) : undefined
+      if (!row || !onContext) return
+      e.preventDefault()
+      select(i)
+      onContext(row, cache.refsFor(row.id), e.clientX, e.clientY)
+    }}
+    onmouseleave={() => {
         hovered = -1
         schedule()
       }}

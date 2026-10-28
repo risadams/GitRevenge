@@ -10,6 +10,7 @@
     CommitChanges,
     DiscardFiles,
     LastCommitMessage,
+    StashSave,
     StageFiles,
     UnstageFiles,
     WorkingTree,
@@ -34,6 +35,24 @@
   let wt = $state<app.WorkingTree | null>(null)
   let confirmDiscard = $state<string[] | null>(null)
   let busy = $state(false)
+  let stashing = $state(false)
+  let stashMessage = $state('')
+  let stashUntracked = $state(true)
+
+  async function saveStash() {
+    busy = true
+    const ok = (await session.run(async () => {
+      await StashSave(path, stashMessage, stashUntracked)
+      return true
+    })) ?? false
+    busy = false
+    if (ok) {
+      stashing = false
+      stashMessage = ''
+      if (current?.mode !== 'commit') openFile(null)
+    }
+    await refresh()
+  }
 
   // Read once: the repo view is keyed by path, so this panel never switches repositories.
   // svelte-ignore state_referenced_locally
@@ -158,6 +177,23 @@
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <aside class="panel" onkeydown={onKey} role="region" aria-label="Uncommitted changes">
+  <div class="stashbar">
+    {#if stashing}
+      <form
+        onsubmit={(e) => {
+          e.preventDefault()
+          void saveStash()
+        }}
+      >
+        <input bind:value={stashMessage} placeholder="Stash message (optional)" aria-label="Stash message" />
+        <label><input type="checkbox" bind:checked={stashUntracked} /> Include untracked</label>
+        <button type="submit" disabled={busy}>Stash</button>
+        <button type="button" onclick={() => (stashing = false)}>Cancel</button>
+      </form>
+    {:else}
+      <button disabled={busy || files.length === 0} onclick={() => (stashing = true)}>Stash changes…</button>
+    {/if}
+  </div>
   <div class="lists">
     <section>
       <header>
@@ -230,6 +266,21 @@
     min-width: 300px;
     border-left: 1px solid var(--border);
     background: var(--bg-raised);
+  }
+
+  .stashbar {
+    padding: 8px 12px 0;
+  }
+
+  .stashbar form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .stashbar label {
+    font-size: 12px;
   }
 
   .lists {

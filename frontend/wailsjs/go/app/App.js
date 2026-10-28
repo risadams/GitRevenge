@@ -94,6 +94,14 @@ export function StageFiles(arg1, arg2) {
   return window['go']['app']['App']['StageFiles'](arg1, arg2);
 }
 
+export function StashAction(arg1, arg2, arg3) {
+  return window['go']['app']['App']['StashAction'](arg1, arg2, arg3);
+}
+
+export function StashSave(arg1, arg2, arg3) {
+  return window['go']['app']['App']['StashSave'](arg1, arg2, arg3);
+}
+
 export function UnstageFiles(arg1, arg2) {
   return window['go']['app']['App']['UnstageFiles'](arg1, arg2);
 }

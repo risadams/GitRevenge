@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { CommitRow, WorkingTree } from '../../wailsjs/go/app/App.js'
+  import { CommitRow, StashAction, WorkingTree } from '../../wailsjs/go/app/App.js'
+  import ContextMenu, { type MenuItem } from './ContextMenu.svelte'
   import CommitPanel from './CommitPanel.svelte'
   import DiffView, { type DiffTarget } from './diff/DiffView.svelte'
   import GraphView from './graph/GraphView.svelte'
@@ -15,6 +16,24 @@
   /** Which panel is on the right: uncommitted changes, or the selected commit. */
   let view = $state<'wip' | 'commit'>('commit')
   let changes = $state(0)
+  let menu = $state<{ x: number; y: number; items: MenuItem[] } | null>(null)
+
+  /** Context menu items for a ref, or none if it has no actions yet. */
+  function itemsFor(ref: Ref): MenuItem[] {
+    if (ref.kind !== 'stash') return []
+    const act = (action: string) => () => session.run(() => StashAction(path, ref.commit, action))
+    return [
+      { label: 'Apply stash', run: act('apply') },
+      { label: 'Pop stash', run: act('pop') },
+      { label: 'Drop stash', danger: true, run: act('drop') },
+    ]
+  }
+
+  function openMenu(refs: Ref[], x: number, y: number) {
+    const items = refs.flatMap(itemsFor)
+    menu = items.length ? { x, y, items } : null
+  }
+
   /** A file diff shown in place of the graph, or null for the graph. */
   let diff = $state<DiffTarget | null>(null)
   let checkedInitial = false
@@ -54,7 +73,7 @@
 </script>
 
 <div class="repo">
-  <Sidebar {path} onPick={pick} />
+  <Sidebar {path} onPick={pick} onContext={(ref, x, y) => openMenu([ref], x, y)} />
   <div class="main">
     <button
       class="wip"
@@ -74,7 +93,7 @@
     <!-- The graph stays mounted while a diff is open, so scroll position and selection
          survive returning to it. -->
     <div class="graph" class:hidden={diff}>
-      <GraphView bind:this={graph} {path} {onSelect} />
+      <GraphView bind:this={graph} {path} {onSelect} onContext={(_row, refs, x, y) => openMenu(refs, x, y)} />
     </div>
     {#if diff}
       <div class="graph">
@@ -88,6 +107,10 @@
     <CommitPanel {path} commitId={selected.id} current={diff} openFile={(t) => (diff = t)} />
   {/if}
 </div>
+
+{#if menu}
+  <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => (menu = null)} />
+{/if}
 
 <style>
   .repo {
