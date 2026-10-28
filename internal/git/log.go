@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -71,7 +72,7 @@ func (r *Repo) Log(ctx context.Context, opts LogOptions, fn func(LogCommit) erro
 				// only valid until the next read, so copy it before reading the rest.
 				head := append([]byte(nil), rec...)
 				rest, err2 := br.ReadBytes(0)
-				rec = append(head, rest...)
+				rec = slices.Concat(head, rest)
 				err = err2
 			}
 			if len(rec) > 0 && rec[len(rec)-1] == 0 {
