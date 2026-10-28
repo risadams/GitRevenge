@@ -8,8 +8,17 @@
   let {
     path,
     onPick,
+    onActivate,
+    onNewBranch,
     onContext,
-  }: { path: string; onPick: (ref: Ref) => void; onContext?: (ref: Ref, x: number, y: number) => void } = $props()
+  }: {
+    path: string
+    onPick: (ref: Ref) => void
+    /** Double-click: check the ref out. */
+    onActivate?: (ref: Ref) => void
+    onNewBranch?: () => void
+    onContext?: (ref: Ref, x: number, y: number) => void
+  } = $props()
 
   /** Groups render at most this many items; the filter narrows the rest. Keeps the DOM
    * small in repositories with tens of thousands of refs. */
@@ -63,6 +72,9 @@
           {g.title}
           <span class="count">{items.length.toLocaleString()}</span>
         </button>
+        {#if g.kind === 'local' && onNewBranch}
+          <button class="add" onclick={onNewBranch} title="New branch from HEAD" aria-label="New branch">+</button>
+        {/if}
         {#if open[g.kind] || filter}
           <ul>
             {#each items.slice(0, MAX_ITEMS) as r (r.name)}
@@ -71,6 +83,7 @@
                   class="ref"
                   class:head={r.head}
                   onclick={() => onPick(r)}
+                  ondblclick={() => onActivate?.(r)}
                   oncontextmenu={(e) => {
                     if (!onContext) return
                     e.preventDefault()
@@ -140,9 +153,22 @@
     background: var(--bg-hover);
   }
 
+  section {
+    position: relative;
+  }
+
   .group {
     font-weight: 600;
     padding: 6px 8px;
+  }
+
+  .add {
+    position: absolute;
+    right: 44px;
+    top: 3px;
+    width: auto;
+    padding: 2px 6px;
+    color: var(--fg-muted);
   }
 
   .caret {

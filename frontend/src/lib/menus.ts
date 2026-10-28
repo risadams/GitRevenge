@@ -1,0 +1,159 @@
+import { BranchAction, Refs, StashAction } from '../../wailsjs/go/app/App.js'
+import type { MenuItem } from './ContextMenu.svelte'
+import type { DialogSpec } from './Dialog.svelte'
+import type { Ref, Row } from './graph/rowCache'
+import { errorText } from './errors'
+import { session } from './session.svelte'
+
+/** What the menus need from the view that opens them. */
+export interface MenuContext {
+  path: string
+  openDialog: (spec: DialogSpec) => void
+}
+
+/** Runs a backend call for a dialog: an error message keeps the dialog open. */
+async function attempt(fn: () => Promise<unknown>): Promise<string | void> {
+  try {
+    await fn()
+  } catch (e) {
+    return errorText(e)
+  }
+}
+
+const branch = (path: string, action: string, ...args: string[]) => BranchAction(path, action, args)
+
+/** Menu items for one ref (branch, remote branch, tag or stash). */
+export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
+  const { path, openDialog } = ctx
+  switch (ref.kind) {
+    case 'local':
+      return [
+        ...(ref.head ? [] : [{ label: `Checkout ${ref.short}`, run: () => session.run(() => branch(path, 'checkout', ref.short)) }]),
+        {
+          label: `Rename ${ref.short}…`,
+          run: () =>
+            openDialog({
+              title: `Rename branch ${ref.short}`,
+              fields: [{ key: 'name', label: 'New name', value: ref.short }],
+              submit: 'Rename',
+              run: (v) => attempt(() => branch(path, 'rename', ref.short, String(v.name).trim())),
+            }),
+        },
+        {
+          label: `Set upstream of ${ref.short}…`,
+          run: async () => {
+            const refs = ((await session.run(() => Refs(path))) ?? []) as Ref[]
+            const remotes = refs.filter((r) => r.kind === 'remote').map((r) => ({ value: r.short, label: r.short }))
+            openDialog({
+              title: `Upstream for ${ref.short}`,
+              message: ref.upstream ? `Currently tracking ${ref.upstream}.` : 'Not tracking a remote branch.',
+              fields: [
+                {
+                  key: 'upstream',
+                  label: 'Track',
+                  type: 'select',
+                  value: ref.upstream,
+                  options: [{ value: '', label: '(none)' }, ...remotes],
+                },
+              ],
+              submit: 'Save',
+              run: (v) => attempt(() => branch(path, 'upstream', ref.short, String(v.upstream))),
+            })
+          },
+        },
+        ...(ref.head
+          ? []
+          : [
+              {
+                label: `Delete ${ref.short}…`,
+                run: () =>
+                  openDialog({
+                    title: `Delete branch ${ref.short}?`,
+                    message: 'The branch is removed locally. Its commits stay reachable from other branches if merged.',
+                    fields: [{ key: 'force', label: 'Delete even if it has unmerged commits', type: 'checkbox' }],
+                    submit: 'Delete',
+                    danger: true,
+                    run: (v) => attempt(() => branch(path, 'delete', ref.short, v.force ? 'true' : '')),
+                  }),
+              },
+            ]),
+      ]
+    case 'remote':
+      return [{ label: `Checkout ${ref.short}`, run: () => session.run(() => branch(path, 'checkout', ref.short)) }]
+    case 'tag':
+      return [
+        {
+          label: `Delete tag ${ref.short}`,
+          danger: true,
+          run: () => session.run(() => branch(path, 'untag', ref.short)),
+        },
+      ]
+    case 'stash': {
+      const act = (action: string) => () => session.run(() => StashAction(path, ref.commit, action))
+      return [
+        { label: 'Apply stash', run: act('apply') },
+        { label: 'Pop stash', run: act('pop') },
+        { label: 'Drop stash', danger: true, run: act('drop') },
+      ]
+    }
+  }
+}
+
+/** Menu items for a commit row, before the items for refs pointing at it. */
+export function commitItems(row: Row, refs: Ref[], ctx: MenuContext): MenuItem[] {
+  const { path, openDialog } = ctx
+  if (refs.some((r) => r.kind === 'stash')) return []
+  const short = row.id.slice(0, 7)
+  return [
+    {
+      label: 'Create branch here…',
+      run: () =>
+        openDialog({
+          title: `New branch at ${short}`,
+          fields: [
+            { key: 'name', label: 'Branch name', placeholder: 'feature/my-change' },
+            { key: 'checkout', label: 'Check it out', type: 'checkbox', value: true },
+          ],
+          submit: 'Create branch',
+          run: (v) => attempt(() => branch(path, 'create', String(v.name).trim(), row.id, v.checkout ? 'true' : '')),
+        }),
+    },
+    {
+      label: 'Create tag here…',
+      run: () =>
+        openDialog({
+          title: `New tag at ${short}`,
+          fields: [
+            { key: 'name', label: 'Tag name', placeholder: 'v1.0.0' },
+            { key: 'message', label: 'Message (makes an annotated tag)', type: 'textarea' },
+          ],
+          submit: 'Create tag',
+          run: (v) => attempt(() => branch(path, 'tag', String(v.name).trim(), row.id, String(v.message))),
+        }),
+    },
+    {
+      label: `Checkout ${short} (detached)`,
+      run: () => session.run(() => branch(path, 'checkout', row.id)),
+    },
+  ]
+}
+
+/** The dialog for "new branch from HEAD". */
+export function newBranchDialog(ctx: MenuContext): DialogSpec {
+  return {
+    title: 'New branch',
+    message: 'Starts at the current commit (HEAD).',
+    fields: [
+      { key: 'name', label: 'Branch name', placeholder: 'feature/my-change' },
+      { key: 'checkout', label: 'Check it out', type: 'checkbox', value: true },
+    ],
+    submit: 'Create branch',
+    run: (v) => attempt(() => branch(ctx.path, 'create', String(v.name).trim(), '', v.checkout ? 'true' : '')),
+  }
+}
+
+/** Double-click on a ref in the sidebar checks it out, as in GitKraken. */
+export function checkoutRef(path: string, ref: Ref) {
+  if (ref.kind === 'stash' || ref.head) return
+  void session.run(() => branch(path, 'checkout', ref.kind === 'tag' ? ref.name : ref.short))
+}
