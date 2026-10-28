@@ -14,6 +14,8 @@ export function RecentRepos():Promise<Array<app.RecentRepo>>;
 
 export function RemoveRecentRepo(arg1:string):Promise<void>;
 
+export function RepoInfo(arg1:string):Promise<app.RepoTab>;
+
 export function RestoreSession():Promise<app.SessionState>;
 
 export function SetActiveRepo(arg1:string):Promise<void>;

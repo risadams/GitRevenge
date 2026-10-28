@@ -4,10 +4,19 @@ import {
   OpenRepo,
   RecentRepos,
   RemoveRecentRepo,
+  RepoInfo,
   RestoreSession,
   SetActiveRepo,
 } from '../../wailsjs/go/app/App.js'
 import type { app } from '../../wailsjs/go/models'
+import { EventsOn } from '../../wailsjs/runtime/runtime.js'
+
+/** Payload of the "repo:changed" event (RepoChange in Go). Events aren't bindings, so
+ * Wails doesn't generate this type. */
+interface RepoChange {
+  path: string
+  kinds: Array<'head' | 'refs' | 'index' | 'state' | 'config' | 'worktree'>
+}
 
 /** Open tabs, the active tab and recent repos, mirrored from the Go session manager. */
 class Session {
@@ -21,6 +30,7 @@ class Session {
   activeTab = $derived(this.tabs.find((t) => t.path === this.active))
 
   async restore() {
+    EventsOn('repo:changed', (c: RepoChange) => void this.onChange(c))
     const st = await this.run(() => RestoreSession())
     if (!st) return
     this.tabs = st.tabs
@@ -64,6 +74,16 @@ class Session {
 
   async refreshRecent() {
     this.recent = (await this.run(() => RecentRepos())) ?? []
+  }
+
+  /** Handles a change detected on disk by the backend watcher. */
+  private async onChange(c: RepoChange) {
+    if (c.kinds.includes('head') || c.kinds.includes('refs')) {
+      const i = this.tabs.findIndex((t) => t.path === c.path)
+      if (i < 0) return
+      const tab = await this.run(() => RepoInfo(c.path))
+      if (tab) this.tabs[i] = tab
+    }
   }
 
   private add(tab: app.RepoTab) {

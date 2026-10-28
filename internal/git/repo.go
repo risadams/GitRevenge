@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -109,4 +110,40 @@ func lockFileFrom(err error) (string, bool) {
 		return "", false
 	}
 	return m[1], true
+}
+
+// NotIgnored returns the paths (relative to the work tree) that .gitignore rules do not
+// exclude. It runs one `git check-ignore` for the whole batch.
+func (r *Repo) NotIgnored(ctx context.Context, paths []string) ([]string, error) {
+	if len(paths) == 0 {
+		return nil, nil
+	}
+	in := strings.Join(paths, "\x00") + "\x00"
+	out, err := r.runner.Run(ctx, Cmd{
+		Dir:      r.dir,
+		Args:     []string{"check-ignore", "--stdin", "-z"},
+		Stdin:    strings.NewReader(in),
+		ReadOnly: true,
+	})
+	// Exit status 1 means none of the paths are ignored.
+	var gerr *Error
+	if errors.As(err, &gerr) && gerr.ExitCode == 1 && gerr.Stderr == "" {
+		return paths, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	ignored := map[string]struct{}{}
+	for p := range strings.SplitSeq(string(out), "\x00") {
+		if p != "" {
+			ignored[p] = struct{}{}
+		}
+	}
+	kept := make([]string, 0, len(paths))
+	for _, p := range paths {
+		if _, ok := ignored[p]; !ok {
+			kept = append(kept, p)
+		}
+	}
+	return kept, nil
 }

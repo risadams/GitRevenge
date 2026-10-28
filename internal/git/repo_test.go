@@ -97,3 +97,21 @@ func TestWriteWaitRespectsContext(t *testing.T) {
 		t.Fatalf("err = %v, want DeadlineExceeded", err)
 	}
 }
+
+func TestNotIgnored(t *testing.T) {
+	repo, fx := openTestRepo(t)
+	fx.CommitFile(".gitignore", "build/\n*.log\n", "ignore")
+
+	got, err := repo.NotIgnored(context.Background(), []string{"src/a.go", "build/out.bin", "debug.log", "README.md"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(got, ",") != "src/a.go,README.md" {
+		t.Fatalf("NotIgnored = %v", got)
+	}
+
+	got, err = repo.NotIgnored(context.Background(), []string{"src/a.go"})
+	if err != nil || len(got) != 1 {
+		t.Fatalf("no ignored paths: got %v, %v", got, err)
+	}
+}

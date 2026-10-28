@@ -26,6 +26,10 @@ export function RemoveRecentRepo(arg1) {
   return window['go']['app']['App']['RemoveRecentRepo'](arg1);
 }
 
+export function RepoInfo(arg1) {
+  return window['go']['app']['App']['RepoInfo'](arg1);
+}
+
 export function RestoreSession() {
   return window['go']['app']['App']['RestoreSession']();
 }

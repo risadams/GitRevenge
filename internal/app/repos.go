@@ -12,6 +12,7 @@ import (
 	"github.com/risadams/gitrevenge/internal/git"
 	"github.com/risadams/gitrevenge/internal/session"
 	"github.com/risadams/gitrevenge/internal/settings"
+	"github.com/risadams/gitrevenge/internal/watch"
 )
 
 // RepoTab describes an open repository for the tab bar.
@@ -64,8 +65,40 @@ func (a *App) sessions() (*session.Manager, error) {
 			return
 		}
 		a.sess = session.NewManager(git.NewRunner(env.GitPath), store)
+		a.sess.OnChange(func(path string, k watch.Kind) {
+			a.emit("repo:changed", RepoChange{Path: path, Kinds: k.Names()})
+		})
 	})
 	return a.sess, a.sessErr
+}
+
+// RepoChange is the payload of the "repo:changed" event.
+type RepoChange struct {
+	Path string `json:"path"`
+	// Kinds lists what changed: head, refs, index, state, config, worktree.
+	Kinds []string `json:"kinds"`
+}
+
+// emit sends an event to the frontend. It is a no-op until Wails has started (and in
+// tests), because the Wails runtime aborts the process when called without its context.
+func (a *App) emit(name string, data any) {
+	if a.ctx == nil {
+		return
+	}
+	runtime.EventsEmit(a.ctx, name, data)
+}
+
+// RepoInfo returns fresh tab details (such as the current branch) for an open repository.
+func (a *App) RepoInfo(path string) (RepoTab, error) {
+	m, err := a.sessions()
+	if err != nil {
+		return RepoTab{}, err
+	}
+	r := m.Get(path)
+	if r == nil {
+		return RepoTab{}, userError("That repository isn't open.")
+	}
+	return tabFor(context.Background(), r), nil
 }
 
 // RestoreSession reopens the tabs from the previous run.
