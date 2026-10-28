@@ -2,6 +2,8 @@ module github.com/risadams/gitrevenge
 
 go 1.25.0
 
+ignore ./frontend/node_modules
+
 require github.com/wailsapp/wails/v2 v2.17.0
 
 require (
