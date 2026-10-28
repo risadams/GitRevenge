@@ -71,6 +71,26 @@ export namespace app {
 		    return a;
 		}
 	}
+	export class RepoState {
+	    operation: string;
+	    step: number;
+	    total: number;
+	    actions: string[];
+	    conflicts: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new RepoState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.operation = source["operation"];
+	        this.step = source["step"];
+	        this.total = source["total"];
+	        this.actions = source["actions"];
+	        this.conflicts = source["conflicts"];
+	    }
+	}
 	export class RepoTab {
 	    path: string;
 	    name: string;

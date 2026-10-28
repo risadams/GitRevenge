@@ -16,7 +16,11 @@ export function RemoveRecentRepo(arg1:string):Promise<void>;
 
 export function RepoInfo(arg1:string):Promise<app.RepoTab>;
 
+export function RepoState(arg1:string):Promise<app.RepoState>;
+
 export function RestoreSession():Promise<app.SessionState>;
+
+export function RunOperationAction(arg1:string,arg2:string):Promise<void>;
 
 export function SetActiveRepo(arg1:string):Promise<void>;
 

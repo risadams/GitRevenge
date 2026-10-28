@@ -26,6 +26,8 @@ class Session {
   recent = $state<app.RecentRepo[]>([])
   /** Last error to show in the banner, or ''. */
   error = $state('')
+  /** Per-repo counter bumped on every change on disk; views re-fetch when it moves. */
+  revision = $state<Record<string, number>>({})
 
   activeTab = $derived(this.tabs.find((t) => t.path === this.active))
 
@@ -78,6 +80,7 @@ class Session {
 
   /** Handles a change detected on disk by the backend watcher. */
   private async onChange(c: RepoChange) {
+    this.revision[c.path] = (this.revision[c.path] ?? 0) + 1
     if (c.kinds.includes('head') || c.kinds.includes('refs')) {
       const i = this.tabs.findIndex((t) => t.path === c.path)
       if (i < 0) return
@@ -94,7 +97,7 @@ class Session {
   }
 
   /** Runs a backend call, turning a rejection into the error banner. */
-  private async run<T>(fn: () => Promise<T>): Promise<T | undefined> {
+  async run<T>(fn: () => Promise<T>): Promise<T | undefined> {
     try {
       return await fn()
     } catch (e) {

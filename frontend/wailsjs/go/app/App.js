@@ -30,8 +30,16 @@ export function RepoInfo(arg1) {
   return window['go']['app']['App']['RepoInfo'](arg1);
 }
 
+export function RepoState(arg1) {
+  return window['go']['app']['App']['RepoState'](arg1);
+}
+
 export function RestoreSession() {
   return window['go']['app']['App']['RestoreSession']();
+}
+
+export function RunOperationAction(arg1, arg2) {
+  return window['go']['app']['App']['RunOperationAction'](arg1, arg2);
 }
 
 export function SetActiveRepo(arg1) {

@@ -3,6 +3,7 @@
   import { Environment, Version } from '../wailsjs/go/app/App.js'
   import type { app } from '../wailsjs/go/models'
   import { BrowserOpenURL } from '../wailsjs/runtime/runtime.js'
+  import OperationBanner from './lib/OperationBanner.svelte'
   import { session } from './lib/session.svelte'
   import StartPage from './lib/StartPage.svelte'
   import TabBar from './lib/TabBar.svelte'
@@ -44,6 +45,11 @@
         <span>{session.error}</span>
         <button onclick={() => (session.error = '')}>Dismiss</button>
       </div>
+    {/if}
+    {#if session.activeTab}
+      {#key session.activeTab.path}
+        <OperationBanner path={session.activeTab.path} />
+      {/key}
     {/if}
     <main>
       {#if session.activeTab}
