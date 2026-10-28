@@ -170,4 +170,3 @@ func TestTags(t *testing.T) {
 		t.Fatal("tag not deleted")
 	}
 }
-
