@@ -38,7 +38,7 @@ This document records the decisions from the initial requirements session (2026-
 - **Persistent helper.** Each open repo keeps a long-lived `git cat-file --batch` process for fast object reads.
 - **Per-repo operation queue.** Mutating operations are serialized, and reads run concurrently. If `index.lock` is held by another process, the app retries briefly and then reports it clearly.
 - **Commit graph.** The lane layout is computed incrementally in Go while commits stream from `git log`. Only compact row data is sent to the UI.
-- **Watching for external changes.** `fsnotify` watches `HEAD`, refs, `packed-refs`, the index and the work tree, debounced to about 150ms. The app uses `core.fsmonitor` where it is enabled.
+- **Watching for external changes.** Each repo gets one native recursive file-system subscription (`ReadDirectoryChangesW` on Windows, FSEvents on macOS). Changes are classified and debounced to about 150ms, and ignored files are filtered out. Where `core.fsmonitor` is enabled, it speeds up the `git status` that follows.
 - **In-progress operations.** A merge, rebase, cherry-pick, revert or bisect that is in progress is detected even if it started outside the app.
 
 ### Frontend

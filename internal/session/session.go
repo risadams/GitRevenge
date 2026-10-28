@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"slices"
@@ -15,6 +16,7 @@ import (
 	"github.com/risadams/gitrevenge/internal/fsutil"
 	"github.com/risadams/gitrevenge/internal/git"
 	"github.com/risadams/gitrevenge/internal/settings"
+	"github.com/risadams/gitrevenge/internal/watch"
 )
 
 // ErrNotRepo means the chosen folder is not inside a git work tree.
@@ -26,15 +28,23 @@ var ErrBare = errors.New("bare repositories are not supported")
 // Repo is one open repository with its warm backend state.
 type Repo struct {
 	// Path is the absolute work tree root; it is also the repo's ID.
-	Path    string
+	Path string
+	// GitDir is the absolute git directory (usually Path/.git).
+	GitDir  string
 	Git     *git.Repo
 	Objects *git.ObjectReader
+	watcher *watch.Watcher
 }
 
 // Name is the folder name shown on the tab.
 func (r *Repo) Name() string { return filepath.Base(r.Path) }
 
-func (r *Repo) close() { _ = r.Objects.Close() }
+func (r *Repo) close() {
+	if r.watcher != nil {
+		r.watcher.Close()
+	}
+	_ = r.Objects.Close()
+}
 
 // Manager owns the open repositories. It is safe for concurrent use.
 type Manager struct {
@@ -42,8 +52,17 @@ type Manager struct {
 	settings *settings.Store
 	now      func() time.Time
 
-	mu    sync.Mutex
-	repos []*Repo // tab order
+	mu       sync.Mutex
+	repos    []*Repo // tab order
+	onChange func(path string, k watch.Kind)
+}
+
+// OnChange registers fn to be called (from a background goroutine) when an open
+// repository changes on disk. Call it before opening repositories.
+func (m *Manager) OnChange(fn func(path string, k watch.Kind)) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.onChange = fn
 }
 
 // NewManager returns a Manager with no open repositories.
@@ -53,12 +72,18 @@ func NewManager(runner *git.Runner, store *settings.Store) *Manager {
 
 // Resolve returns the work tree root containing path.
 func (m *Manager) Resolve(ctx context.Context, path string) (string, error) {
+	root, _, err := m.resolve(ctx, path)
+	return root, err
+}
+
+// resolve returns the work tree root and git directory containing path.
+func (m *Manager) resolve(ctx context.Context, path string) (root, gitDir string, err error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if info, err := os.Stat(abs); err != nil || !info.IsDir() {
-		return "", fmt.Errorf("%s: folder not found", abs)
+		return "", "", fmt.Errorf("%s: folder not found", abs)
 	}
 	// --show-toplevel fails outside a work tree, so classify the folder first.
 	out, err := m.runner.Output(ctx, git.Cmd{
@@ -69,32 +94,40 @@ func (m *Manager) Resolve(ctx context.Context, path string) (string, error) {
 	if err != nil {
 		var gerr *git.Error
 		if errors.As(err, &gerr) && strings.Contains(gerr.Stderr, "not a git repository") {
-			return "", fmt.Errorf("%s: %w", abs, ErrNotRepo)
+			return "", "", fmt.Errorf("%s: %w", abs, ErrNotRepo)
 		}
-		return "", err
+		return "", "", err
 	}
 	f := strings.Fields(out)
 	if len(f) != 2 {
-		return "", fmt.Errorf("unexpected rev-parse output %q", out)
+		return "", "", fmt.Errorf("unexpected rev-parse output %q", out)
 	}
 	switch f[0] + " " + f[1] {
 	case "true false":
-		return "", fmt.Errorf("%s: %w", abs, ErrBare)
+		return "", "", fmt.Errorf("%s: %w", abs, ErrBare)
 	case "false false":
 		// Inside a .git directory.
-		return "", fmt.Errorf("%s: %w", abs, ErrNotRepo)
+		return "", "", fmt.Errorf("%s: %w", abs, ErrNotRepo)
 	}
-	top, err := m.runner.Output(ctx, git.Cmd{Dir: abs, Args: []string{"rev-parse", "--show-toplevel"}, ReadOnly: true})
+	out, err = m.runner.Output(ctx, git.Cmd{
+		Dir:      abs,
+		Args:     []string{"rev-parse", "--show-toplevel", "--absolute-git-dir"},
+		ReadOnly: true,
+	})
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return filepath.Clean(filepath.FromSlash(top)), nil
+	lines := strings.Split(out, "\n")
+	if len(lines) != 2 {
+		return "", "", fmt.Errorf("unexpected rev-parse output %q", out)
+	}
+	return filepath.Clean(filepath.FromSlash(lines[0])), filepath.Clean(filepath.FromSlash(lines[1])), nil
 }
 
 // Open opens the repository containing path as a tab, or returns it if already open, and
 // records it as most recently used and active.
 func (m *Manager) Open(ctx context.Context, path string) (*Repo, error) {
-	root, err := m.Resolve(ctx, path)
+	root, gitDir, err := m.resolve(ctx, path)
 	if err != nil {
 		return nil, err
 	}
@@ -105,9 +138,11 @@ func (m *Manager) Open(ctx context.Context, path string) (*Repo, error) {
 	if r == nil {
 		r = &Repo{
 			Path:    root,
+			GitDir:  gitDir,
 			Git:     git.OpenRepo(m.runner, root),
 			Objects: git.NewObjectReader(m.runner, root),
 		}
+		r.watcher = m.watchLocked(r)
 		m.repos = append(m.repos, r)
 	}
 	err = m.settings.Update(func(s *settings.Settings) {
@@ -218,3 +253,30 @@ func (m *Manager) pathsLocked() []string {
 
 // Settings returns the settings store the manager keeps in sync.
 func (m *Manager) Settings() *settings.Store { return m.settings }
+
+// watchLocked starts the change watcher for r. A watcher that fails to start is not fatal:
+// the repo still works, it just won't refresh on its own.
+func (m *Manager) watchLocked(r *Repo) *watch.Watcher {
+	onChange := m.onChange
+	w, err := watch.New(watch.Options{
+		Root:   r.Path,
+		GitDir: r.GitDir,
+		FilterWorkTree: func(paths []string) []string {
+			kept, err := r.Git.NotIgnored(context.Background(), paths)
+			if err != nil {
+				return paths // when unsure, refresh
+			}
+			return kept
+		},
+		OnChange: func(k watch.Kind) {
+			if onChange != nil {
+				onChange(r.Path, k)
+			}
+		},
+	})
+	if err != nil {
+		log.Printf("watching %s: %v", r.Path, err)
+		return nil
+	}
+	return w
+}

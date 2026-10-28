@@ -7,11 +7,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/risadams/gitrevenge/internal/fsutil"
 	"github.com/risadams/gitrevenge/internal/git"
 	"github.com/risadams/gitrevenge/internal/gittest"
 	"github.com/risadams/gitrevenge/internal/settings"
+	"github.com/risadams/gitrevenge/internal/watch"
 )
 
 func newManager(t *testing.T) (*Manager, *settings.Store) {
@@ -164,5 +166,29 @@ func TestRestoreKeepsStartPage(t *testing.T) {
 	active, failed := m.Restore(context.Background())
 	if active != "" || len(failed) != 0 || store.Get().ActiveTab != "" {
 		t.Fatalf("active = %q, failed = %v; the start page should stay selected", active, failed)
+	}
+}
+
+func TestOnChangeReportsRepoChanges(t *testing.T) {
+	m, _ := newManager(t)
+	changes := make(chan watch.Kind, 16)
+	m.OnChange(func(_ string, k watch.Kind) { changes <- k })
+	fx := gittest.New(t)
+	fx.Linear(1)
+	if _, err := m.Open(context.Background(), fx.Dir); err != nil {
+		t.Fatal(err)
+	}
+
+	fx.Branch("feature")
+	timeout := time.After(5 * time.Second)
+	for {
+		select {
+		case k := <-changes:
+			if k.Has(watch.Head) {
+				return
+			}
+		case <-timeout:
+			t.Fatal("no head change reported after checkout")
+		}
 	}
 }
