@@ -269,32 +269,6 @@ func TestCommitSignedWithSSH(t *testing.T) {
 	}
 }
 
-func TestWorkTreeDiff(t *testing.T) {
-	fx := gittest.New(t)
-	fx.CommitFile("a.txt", "one\n", "base")
-	repo := OpenRepo(newTestRunner(t), fx.Dir)
-	ctx := context.Background()
-
-	fx.WriteFile("a.txt", "one\nstaged\n")
-	fx.Git("add", "a.txt")
-	fx.WriteFile("a.txt", "one\nstaged\nunstaged\n")
-	fx.WriteFile("new.txt", "brand new\n")
-	s := status(t, repo)
-
-	staged, err := repo.WorkTreeDiff(ctx, s["a.txt"], true)
-	if err != nil || !strings.Contains(staged.Patch, "+staged") || strings.Contains(staged.Patch, "+unstaged") {
-		t.Fatalf("staged diff = %q, %v", staged.Patch, err)
-	}
-	unstaged, err := repo.WorkTreeDiff(ctx, s["a.txt"], false)
-	if err != nil || !strings.Contains(unstaged.Patch, "+unstaged") || strings.Contains(unstaged.Patch, "+staged") {
-		t.Fatalf("unstaged diff = %q, %v", unstaged.Patch, err)
-	}
-	untracked, err := repo.WorkTreeDiff(ctx, s["new.txt"], false)
-	if err != nil || !strings.Contains(untracked.Patch, "+brand new") {
-		t.Fatalf("untracked diff = %q, %v", untracked.Patch, err)
-	}
-}
-
 func TestCommitNothingStaged(t *testing.T) {
 	fx := gittest.New(t)
 	fx.Linear(1)

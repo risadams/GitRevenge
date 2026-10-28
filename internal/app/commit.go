@@ -32,16 +32,3 @@ func (a *App) CommitDetail(path, id string) (CommitInfo, error) {
 	}
 	return CommitInfo{Commit: c, Files: files}, nil
 }
-
-// CommitFileDiff returns the patch for one file of a commit.
-func (a *App) CommitFileDiff(path, id, file, oldPath string) (git.FileDiff, error) {
-	r, err := a.openRepo(path)
-	if err != nil {
-		return git.FileDiff{}, err
-	}
-	c, err := git.ReadCommit(r.Objects, id)
-	if err != nil {
-		return git.FileDiff{}, err
-	}
-	return r.Git.CommitFileDiff(context.Background(), c, file, oldPath)
-}

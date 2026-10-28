@@ -12,13 +12,13 @@ export function CommitChanges(arg1:string,arg2:string,arg3:boolean):Promise<stri
 
 export function CommitDetail(arg1:string,arg2:string):Promise<app.CommitInfo>;
 
-export function CommitFileDiff(arg1:string,arg2:string,arg3:string,arg4:string):Promise<git.FileDiff>;
-
 export function CommitRow(arg1:string,arg2:string):Promise<number>;
 
 export function DiscardFiles(arg1:string,arg2:Array<string>):Promise<void>;
 
 export function Environment():Promise<app.Environment>;
+
+export function FileContents(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:boolean):Promise<git.FileContents>;
 
 export function GraphRows(arg1:string,arg2:number,arg3:number):Promise<app.GraphPage>;
 
@@ -44,12 +44,14 @@ export function SearchGraph(arg1:string,arg2:string):Promise<graph.SearchResult>
 
 export function SetActiveRepo(arg1:string):Promise<void>;
 
+export function SetStagedContent(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
+
+export function SetWorkTreeContent(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
+
 export function StageFiles(arg1:string,arg2:Array<string>):Promise<void>;
 
 export function UnstageFiles(arg1:string,arg2:Array<string>):Promise<void>;
 
 export function Version():Promise<string>;
-
-export function WorkTreeFileDiff(arg1:string,arg2:string,arg3:boolean):Promise<git.FileDiff>;
 
 export function WorkingTree(arg1:string):Promise<app.WorkingTree>;

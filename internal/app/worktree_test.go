@@ -26,9 +26,9 @@ func TestWorkingTreeFlow(t *testing.T) {
 	if err := a.StageFiles(tab.Path, []string{"a.txt"}); err != nil {
 		t.Fatal(err)
 	}
-	d, err := a.WorkTreeFileDiff(tab.Path, "a.txt", true)
-	if err != nil || !strings.Contains(d.Patch, "+two") {
-		t.Fatalf("staged diff = %q, %v", d.Patch, err)
+	fc, err := a.FileContents(tab.Path, DiffStaged, "", "a.txt", "", false)
+	if err != nil || fc.New.Text != "one\ntwo\n" {
+		t.Fatalf("staged contents = %+v, %v", fc, err)
 	}
 	if _, err := a.CommitChanges(tab.Path, "Add two", false); err != nil {
 		t.Fatal(err)

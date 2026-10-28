@@ -1,0 +1,264 @@
+<script lang="ts">
+  import { SvelteSet } from 'svelte/reactivity'
+  import { highlightLines, languageFor, type Token } from './highlight'
+  import { applyChanges, diffLines, splitLines, toHunks, type Hunk } from './lineDiff'
+
+  /** What the hunk and line buttons do, and how the result is written. */
+  export type Actions = {
+    /** Label for the apply action, e.g. "Stage". */
+    apply?: { label: string; run: (content: string) => Promise<void> }
+    /** Label for the revert action, e.g. "Unstage" or "Discard". */
+    revert?: { label: string; danger?: boolean; run: (content: string) => Promise<void> }
+  }
+
+  let {
+    path,
+    oldText,
+    newText,
+    actions = {},
+  }: { path: string; oldText: string; newText: string; actions?: Actions } = $props()
+
+  let oldLines = $derived(splitLines(oldText))
+  let newLines = $derived(splitLines(newText))
+  let ops = $derived(diffLines(oldLines, newLines))
+  let hunks = $derived(toHunks(ops))
+
+  let oldTokens = $state<Token[][]>([])
+  let newTokens = $state<Token[][]>([])
+  $effect(() => {
+    const [o, n] = [oldText, newText]
+    oldTokens = highlightLines(o, null)
+    newTokens = highlightLines(n, null)
+    void languageFor(path).then((lang) => {
+      if (!lang || o !== oldText || n !== newText) return
+      oldTokens = highlightLines(o, lang)
+      newTokens = highlightLines(n, lang)
+    })
+  })
+
+  /** Selected change ops (by op index), for line-level actions. */
+  const selected = new SvelteSet<number>()
+  let anchor = -1
+  let busy = $state(false)
+  let confirming = $state<string | null>(null)
+
+  // A new diff invalidates any selection.
+  $effect(() => {
+    void ops
+    selected.clear()
+    anchor = -1
+    confirming = null
+  })
+
+  function toggle(i: number, e: MouseEvent) {
+    if (!actions.apply && !actions.revert) return
+    if (e.shiftKey && anchor >= 0) {
+      const [a, b] = anchor < i ? [anchor, i] : [i, anchor]
+      for (let j = a; j <= b; j++) if (ops[j].kind !== 'eq') selected.add(j)
+    } else if (selected.has(i)) selected.delete(i)
+    else selected.add(i)
+    anchor = i
+  }
+
+  function inHunk(h: Hunk) {
+    return (i: number) => i >= h.start && i < h.end
+  }
+
+  /** "Apply" applies the chosen changes; "revert" removes them and keeps the rest. */
+  async function run(which: 'apply' | 'revert', chosen: (i: number) => boolean, key: string) {
+    const action = actions[which]
+    if (!action) return
+    if (which === 'revert' && actions.revert?.danger && confirming !== key) {
+      confirming = key
+      return
+    }
+    confirming = null
+    const content =
+      which === 'apply'
+        ? applyChanges(ops, oldLines, newLines, chosen)
+        : applyChanges(ops, oldLines, newLines, (i) => !chosen(i))
+    busy = true
+    try {
+      await action.run(content)
+    } finally {
+      busy = false
+    }
+  }
+
+  const opIndexes = (h: Hunk) => Array.from({ length: h.end - h.start }, (_, k) => h.start + k)
+  const header = (h: Hunk) => `@@ -${h.oldStart},${h.oldCount} +${h.newStart},${h.newCount} @@`
+</script>
+
+{#snippet line(tokens: Token[] | undefined, fallback: string)}
+  {#if tokens}{#each tokens as t, k (k)}<span class={t.cls}>{t.text}</span>{/each}{:else}{fallback.replace(
+      /\r?\n$/,
+      '',
+    )}{/if}
+{/snippet}
+
+<div class="unified">
+  {#if hunks.length === 0}
+    <p class="muted">No changes.</p>
+  {/if}
+  {#each hunks as h (h.start)}
+    <section class="hunk">
+      <header>
+        <span class="mono">{header(h)}</span>
+        {#if actions.apply}
+          <button disabled={busy} onclick={() => run('apply', inHunk(h), 'h' + h.start)}>{actions.apply.label} hunk</button>
+        {/if}
+        {#if actions.revert}
+          <button
+            class:danger={actions.revert.danger}
+            disabled={busy}
+            onclick={() => run('revert', inHunk(h), 'h' + h.start)}
+            >{confirming === 'h' + h.start ? `Really ${actions.revert.label.toLowerCase()}?` : `${actions.revert.label} hunk`}</button
+          >
+        {/if}
+      </header>
+      <table>
+        <tbody>
+          {#each opIndexes(h) as i (i)}
+            {@const op = ops[i]}
+            <tr class={op.kind} class:sel={selected.has(i)} onclick={(e) => op.kind !== 'eq' && toggle(i, e)}>
+              <td class="num">{op.oldIndex >= 0 ? op.oldIndex + 1 : ''}</td>
+              <td class="num">{op.newIndex >= 0 ? op.newIndex + 1 : ''}</td>
+              <td class="sign">{op.kind === 'add' ? '+' : op.kind === 'del' ? '-' : ' '}</td>
+              <td class="code"
+                >{#if op.kind === 'del'}{@render line(oldTokens[op.oldIndex], oldLines[op.oldIndex])}{:else}{@render line(
+                    newTokens[op.newIndex],
+                    newLines[op.newIndex],
+                  )}{/if}</td
+              >
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </section>
+  {/each}
+
+  {#if selected.size > 0}
+    <footer>
+      <span>{selected.size} {selected.size === 1 ? 'line' : 'lines'} selected</span>
+      {#if actions.apply}
+        <button disabled={busy} onclick={() => run('apply', (i) => selected.has(i), 'sel')}>{actions.apply.label} lines</button>
+      {/if}
+      {#if actions.revert}
+        <button class:danger={actions.revert.danger} disabled={busy} onclick={() => run('revert', (i) => selected.has(i), 'sel')}
+          >{confirming === 'sel' ? `Really ${actions.revert.label.toLowerCase()}?` : `${actions.revert.label} lines`}</button
+        >
+      {/if}
+      <button onclick={() => selected.clear()}>Clear</button>
+    </footer>
+  {/if}
+</div>
+
+<style>
+  .unified {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    tab-size: 4;
+  }
+
+  .hunk {
+    margin-bottom: 8px;
+  }
+
+  header {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 4px 8px;
+    background: var(--bg-raised);
+    color: var(--fg-muted);
+    position: sticky;
+    top: 0;
+  }
+
+  header .mono {
+    flex: 1;
+  }
+
+  button {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--fg);
+    font: inherit;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    padding: 1px 8px;
+  }
+
+  button:disabled {
+    opacity: 0.5;
+  }
+
+  .danger {
+    border-color: #a33;
+    color: #f48771;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  td {
+    padding: 0 6px;
+    white-space: pre;
+    vertical-align: top;
+  }
+
+  .num {
+    width: 1%;
+    text-align: right;
+    color: var(--fg-muted);
+    user-select: none;
+  }
+
+  .sign {
+    width: 1%;
+    user-select: none;
+  }
+
+  .code {
+    width: 100%;
+  }
+
+  tr.add {
+    background: rgba(80, 160, 80, 0.18);
+    cursor: pointer;
+  }
+
+  tr.del {
+    background: rgba(200, 80, 80, 0.18);
+    cursor: pointer;
+  }
+
+  tr.sel {
+    outline: 1px solid #75beff;
+    outline-offset: -1px;
+    background-image: linear-gradient(rgba(117, 190, 255, 0.18), rgba(117, 190, 255, 0.18));
+  }
+
+  footer {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: var(--bg-raised);
+    border-top: 1px solid var(--border);
+    font-family: var(--font-ui);
+  }
+
+  footer span {
+    flex: 1;
+  }
+
+  .muted {
+    color: var(--fg-muted);
+    padding: 8px;
+  }
+</style>

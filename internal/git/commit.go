@@ -3,7 +3,6 @@ package git
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -135,75 +134,4 @@ func parseNameStatus(out []byte) []FileChange {
 		i += 2
 	}
 	return changes
-}
-
-// MaxDiffBytes caps a single file diff; larger diffs are truncated and flagged.
-const MaxDiffBytes = 1 << 20
-
-// FileDiff is the patch for one file in a commit.
-type FileDiff struct {
-	Patch     string `json:"patch"`
-	Binary    bool   `json:"binary"`
-	Truncated bool   `json:"truncated"`
-}
-
-// CommitFileDiff returns the patch for path in commit c, relative to its first parent.
-func (r *Repo) CommitFileDiff(ctx context.Context, c CommitDetail, path, oldPath string) (FileDiff, error) {
-	var args []string
-	if len(c.Parents) == 0 {
-		// A root commit has nothing to diff against; show its additions.
-		args = []string{"show", "--no-color", "--no-ext-diff", "--format=", c.ID, "--"}
-	} else {
-		args = []string{"diff", "--no-color", "--no-ext-diff", "-M", c.Parents[0], c.ID, "--"}
-	}
-	args = append(args, path)
-	if oldPath != "" && oldPath != path {
-		args = append(args, oldPath)
-	}
-	out, err := r.Read(ctx, args...)
-	if err != nil {
-		return FileDiff{}, err
-	}
-	d := FileDiff{}
-	if len(out) > MaxDiffBytes {
-		out = out[:MaxDiffBytes]
-		d.Truncated = true
-	}
-	d.Patch = string(out)
-	d.Binary = bytes.Contains(out, []byte("\nBinary files ")) || bytes.HasPrefix(out, []byte("Binary files "))
-	return d, nil
-}
-
-// WorkTreeDiff returns the patch for one uncommitted file: staged changes (index vs HEAD),
-// unstaged changes (work tree vs index), or a whole untracked file.
-func (r *Repo) WorkTreeDiff(ctx context.Context, f FileStatus, staged bool) (FileDiff, error) {
-	var args []string
-	switch {
-	case f.Untracked:
-		// --no-index exits 1 when the files differ, which they always do here.
-		args = []string{"diff", "--no-index", "--no-color", "--no-ext-diff", "--", "/dev/null", f.Path}
-	case staged:
-		args = []string{"diff", "--cached", "--no-color", "--no-ext-diff", "-M", "--", f.Path}
-		if f.OrigPath != "" {
-			args = append(args, f.OrigPath)
-		}
-	default:
-		args = []string{"diff", "--no-color", "--no-ext-diff", "--", f.Path}
-	}
-	out, err := r.runner.Run(ctx, Cmd{Dir: r.dir, Args: args, ReadOnly: true, Env: []string{"GIT_LITERAL_PATHSPECS=1"}})
-	var gerr *Error
-	if f.Untracked && errors.As(err, &gerr) && gerr.ExitCode == 1 {
-		err = nil
-	}
-	if err != nil {
-		return FileDiff{}, err
-	}
-	d := FileDiff{}
-	if len(out) > MaxDiffBytes {
-		out = out[:MaxDiffBytes]
-		d.Truncated = true
-	}
-	d.Patch = string(out)
-	d.Binary = bytes.Contains(out, []byte("\nBinary files ")) || bytes.HasPrefix(out, []byte("Binary files "))
-	return d, nil
 }
