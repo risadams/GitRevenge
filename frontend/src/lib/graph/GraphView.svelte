@@ -75,7 +75,7 @@
     for (let i = first; i < last; i++) {
       const row = cache.get(i)
       const y = i * ROW_HEIGHT - top
-      if (row) drawRow(ctx, row, y, lay, th, i === selected, i === hovered)
+      if (row) drawRow(ctx, row, cache.refsFor(row.id), y, lay, th, i === selected, i === hovered)
     }
   }
 
@@ -83,6 +83,15 @@
     const rect = scroller.getBoundingClientRect()
     const i = Math.floor((e.clientY - rect.top + scroller.scrollTop) / ROW_HEIGHT)
     return i >= 0 && i < total ? i : -1
+  }
+
+  /** Scrolls to and selects row i (e.g. when a branch is picked in the sidebar). */
+  export function reveal(i: number) {
+    if (i < 0) return
+    // Center it rather than pinning it to an edge.
+    scroller.scrollTop = Math.max(0, i * ROW_HEIGHT - scroller.clientHeight / 2)
+    select(i)
+    scroller.focus()
   }
 
   function select(i: number) {

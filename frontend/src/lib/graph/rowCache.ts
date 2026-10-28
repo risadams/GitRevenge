@@ -19,8 +19,23 @@ export interface Row {
   subject: string
 }
 
+/** A branch, tag or stash (git.Ref in Go). */
+export interface Ref {
+  name: string
+  short: string
+  kind: 'local' | 'remote' | 'tag' | 'stash'
+  commit: string
+  head: boolean
+  upstream: string
+  ahead: number
+  behind: number
+  gone: boolean
+  subject?: string
+}
+
 export interface Page {
   rows: Row[]
+  refs: Record<string, Ref[]>
   total: number
   loading: boolean
 }
@@ -33,6 +48,7 @@ export const CHUNK = 200
  */
 export class RowCache {
   private chunks = new Map<number, Row[]>()
+  private labels = new Map<string, Ref[]>()
   private inflight = new Map<number, Promise<void>>()
   private generation = 0
   total = 0
@@ -45,6 +61,11 @@ export class RowCache {
 
   get(i: number): Row | undefined {
     return this.chunks.get(Math.floor(i / CHUNK))?.[i % CHUNK]
+  }
+
+  /** Refs pointing at the commit, as of when its row was fetched. */
+  refsFor(id: string): Ref[] {
+    return this.labels.get(id) ?? []
   }
 
   /** Ensures rows [start, end) are loaded or loading. */
@@ -67,6 +88,7 @@ export class RowCache {
   /** Drops everything, e.g. after the backend swapped in a reloaded graph. */
   invalidate() {
     this.chunks.clear()
+    this.labels.clear()
     this.inflight.clear()
     this.generation++
   }
@@ -77,6 +99,7 @@ export class RowCache {
       .then((page) => {
         if (gen !== this.generation) return
         this.chunks.set(c, page.rows)
+        for (const [id, refs] of Object.entries(page.refs ?? {})) this.labels.set(id, refs)
         this.total = page.total
         this.loading = page.loading
         this.onUpdate()

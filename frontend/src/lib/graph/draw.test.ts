@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clip, graphWidth, LANE_WIDTH, laneColor, laneX, PALETTE } from './draw'
+import { clip, graphWidth, LANE_WIDTH, laneColor, laneX, PALETTE, sortRefs } from './draw'
 
 describe('graph geometry', () => {
   it('spaces lanes evenly', () => {
@@ -32,5 +32,15 @@ describe('clip', () => {
 
   it('handles no room at all', () => {
     expect(clip(ctx, 'hello', 0)).toBe('')
+  })
+})
+
+describe('sortRefs', () => {
+  const ref = (short: string, kind: 'local' | 'remote' | 'tag' | 'stash', head = false) =>
+    ({ name: short, short, kind, head, commit: '', upstream: '', ahead: 0, behind: 0, gone: false }) as const
+
+  it('puts the checked-out branch first, then local, remote, tag', () => {
+    const out = sortRefs([ref('v1', 'tag'), ref('origin/main', 'remote'), ref('dev', 'local'), ref('main', 'local', true)])
+    expect(out.map((r) => r.short)).toEqual(['main', 'dev', 'origin/main', 'v1'])
   })
 })

@@ -1,4 +1,4 @@
-import type { Row } from './rowCache'
+import type { Ref, Row } from './rowCache'
 
 export const ROW_HEIGHT = 26
 export const LANE_WIDTH = 16
@@ -67,6 +67,7 @@ export function layoutColumns(width: number, graphW: number): Layout {
 export function drawRow(
   ctx: CanvasRenderingContext2D,
   row: Row,
+  refs: Ref[],
   y: number,
   lay: Layout,
   theme: Theme,
@@ -119,9 +120,86 @@ export function drawRow(
     right -= lay.authorW
   }
   ctx.textAlign = 'left'
+  let left = lay.graphW + 8
+  const subjectRight = right - 12
+  left = drawLabels(ctx, refs, left, mid, Math.min(subjectRight - left, (subjectRight - left) * 0.6), laneColor(row.color), theme)
   ctx.fillStyle = theme.fg
-  const left = lay.graphW + 8
-  ctx.fillText(clip(ctx, row.subject, right - left - 12), left, textY)
+  ctx.fillText(clip(ctx, row.subject, subjectRight - left), left, textY)
+}
+
+/** Sort order for labels: checked-out branch, local, remote, tags, stashes. */
+const KIND_ORDER: Record<Ref['kind'], number> = { local: 1, remote: 2, tag: 3, stash: 4 }
+
+export function sortRefs(refs: Ref[]): Ref[] {
+  return [...refs].sort((a, b) => Number(b.head) - Number(a.head) || KIND_ORDER[a.kind] - KIND_ORDER[b.kind])
+}
+
+/** Draws ref pills starting at x; returns the x where the subject should start. */
+function drawLabels(
+  ctx: CanvasRenderingContext2D,
+  refs: Ref[],
+  x: number,
+  mid: number,
+  maxWidth: number,
+  color: string,
+  theme: Theme,
+): number {
+  if (refs.length === 0) return x
+  const end = x + maxWidth
+  const h = 18
+  const sorted = sortRefs(refs)
+  ctx.save()
+  ctx.font = '11px system-ui, -apple-system, "Segoe UI", sans-serif'
+  for (let i = 0; i < sorted.length; i++) {
+    const r = sorted[i]
+    const remaining = sorted.length - i
+    const more = remaining > 1 ? ` +${remaining - 1}` : ''
+    const prefix = r.kind === 'tag' ? '◆ ' : r.kind === 'stash' ? '≡ ' : ''
+    const text = prefix + r.short
+    let w = ctx.measureText(text).width + 12
+    if (x + w > end) {
+      // Out of room: one clipped pill that also counts the rest.
+      const label = clip(ctx, text, Math.max(0, end - x - 12 - ctx.measureText(more).width)) + more
+      w = ctx.measureText(label).width + 12
+      if (w > 24) pill(ctx, label, x, mid, w, h, r, color, theme)
+      x += w + 4
+      break
+    }
+    pill(ctx, text, x, mid, w, h, r, color, theme)
+    x += w + 4
+  }
+  ctx.restore()
+  return x + 4
+}
+
+function pill(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  mid: number,
+  w: number,
+  h: number,
+  r: Ref,
+  color: string,
+  theme: Theme,
+) {
+  const y = mid - h / 2
+  ctx.beginPath()
+  ctx.roundRect(x, y, w, h, 4)
+  // Local branches are filled with the lane color; remotes, tags and stashes are outlined.
+  if (r.kind === 'local') {
+    ctx.fillStyle = color
+    ctx.fill()
+    ctx.fillStyle = theme.bg
+  } else {
+    ctx.strokeStyle = color
+    ctx.lineWidth = 1
+    ctx.stroke()
+    ctx.fillStyle = color
+  }
+  ctx.font = `${r.head ? 'bold ' : ''}11px system-ui, -apple-system, "Segoe UI", sans-serif`
+  ctx.textBaseline = 'middle'
+  ctx.fillText(text, x + 6, mid)
 }
 
 function segment(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, color: string) {
