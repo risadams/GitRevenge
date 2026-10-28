@@ -1,0 +1,159 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  # Dry run: build and package (unsigned) without publishing when this workflow changes.
+  pull_request:
+    paths: [.github/workflows/release.yml]
+
+permissions:
+  contents: read
+
+env:
+  WAILS_VERSION: v2.17.0
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows/amd64
+          - os: macos-latest
+            platform: darwin/universal
+    runs-on: ${{ matrix.os }}
+    # macOS signing and notarization run only when the Apple secrets are configured;
+    # otherwise the .dmg is published unsigned. Only this flag is job-wide: the secrets
+    # themselves are scoped to the steps that use them, never to npm or go install steps.
+    env:
+      MAC_SIGNING: ${{ github.ref_type == 'tag' && secrets.APPLE_CERTIFICATE_P12 != '' && secrets.APPLE_ID != '' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Resolve version from tag
+        id: version
+        shell: bash
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then version="${GITHUB_REF_NAME#v}"; else version="0.0.0-dryrun"; fi
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME is not semver"; exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # Stamp the version into wails.json so installer and bundle metadata match the tag.
+          # Windows file versions must be numeric, so pre-release suffixes are dropped there.
+          node -e '
+            const fs = require("fs");
+            const c = JSON.parse(fs.readFileSync("wails.json"));
+            c.info.productVersion = process.argv[1].split("-")[0];
+            fs.writeFileSync("wails.json", JSON.stringify(c, null, 2) + "\n");
+          ' "$version"
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
+
+      - name: Install NSIS
+        if: runner.os == 'Windows'
+        run: choco install nsis -y --no-progress
+
+      - name: Build
+        shell: bash
+        run: |
+          args=(-clean -platform "${{ matrix.platform }}" -ldflags "-X github.com/risadams/gitrevenge/internal/version.Version=${{ steps.version.outputs.version }}")
+          if [ "$RUNNER_OS" = "Windows" ]; then args+=(-nsis); fi
+          wails build "${args[@]}"
+
+      - name: Package Windows installer
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp build/bin/*-installer.exe "dist/GitRevenge-${{ steps.version.outputs.version }}-windows-amd64-installer.exe"
+
+      - name: Import signing certificate
+        if: runner.os == 'macOS' && env.MAC_SIGNING == 'true'
+        env:
+          APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          keychain_password="$(openssl rand -hex 16)"
+          echo "$APPLE_CERTIFICATE_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$RUNNER_TEMP/cert.p12" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security set-key-partition-list -S apple-tool:,apple: -k "$keychain_password" "$keychain"
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/cert.p12"
+
+      - name: Sign app bundle
+        if: runner.os == 'macOS' && env.MAC_SIGNING == 'true'
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          app=$(ls -d build/bin/*.app)
+          codesign --force --deep --options runtime --timestamp \
+            --sign "$APPLE_SIGNING_IDENTITY" "$app"
+          codesign --verify --strict --verbose=2 "$app"
+
+      - name: Package macOS disk image
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p dist staging
+          cp -R build/bin/*.app "staging/Git Revenge.app"
+          ln -s /Applications staging/Applications
+          hdiutil create -volname "Git Revenge" -srcfolder staging -ov -format UDZO \
+            "dist/GitRevenge-${{ steps.version.outputs.version }}-macos-universal.dmg"
+
+      - name: Notarize disk image
+        if: runner.os == 'macOS' && env.MAC_SIGNING == 'true'
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          dmg=$(ls dist/*.dmg)
+          codesign --force --timestamp --sign "$APPLE_SIGNING_IDENTITY" "$dmg"
+          xcrun notarytool submit "$dmg" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" --wait
+          xcrun stapler staple "$dmg"
+          spctl --assess --type open --context context:primary-signature --verbose "$dmg"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ runner.os }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then prerelease="--prerelease"; fi
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" \
+            --title "Git Revenge ${GITHUB_REF_NAME}" --generate-notes $prerelease
