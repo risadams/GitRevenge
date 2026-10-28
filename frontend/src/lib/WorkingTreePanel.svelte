@@ -13,17 +13,25 @@
     StageFiles,
     UnstageFiles,
     WorkingTree,
-    WorkTreeFileDiff,
   } from '../../wailsjs/go/app/App.js'
   import type { app, git } from '../../wailsjs/go/models'
-  import PatchView from './PatchView.svelte'
+  import type { DiffTarget } from './diff/DiffView.svelte'
   import { session } from './session.svelte'
 
-  let { path, onCommitted }: { path: string; onCommitted?: (id: string) => void } = $props()
+  let {
+    path,
+    openFile,
+    current,
+    onCommitted,
+  }: {
+    path: string
+    openFile: (t: DiffTarget | null) => void
+    /** The diff currently open, to highlight its file. */
+    current?: DiffTarget | null
+    onCommitted?: (id: string) => void
+  } = $props()
 
   let wt = $state<app.WorkingTree | null>(null)
-  let selected = $state<{ path: string; staged: boolean } | null>(null)
-  let diff = $state<git.FileDiff | null>(null)
   let confirmDiscard = $state<string[] | null>(null)
   let busy = $state(false)
 
@@ -49,7 +57,6 @@
     const res = await session.run(() => WorkingTree(path))
     if (!res) return
     wt = res
-    if (selected) await loadDiff()
   }
 
   // Refresh on open and whenever the backend reports a change on disk.
@@ -58,18 +65,12 @@
     void refresh()
   })
 
-  async function loadDiff() {
-    if (!selected) return
-    const sel = selected
-    const res = await session.run(() => WorkTreeFileDiff(path, sel.path, sel.staged))
-    if (res && selected === sel) diff = res
+  function show(f: git.FileStatus, inStaged: boolean) {
+    openFile({ mode: inStaged ? 'staged' : 'unstaged', file: f.path, oldPath: f.origPath })
   }
 
-  function show(f: git.FileStatus, inStaged: boolean) {
-    selected = { path: f.path, staged: inStaged }
-    diff = null
-    void loadDiff()
-  }
+  const isOpen = (f: git.FileStatus, inStaged: boolean) =>
+    current?.file === f.path && current.mode === (inStaged ? 'staged' : 'unstaged')
 
   async function act(fn: () => Promise<void>) {
     busy = true
@@ -83,7 +84,7 @@
 
   async function discard(paths: string[]) {
     confirmDiscard = null
-    if (selected && paths.includes(selected.path)) selected = null
+    if (current && paths.includes(current.file)) openFile(null)
     await act(() => DiscardFiles(path, paths))
   }
 
@@ -112,7 +113,7 @@
       amend = false
       stash = null
       drafts.delete(path)
-      selected = null
+      if (current?.mode !== 'commit') openFile(null)
       onCommitted?.(id)
     }
     await refresh()
@@ -133,7 +134,7 @@
 </script>
 
 {#snippet fileRow(f: git.FileStatus, inStaged: boolean)}
-  <li class:active={selected?.path === f.path && selected?.staged === inStaged}>
+  <li class:active={isOpen(f, inStaged)}>
     <button class="name" onclick={() => show(f, inStaged)} title={f.origPath ? `${f.origPath} → ${f.path}` : f.path}>
       <span class="code c-{code(f, inStaged)}">{code(f, inStaged)}</span>
       <span class="path">{f.origPath ? `${f.origPath} → ${f.path}` : f.path}</span>
@@ -191,9 +192,6 @@
         {#each staged as f (f.path)}{@render fileRow(f, true)}{/each}
       </ul>
     </section>
-    {#if selected}
-      <PatchView {diff} />
-    {/if}
   </div>
 
   <form

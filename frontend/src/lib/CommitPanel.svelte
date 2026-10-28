@@ -1,15 +1,24 @@
 <script lang="ts">
-  import { CommitDetail, CommitFileDiff } from '../../wailsjs/go/app/App.js'
+  import { CommitDetail } from '../../wailsjs/go/app/App.js'
   import type { app, git } from '../../wailsjs/go/models'
   import { formatTime } from './graph/draw'
-  import PatchView from './PatchView.svelte'
+  import type { DiffTarget } from './diff/DiffView.svelte'
   import { session } from './session.svelte'
 
-  let { path, commitId }: { path: string; commitId: string } = $props()
+  let {
+    path,
+    commitId,
+    openFile,
+    current,
+  }: {
+    path: string
+    commitId: string
+    openFile: (t: DiffTarget) => void
+    /** The diff currently open, to highlight its file. */
+    current?: DiffTarget | null
+  } = $props()
 
   let info = $state<app.CommitInfo | null>(null)
-  let file = $state<git.FileChange | null>(null)
-  let diff = $state<git.FileDiff | null>(null)
 
   const statusNames: Record<string, string> = {
     A: 'Added',
@@ -24,19 +33,13 @@
   $effect(() => {
     const id = commitId
     info = null
-    file = null
-    diff = null
     void session.run(() => CommitDetail(path, id)).then((res) => {
       if (res && id === commitId) info = res
     })
   })
 
-  async function showFile(f: git.FileChange) {
-    file = f
-    diff = null
-    const id = commitId
-    const res = await session.run(() => CommitFileDiff(path, id, f.path, f.oldPath ?? ''))
-    if (res && file === f && id === commitId) diff = res
+  function showFile(f: git.FileChange) {
+    openFile({ mode: 'commit', commit: commitId, file: f.path, oldPath: f.oldPath })
   }
 </script>
 
@@ -71,7 +74,7 @@
     <ul class="files">
       {#each info.files as f (f.path)}
         <li>
-          <button class:active={file === f} onclick={() => showFile(f)} title={statusNames[f.status] ?? f.status}>
+          <button class:active={current?.mode === 'commit' && current.commit === commitId && current.file === f.path} onclick={() => showFile(f)} title={statusNames[f.status] ?? f.status}>
             <span class="status s-{f.status}">{f.status}</span>
             <span class="file">{f.oldPath ? `${f.oldPath} → ${f.path}` : f.path}</span>
           </button>
@@ -79,9 +82,6 @@
       {/each}
     </ul>
 
-    {#if file}
-      <PatchView {diff} />
-    {/if}
   {/if}
 </aside>
 

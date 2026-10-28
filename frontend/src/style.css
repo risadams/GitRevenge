@@ -30,3 +30,49 @@ body {
   font-family: var(--font-ui);
   font-size: 13px;
 }
+
+/* Syntax colors for @lezer/highlight's classHighlighter, used by both diff views. */
+.tok-keyword,
+.tok-operatorKeyword,
+.tok-modifier {
+  color: #c792ea;
+}
+.tok-string,
+.tok-string2,
+.tok-regexp {
+  color: #c3e88d;
+}
+.tok-number,
+.tok-bool,
+.tok-atom,
+.tok-literal {
+  color: #f78c6c;
+}
+.tok-comment {
+  color: #6a7a8a;
+  font-style: italic;
+}
+.tok-typeName,
+.tok-className,
+.tok-namespace {
+  color: #ffcb6b;
+}
+.tok-definition,
+.tok-function,
+.tok-propertyName {
+  color: #82aaff;
+}
+.tok-variableName.tok-definition {
+  color: #eeffff;
+}
+.tok-tagName,
+.tok-heading {
+  color: #f07178;
+}
+.tok-attributeName,
+.tok-meta {
+  color: #ffcb6b;
+}
+.tok-invalid {
+  color: #ff5370;
+}

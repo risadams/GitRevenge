@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -93,13 +92,9 @@ func (r *Repo) Discard(ctx context.Context, files []FileStatus) error {
 
 // removeUntracked deletes an untracked file, refusing anything outside the work tree.
 func (r *Repo) removeUntracked(rel string) error {
-	root, err := filepath.Abs(r.dir)
+	p, err := r.inside(rel)
 	if err != nil {
-		return err
-	}
-	p := filepath.Join(root, filepath.FromSlash(rel))
-	if back, err := filepath.Rel(root, p); err != nil || back == ".." || strings.HasPrefix(back, ".."+string(filepath.Separator)) {
-		return fmt.Errorf("refusing to delete %q: outside the repository", rel)
+		return fmt.Errorf("refusing to delete: %w", err)
 	}
 	if err := os.Remove(p); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err

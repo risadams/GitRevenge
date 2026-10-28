@@ -24,9 +24,9 @@ func TestCommitDetailAndDiff(t *testing.T) {
 	if info.Commit.Subject != "second" || info.Commit.Body != "body" || len(info.Files) != 1 || info.Files[0].Path != "a.txt" {
 		t.Fatalf("info = %+v", info)
 	}
-	d, err := a.CommitFileDiff(tab.Path, fx.Head(), "a.txt", "")
-	if err != nil || !strings.Contains(d.Patch, "+two") {
-		t.Fatalf("diff = %+v, %v", d, err)
+	fc, err := a.FileContents(tab.Path, DiffCommit, fx.Head(), "a.txt", "", false)
+	if err != nil || fc.Old.Text != "one\n" || fc.New.Text != "one\ntwo\n" {
+		t.Fatalf("contents = %+v, %v", fc, err)
 	}
 	if _, err := a.CommitDetail(tab.Path, strings.Repeat("0", 40)); err == nil || err.Error() != "That commit no longer exists." {
 		t.Fatalf("missing commit err = %v", err)

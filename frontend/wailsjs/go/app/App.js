@@ -18,10 +18,6 @@ export function CommitDetail(arg1, arg2) {
   return window['go']['app']['App']['CommitDetail'](arg1, arg2);
 }
 
-export function CommitFileDiff(arg1, arg2, arg3, arg4) {
-  return window['go']['app']['App']['CommitFileDiff'](arg1, arg2, arg3, arg4);
-}
-
 export function CommitRow(arg1, arg2) {
   return window['go']['app']['App']['CommitRow'](arg1, arg2);
 }
@@ -32,6 +28,10 @@ export function DiscardFiles(arg1, arg2) {
 
 export function Environment() {
   return window['go']['app']['App']['Environment']();
+}
+
+export function FileContents(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['app']['App']['FileContents'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 export function GraphRows(arg1, arg2, arg3) {
@@ -82,6 +82,14 @@ export function SetActiveRepo(arg1) {
   return window['go']['app']['App']['SetActiveRepo'](arg1);
 }
 
+export function SetStagedContent(arg1, arg2, arg3, arg4) {
+  return window['go']['app']['App']['SetStagedContent'](arg1, arg2, arg3, arg4);
+}
+
+export function SetWorkTreeContent(arg1, arg2, arg3, arg4) {
+  return window['go']['app']['App']['SetWorkTreeContent'](arg1, arg2, arg3, arg4);
+}
+
 export function StageFiles(arg1, arg2) {
   return window['go']['app']['App']['StageFiles'](arg1, arg2);
 }
@@ -92,10 +100,6 @@ export function UnstageFiles(arg1, arg2) {
 
 export function Version() {
   return window['go']['app']['App']['Version']();
-}
-
-export function WorkTreeFileDiff(arg1, arg2, arg3) {
-  return window['go']['app']['App']['WorkTreeFileDiff'](arg1, arg2, arg3);
 }
 
 export function WorkingTree(arg1) {

@@ -322,21 +322,61 @@ export namespace git {
 	        this.oldPath = source["oldPath"];
 	    }
 	}
-	export class FileDiff {
-	    patch: string;
-	    binary: boolean;
-	    truncated: boolean;
+	export class Side {
+	    exists: boolean;
+	    text: string;
+	    image?: string;
+	    size: number;
 	
 	    static createFrom(source: any = {}) {
-	        return new FileDiff(source);
+	        return new Side(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.patch = source["patch"];
-	        this.binary = source["binary"];
-	        this.truncated = source["truncated"];
+	        this.exists = source["exists"];
+	        this.text = source["text"];
+	        this.image = source["image"];
+	        this.size = source["size"];
 	    }
+	}
+	export class FileContents {
+	    path: string;
+	    old: Side;
+	    new: Side;
+	    kind: string;
+	    mime?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FileContents(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.old = this.convertValues(source["old"], Side);
+	        this.new = this.convertValues(source["new"], Side);
+	        this.kind = source["kind"];
+	        this.mime = source["mime"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class FileStatus {
 	    path: string;
@@ -392,6 +432,7 @@ export namespace git {
 	        this.subject = source["subject"];
 	    }
 	}
+	
 	
 	export class Signing {
 	    enabled: boolean;

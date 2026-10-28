@@ -82,25 +82,6 @@ func (a *App) DiscardFiles(path string, files []string) error {
 	return writeErr(err)
 }
 
-// WorkTreeFileDiff returns the staged or unstaged patch for one uncommitted file.
-func (a *App) WorkTreeFileDiff(path, file string, staged bool) (git.FileDiff, error) {
-	r, err := a.openRepo(path)
-	if err != nil {
-		return git.FileDiff{}, err
-	}
-	ctx := context.Background()
-	st, err := r.Git.Status(ctx)
-	if err != nil {
-		return git.FileDiff{}, err
-	}
-	for _, f := range st.Files {
-		if f.Path == file {
-			return r.Git.WorkTreeDiff(ctx, f, staged)
-		}
-	}
-	return git.FileDiff{}, nil // no longer changed
-}
-
 // CommitChanges commits the staged changes (or amends the last commit) and returns the new
 // commit ID.
 func (a *App) CommitChanges(path, message string, amend bool) (string, error) {
