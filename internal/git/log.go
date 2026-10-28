@@ -28,6 +28,8 @@ type LogOptions struct {
 	// Revs are the starting points. Empty means every branch, remote-tracking branch and tag,
 	// plus HEAD (so a detached HEAD is included).
 	Revs []string
+	// Extra revisions are added to the default starting points (used for stash commits).
+	Extra []string
 	// MaxCount limits the number of commits; 0 means no limit.
 	MaxCount int
 }
@@ -57,6 +59,7 @@ func (r *Repo) Log(ctx context.Context, opts LogOptions, fn func(LogCommit) erro
 	} else {
 		args = append(args, opts.Revs...)
 	}
+	args = append(args, opts.Extra...)
 	// "--" stops revs from being read as paths.
 	args = append(args, "--")
 

@@ -104,9 +104,28 @@ func (l *graphLoader) reload() {
 			refsCh <- refResult{idx, err}
 		}()
 
+		// Stashes appear as single rows on their base commit. A stash commit's other parents
+		// (its index and untracked-files snapshots) are internal: drop those edges and skip
+		// the commits, which topological order always yields after the stash itself.
+		stashIDs, _ := l.repo.StashIDs(ctx)
+		stashes := map[string]bool{}
+		for _, id := range stashIDs {
+			stashes[id] = true
+		}
+		hidden := map[string]bool{}
+
 		const every = 100 * time.Millisecond
 		last := time.Now()
-		err := l.repo.Log(ctx, git.LogOptions{}, func(c git.LogCommit) error {
+		err := l.repo.Log(ctx, git.LogOptions{Extra: stashIDs}, func(c git.LogCommit) error {
+			if hidden[c.ID] {
+				return nil
+			}
+			if stashes[c.ID] && len(c.Parents) > 1 {
+				for _, p := range c.Parents[1:] {
+					hidden[p] = true
+				}
+				c.Parents = c.Parents[:1]
+			}
 			if err := g.Add(c); err != nil {
 				return err
 			}

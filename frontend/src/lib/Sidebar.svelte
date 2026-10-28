@@ -5,7 +5,11 @@
   import type { Ref } from './graph/rowCache'
   import { session } from './session.svelte'
 
-  let { path, onPick }: { path: string; onPick: (ref: Ref) => void } = $props()
+  let {
+    path,
+    onPick,
+    onContext,
+  }: { path: string; onPick: (ref: Ref) => void; onContext?: (ref: Ref, x: number, y: number) => void } = $props()
 
   /** Groups render at most this many items; the filter narrows the rest. Keeps the DOM
    * small in repositories with tens of thousands of refs. */
@@ -63,7 +67,17 @@
           <ul>
             {#each items.slice(0, MAX_ITEMS) as r (r.name)}
               <li>
-                <button class="ref" class:head={r.head} onclick={() => onPick(r)} title={r.subject ?? r.name}>
+                <button
+                  class="ref"
+                  class:head={r.head}
+                  onclick={() => onPick(r)}
+                  oncontextmenu={(e) => {
+                    if (!onContext) return
+                    e.preventDefault()
+                    onContext(r, e.clientX, e.clientY)
+                  }}
+                  title={r.subject ?? r.name}
+                >
                   <span class="name">{r.kind === 'stash' ? r.subject : r.short}</span>
                   {#if r.gone}
                     <span class="track" title="Upstream branch was deleted">gone</span>

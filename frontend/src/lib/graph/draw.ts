@@ -94,11 +94,22 @@ export function drawRow(
   for (const s of row.up) segment(ctx, laneX(s.from), y, laneX(s.to), mid, laneColor(s.color))
   for (const s of row.down) segment(ctx, laneX(s.from), mid, laneX(s.to), y + h, laneColor(s.color))
 
-  ctx.beginPath()
-  ctx.arc(laneX(row.col), mid, NODE_RADIUS, 0, Math.PI * 2)
-  ctx.fillStyle = laneColor(row.color)
-  ctx.fill()
-  if (row.parents > 1) {
+  const isStash = refs.some((r) => r.kind === 'stash')
+  if (isStash) {
+    // Stashes are drawn as hollow squares so they read as "not a real commit".
+    const s = NODE_RADIUS + 0.5
+    ctx.strokeStyle = laneColor(row.color)
+    ctx.lineWidth = 2
+    ctx.fillStyle = theme.bg
+    ctx.fillRect(laneX(row.col) - s, mid - s, s * 2, s * 2)
+    ctx.strokeRect(laneX(row.col) - s, mid - s, s * 2, s * 2)
+  } else {
+    ctx.beginPath()
+    ctx.arc(laneX(row.col), mid, NODE_RADIUS, 0, Math.PI * 2)
+    ctx.fillStyle = laneColor(row.color)
+    ctx.fill()
+  }
+  if (row.parents > 1 && !isStash) {
     // Merge commits get a hollow center.
     ctx.beginPath()
     ctx.arc(laneX(row.col), mid, NODE_RADIUS - 2.5, 0, Math.PI * 2)

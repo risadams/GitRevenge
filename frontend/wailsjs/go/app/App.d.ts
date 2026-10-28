@@ -50,6 +50,10 @@ export function SetWorkTreeContent(arg1:string,arg2:string,arg3:string,arg4:stri
 
 export function StageFiles(arg1:string,arg2:Array<string>):Promise<void>;
 
+export function StashAction(arg1:string,arg2:string,arg3:string):Promise<void>;
+
+export function StashSave(arg1:string,arg2:string,arg3:boolean):Promise<void>;
+
 export function UnstageFiles(arg1:string,arg2:Array<string>):Promise<void>;
 
 export function Version():Promise<string>;

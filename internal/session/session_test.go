@@ -235,3 +235,28 @@ func TestGraphLoadsAndReloadsOnCommit(t *testing.T) {
 	fx.CommitFile("more.txt", "x", "fourth")
 	waitGraph(t, r, 4)
 }
+
+func TestGraphShowsStashesOnTheirBase(t *testing.T) {
+	m, _ := newManager(t)
+	fx := gittest.New(t)
+	base := fx.Linear(2)[1]
+	fx.WriteFile("file.txt", "wip\n")
+	fx.WriteFile("untracked.txt", "u\n")
+	fx.Git("stash", "push", "-u", "-m", "my stash")
+	stash := fx.Git("rev-parse", "refs/stash")
+
+	r, err := m.Open(context.Background(), fx.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// 2 commits + 1 stash row; the stash's index and untracked commits stay hidden.
+	waitGraph(t, r, 3)
+	g, _ := r.Graph()
+	rows := g.Rows(0, 3)
+	if rows[0].ID != stash || rows[0].Parents != 1 {
+		t.Fatalf("first row should be the stash with one parent: %+v", rows[0])
+	}
+	if row, ok := g.RowOf(base); !ok || row != 1 {
+		t.Fatalf("base commit row = %d, %v", row, ok)
+	}
+}
