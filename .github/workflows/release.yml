@@ -64,7 +64,11 @@ jobs:
 
       - name: Install NSIS
         if: runner.os == 'Windows'
-        run: choco install nsis -y --no-progress
+        shell: bash
+        run: |
+          choco install nsis -y --no-progress
+          # Chocolatey doesn't update PATH for later steps, and Wails only warns if makensis is missing.
+          echo "C:\Program Files (x86)\NSIS" >> "$GITHUB_PATH"
 
       - name: Build
         shell: bash
