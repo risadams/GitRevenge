@@ -16,6 +16,22 @@ Git Revenge is a fast, local-only desktop git client for Windows and macOS. It h
 - `git` 2.40 or newer on your `PATH`.
 - `git-lfs` if you want the LFS features.
 
+## Development
+
+You need Go 1.25+, Node 24+ and the [Wails v2 CLI](https://wails.io/docs/gettingstarted/installation) (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`).
+
+```sh
+wails dev        # run with hot reload
+wails build      # produce build/bin/gitrevenge(.exe)
+```
+
+The Go binary embeds `frontend/dist`. On a fresh clone, build the frontend once before running Go tools directly:
+
+```sh
+cd frontend && npm ci && npm run build && cd ..
+go test ./...
+```
+
 ## Docs
 
 - [Plan](docs/PLAN.md): scope, architecture, performance targets, milestones and workflow.
