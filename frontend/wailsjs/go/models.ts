@@ -1,5 +1,37 @@
 export namespace app {
 	
+	export class CommitInfo {
+	    commit: git.CommitDetail;
+	    files: git.FileChange[];
+	
+	    static createFrom(source: any = {}) {
+	        return new CommitInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.commit = this.convertValues(source["commit"], git.CommitDetail);
+	        this.files = this.convertValues(source["files"], git.FileChange);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class Environment {
 	    gitPath: string;
 	    gitVersion: string;
@@ -182,6 +214,98 @@ export namespace app {
 
 export namespace git {
 	
+	export class Signature {
+	    name: string;
+	    email: string;
+	    time: number;
+	    tz: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Signature(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.email = source["email"];
+	        this.time = source["time"];
+	        this.tz = source["tz"];
+	    }
+	}
+	export class CommitDetail {
+	    id: string;
+	    parents: string[];
+	    author: Signature;
+	    committer: Signature;
+	    subject: string;
+	    body: string;
+	    signed: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new CommitDetail(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.parents = source["parents"];
+	        this.author = this.convertValues(source["author"], Signature);
+	        this.committer = this.convertValues(source["committer"], Signature);
+	        this.subject = source["subject"];
+	        this.body = source["body"];
+	        this.signed = source["signed"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class FileChange {
+	    status: string;
+	    path: string;
+	    oldPath?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FileChange(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.path = source["path"];
+	        this.oldPath = source["oldPath"];
+	    }
+	}
+	export class FileDiff {
+	    patch: string;
+	    binary: boolean;
+	    truncated: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new FileDiff(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.patch = source["patch"];
+	        this.binary = source["binary"];
+	        this.truncated = source["truncated"];
+	    }
+	}
 	export class Ref {
 	    name: string;
 	    short: string;

@@ -10,6 +10,14 @@ export function CloseRepo(arg1) {
   return window['go']['app']['App']['CloseRepo'](arg1);
 }
 
+export function CommitDetail(arg1, arg2) {
+  return window['go']['app']['App']['CommitDetail'](arg1, arg2);
+}
+
+export function CommitFileDiff(arg1, arg2, arg3, arg4) {
+  return window['go']['app']['App']['CommitFileDiff'](arg1, arg2, arg3, arg4);
+}
+
 export function CommitRow(arg1, arg2) {
   return window['go']['app']['App']['CommitRow'](arg1, arg2);
 }
