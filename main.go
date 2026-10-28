@@ -1,3 +1,4 @@
+// Command gitrevenge is the Git Revenge desktop git client.
 package main
 
 import (
