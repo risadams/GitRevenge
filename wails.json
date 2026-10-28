@@ -1,0 +1,19 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "gitrevenge",
+  "outputfilename": "gitrevenge",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Ris Adams"
+  },
+  "info": {
+    "companyName": "Ris Adams",
+    "productName": "Git Revenge",
+    "productVersion": "0.1.0",
+    "copyright": "Copyright 2026 Ris Adams. Licensed under Apache-2.0.",
+    "comments": "A fast, local-only desktop git client."
+  }
+}
