@@ -11,6 +11,8 @@ import (
 	"slices"
 	"sync"
 	"time"
+
+	"github.com/risadams/gitrevenge/internal/fsutil"
 )
 
 // schemaVersion is bumped when the file format changes incompatibly.
@@ -49,7 +51,7 @@ func (s Settings) clone() Settings {
 
 // AddRecent moves path to the front of the recent list, adding it if needed.
 func (s *Settings) AddRecent(path string, now time.Time) {
-	s.Recent = slices.DeleteFunc(s.Recent, func(r RecentRepo) bool { return samePath(r.Path, path) })
+	s.Recent = slices.DeleteFunc(s.Recent, func(r RecentRepo) bool { return fsutil.SamePath(r.Path, path) })
 	s.Recent = slices.Insert(s.Recent, 0, RecentRepo{Path: path, LastOpened: now})
 	if len(s.Recent) > maxRecent {
 		s.Recent = s.Recent[:maxRecent]
@@ -58,7 +60,7 @@ func (s *Settings) AddRecent(path string, now time.Time) {
 
 // RemoveRecent drops path from the recent list.
 func (s *Settings) RemoveRecent(path string) {
-	s.Recent = slices.DeleteFunc(s.Recent, func(r RecentRepo) bool { return samePath(r.Path, path) })
+	s.Recent = slices.DeleteFunc(s.Recent, func(r RecentRepo) bool { return fsutil.SamePath(r.Path, path) })
 }
 
 // DefaultPath returns the settings file location: %APPDATA%\GitRevenge\settings.json on

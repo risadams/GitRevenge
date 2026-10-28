@@ -1,0 +1,220 @@
+// Package session tracks the repositories open as tabs and keeps settings in sync with them.
+package session
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/risadams/gitrevenge/internal/fsutil"
+	"github.com/risadams/gitrevenge/internal/git"
+	"github.com/risadams/gitrevenge/internal/settings"
+)
+
+// ErrNotRepo means the chosen folder is not inside a git work tree.
+var ErrNotRepo = errors.New("not a git repository")
+
+// ErrBare means the chosen folder is a bare repository, which has no work tree to show.
+var ErrBare = errors.New("bare repositories are not supported")
+
+// Repo is one open repository with its warm backend state.
+type Repo struct {
+	// Path is the absolute work tree root; it is also the repo's ID.
+	Path    string
+	Git     *git.Repo
+	Objects *git.ObjectReader
+}
+
+// Name is the folder name shown on the tab.
+func (r *Repo) Name() string { return filepath.Base(r.Path) }
+
+func (r *Repo) close() { _ = r.Objects.Close() }
+
+// Manager owns the open repositories. It is safe for concurrent use.
+type Manager struct {
+	runner   *git.Runner
+	settings *settings.Store
+	now      func() time.Time
+
+	mu    sync.Mutex
+	repos []*Repo // tab order
+}
+
+// NewManager returns a Manager with no open repositories.
+func NewManager(runner *git.Runner, store *settings.Store) *Manager {
+	return &Manager{runner: runner, settings: store, now: time.Now}
+}
+
+// Resolve returns the work tree root containing path.
+func (m *Manager) Resolve(ctx context.Context, path string) (string, error) {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	if info, err := os.Stat(abs); err != nil || !info.IsDir() {
+		return "", fmt.Errorf("%s: folder not found", abs)
+	}
+	// --show-toplevel fails outside a work tree, so classify the folder first.
+	out, err := m.runner.Output(ctx, git.Cmd{
+		Dir:      abs,
+		Args:     []string{"rev-parse", "--is-bare-repository", "--is-inside-work-tree"},
+		ReadOnly: true,
+	})
+	if err != nil {
+		var gerr *git.Error
+		if errors.As(err, &gerr) && strings.Contains(gerr.Stderr, "not a git repository") {
+			return "", fmt.Errorf("%s: %w", abs, ErrNotRepo)
+		}
+		return "", err
+	}
+	f := strings.Fields(out)
+	if len(f) != 2 {
+		return "", fmt.Errorf("unexpected rev-parse output %q", out)
+	}
+	switch f[0] + " " + f[1] {
+	case "true false":
+		return "", fmt.Errorf("%s: %w", abs, ErrBare)
+	case "false false":
+		// Inside a .git directory.
+		return "", fmt.Errorf("%s: %w", abs, ErrNotRepo)
+	}
+	top, err := m.runner.Output(ctx, git.Cmd{Dir: abs, Args: []string{"rev-parse", "--show-toplevel"}, ReadOnly: true})
+	if err != nil {
+		return "", err
+	}
+	return filepath.Clean(filepath.FromSlash(top)), nil
+}
+
+// Open opens the repository containing path as a tab, or returns it if already open, and
+// records it as most recently used and active.
+func (m *Manager) Open(ctx context.Context, path string) (*Repo, error) {
+	root, err := m.Resolve(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	r := m.findLocked(root)
+	if r == nil {
+		r = &Repo{
+			Path:    root,
+			Git:     git.OpenRepo(m.runner, root),
+			Objects: git.NewObjectReader(m.runner, root),
+		}
+		m.repos = append(m.repos, r)
+	}
+	err = m.settings.Update(func(s *settings.Settings) {
+		s.AddRecent(root, m.now())
+		s.OpenTabs = m.pathsLocked()
+		s.ActiveTab = root
+	})
+	return r, err
+}
+
+// Close closes the tab for path. Closing a path that isn't open is not an error.
+func (m *Manager) Close(path string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	i := slices.IndexFunc(m.repos, func(r *Repo) bool { return fsutil.SamePath(r.Path, path) })
+	if i < 0 {
+		return nil
+	}
+	m.repos[i].close()
+	m.repos = slices.Delete(m.repos, i, i+1)
+	return m.settings.Update(func(s *settings.Settings) {
+		s.OpenTabs = m.pathsLocked()
+		if fsutil.SamePath(s.ActiveTab, path) {
+			s.ActiveTab = ""
+			if len(m.repos) > 0 {
+				s.ActiveTab = m.repos[min(i, len(m.repos)-1)].Path
+			}
+		}
+	})
+}
+
+// SetActive records which tab is selected. An empty path means the start page.
+func (m *Manager) SetActive(path string) error {
+	return m.settings.Update(func(s *settings.Settings) { s.ActiveTab = path })
+}
+
+// Get returns the open repository at path, or nil.
+func (m *Manager) Get(path string) *Repo {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.findLocked(path)
+}
+
+// List returns the open repositories in tab order.
+func (m *Manager) List() []*Repo {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return slices.Clone(m.repos)
+}
+
+// Restore reopens the tabs saved in settings. Repositories that no longer open are
+// dropped and returned with the reason. The saved active tab (or the start page, "") is
+// kept if possible; if the active repo failed to reopen, the first tab is selected.
+func (m *Manager) Restore(ctx context.Context) (active string, failed map[string]error) {
+	saved := m.settings.Get()
+	failed = map[string]error{}
+	for _, p := range saved.OpenTabs {
+		if _, err := m.Open(ctx, p); err != nil {
+			failed[p] = err
+		}
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	switch r := m.findLocked(saved.ActiveTab); {
+	case saved.ActiveTab == "":
+	case r != nil:
+		active = r.Path
+	case len(m.repos) > 0:
+		active = m.repos[0].Path
+	}
+	// Rewrite tabs even if nothing reopened, so failed paths aren't retried forever.
+	if err := m.settings.Update(func(s *settings.Settings) {
+		s.OpenTabs = m.pathsLocked()
+		s.ActiveTab = active
+	}); err != nil {
+		failed[""] = err
+	}
+	return active, failed
+}
+
+// CloseAll stops every repository's background processes. Settings are left as they are,
+// so the tabs come back on next launch.
+func (m *Manager) CloseAll() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, r := range m.repos {
+		r.close()
+	}
+	m.repos = nil
+}
+
+func (m *Manager) findLocked(path string) *Repo {
+	for _, r := range m.repos {
+		if fsutil.SamePath(r.Path, path) {
+			return r
+		}
+	}
+	return nil
+}
+
+func (m *Manager) pathsLocked() []string {
+	paths := make([]string, len(m.repos))
+	for i, r := range m.repos {
+		paths[i] = r.Path
+	}
+	return paths
+}
+
+// Settings returns the settings store the manager keeps in sync.
+func (m *Manager) Settings() *settings.Store { return m.settings }

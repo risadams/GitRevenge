@@ -7,15 +7,22 @@ import (
 	"sync"
 
 	"github.com/risadams/gitrevenge/internal/git"
+	"github.com/risadams/gitrevenge/internal/session"
 	"github.com/risadams/gitrevenge/internal/version"
 )
 
 // App holds application-wide state. Its exported methods are callable from the frontend.
 type App struct {
 	ctx context.Context
+	// settingsPath overrides the settings file location; tests use it.
+	settingsPath string
 
 	envOnce sync.Once
 	env     Environment
+
+	sessOnce sync.Once
+	sess     *session.Manager
+	sessErr  error
 }
 
 // Environment reports the git installation the app will use.
@@ -36,6 +43,13 @@ func New() *App {
 // Startup is called by Wails when the app starts. The context is kept for runtime calls.
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
+}
+
+// Shutdown is called by Wails when the app quits. It stops background git processes.
+func (a *App) Shutdown(context.Context) {
+	if a.sess != nil {
+		a.sess.CloseAll()
+	}
 }
 
 func discover(ctx context.Context) Environment {
