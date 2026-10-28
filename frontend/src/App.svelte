@@ -3,12 +3,16 @@
   import { Environment, Version } from '../wailsjs/go/app/App.js'
   import type { app } from '../wailsjs/go/models'
   import { BrowserOpenURL } from '../wailsjs/runtime/runtime.js'
+  import { session } from './lib/session.svelte'
+  import StartPage from './lib/StartPage.svelte'
+  import TabBar from './lib/TabBar.svelte'
 
   let version = $state('')
   let env = $state<app.Environment | null>(null)
 
   onMount(async () => {
     ;[version, env] = await Promise.all([Version(), Environment()])
+    if (!env.problem) await session.restore()
   })
 </script>
 
@@ -20,8 +24,9 @@
       <span class="muted right">git {env.gitVersion}{env.lfsVersion ? '' : ' · git-lfs not found'}</span>
     {/if}
   </header>
-  <main>
-    {#if env?.problem}
+
+  {#if env?.problem}
+    <main class="center">
       <div class="problem">
         <h2>Git is required</h2>
         <p>{env.problem}</p>
@@ -31,10 +36,30 @@
         </p>
         <button onclick={() => BrowserOpenURL('https://git-scm.com/downloads')}>Download git</button>
       </div>
-    {:else if env}
-      <p class="muted">No repository open.</p>
+    </main>
+  {:else if env}
+    <TabBar />
+    {#if session.error}
+      <div class="banner" role="alert">
+        <span>{session.error}</span>
+        <button onclick={() => (session.error = '')}>Dismiss</button>
+      </div>
     {/if}
-  </main>
+    <main>
+      {#if session.activeTab}
+        <!-- Placeholder until the commit graph lands (#17). -->
+        <div class="center">
+          <div>
+            <h2>{session.activeTab.name}</h2>
+            <p class="muted">{session.activeTab.path}</p>
+            <p>On <strong>{session.activeTab.head || '(no commits)'}</strong></p>
+          </div>
+        </div>
+      {:else}
+        <StartPage />
+      {/if}
+    </main>
+  {/if}
 </div>
 
 <style>
@@ -59,8 +84,21 @@
 
   main {
     flex: 1;
+    overflow: auto;
+  }
+
+  .center {
     display: grid;
     place-items: center;
+    height: 100%;
+  }
+
+  .banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    background: #5a1d1d;
   }
 
   .problem {
