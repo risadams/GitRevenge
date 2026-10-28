@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -219,4 +220,17 @@ func friendly(err error) error {
 		return userError("Bare repositories aren't supported, because they have no working files to show.")
 	}
 	return err
+}
+
+// gitMessage turns git's stderr into a message for a dialog: "error: " / "fatal: " /
+// "hint: " prefixes are dropped, since the UI already presents it as an error.
+func gitMessage(stderr string) userError {
+	lines := strings.Split(strings.TrimSpace(stderr), "\n")
+	for i, l := range lines {
+		for _, p := range []string{"error: ", "fatal: ", "hint: "} {
+			l = strings.TrimPrefix(l, p)
+		}
+		lines[i] = l
+	}
+	return userError(strings.Join(lines, "\n"))
 }

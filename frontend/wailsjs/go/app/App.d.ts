@@ -4,6 +4,8 @@ import {app} from '../models';
 import {git} from '../models';
 import {graph} from '../models';
 
+export function BranchAction(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
+
 export function ChooseAndOpenRepo():Promise<app.RepoTab>;
 
 export function CloseRepo(arg1:string):Promise<void>;

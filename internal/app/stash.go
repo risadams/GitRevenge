@@ -48,7 +48,7 @@ func stashErr(err error) error {
 	var gerr *git.Error
 	if errors.As(err, &gerr) && gerr.Stderr != "" {
 		// e.g. "Your local changes to the following files would be overwritten".
-		return userError(gerr.Stderr)
+		return gitMessage(gerr.Stderr)
 	}
 	return writeErr(err)
 }

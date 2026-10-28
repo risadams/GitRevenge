@@ -129,7 +129,7 @@ func commitErr(err error) error {
 	}
 	if s := strings.TrimSpace(gerr.Stderr); s != "" {
 		// Usually a hook rejecting the commit: its own output is the most useful message.
-		return userError(s)
+		return gitMessage(s)
 	}
 	return err
 }

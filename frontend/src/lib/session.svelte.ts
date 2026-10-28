@@ -10,6 +10,7 @@ import {
 } from '../../wailsjs/go/app/App.js'
 import type { app } from '../../wailsjs/go/models'
 import { EventsOn } from '../../wailsjs/runtime/runtime.js'
+import { errorText } from './errors'
 
 /** Payload of the "repo:changed" event (RepoChange in Go). Events aren't bindings, so
  * Wails doesn't generate this type. */
@@ -101,7 +102,7 @@ class Session {
     try {
       return await fn()
     } catch (e) {
-      this.error = String(e)
+      this.error = errorText(e)
       return undefined
     }
   }
