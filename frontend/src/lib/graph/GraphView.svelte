@@ -201,9 +201,10 @@
   onMount(() => {
     const ro = new ResizeObserver(schedule)
     ro.observe(scroller)
-    const off = EventsOn('graph:progress', (p: { path: string; rows: number; done: boolean; error: string }) => {
+    const off = EventsOn('graph:progress', (p: { path: string; rows: number; done: boolean; refsReady: boolean; error: string }) => {
       if (p.path !== path) return
       cache.setTotal(p.rows, !p.done)
+      if (p.refsReady) cache.invalidate() // labels arrived after the first rows
       if (p.done) {
         // A reload swaps in a new graph; anything cached may be stale.
         cache.invalidate()
