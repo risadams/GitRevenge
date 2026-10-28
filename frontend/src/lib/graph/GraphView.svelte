@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { GraphRows } from '../../../wailsjs/go/app/App.js'
+  import { GraphRows, SearchGraph } from '../../../wailsjs/go/app/App.js'
+  import { session } from '../session.svelte'
   import { EventsOn } from '../../../wailsjs/runtime/runtime.js'
   import { drawRow, graphWidth, layoutColumns, ROW_HEIGHT, type Theme } from './draw'
   import { RowCache, type Page, type Row } from './rowCache'
@@ -20,6 +21,14 @@
   let selected = $state(-1)
   let hovered = -1
   let frame = 0
+
+  // Search state. matchSet is only used for dimming when every match fits in the result.
+  let searchInput: HTMLInputElement
+  let query = $state('')
+  let matches = $state<number[]>([])
+  let matchTotal = $state(0)
+  let matchSet: Set<number> | null = null
+  let searchSeq = 0
 
   const cache = new RowCache(
     // The generated binding types mirror rowCache's; the cast only bridges class vs interface.
@@ -76,7 +85,7 @@
     for (let i = first; i < last; i++) {
       const row = cache.get(i)
       const y = i * ROW_HEIGHT - top
-      if (row) drawRow(ctx, row, cache.refsFor(row.id), y, lay, th, i === selected, i === hovered)
+      if (row) drawRow(ctx, row, cache.refsFor(row.id), y, lay, th, i === selected, i === hovered, !!matchSet && !matchSet.has(i))
     }
   }
 
@@ -122,6 +131,56 @@
     schedule()
   }
 
+  async function runSearch() {
+    const seq = ++searchSeq
+    const q = query
+    if (!q.trim()) {
+      matches = []
+      matchTotal = 0
+      matchSet = null
+      schedule()
+      return
+    }
+    const res = await session.run(() => SearchGraph(path, q))
+    if (!res || seq !== searchSeq) return
+    matches = res.rows
+    matchTotal = res.total
+    matchSet = res.total === res.rows.length ? new Set(res.rows) : null
+    schedule()
+  }
+
+  /** Moves to the next (or previous) match relative to the selection. */
+  function jump(dir: 1 | -1) {
+    if (matches.length === 0) return
+    const next =
+      dir === 1
+        ? (matches.find((m) => m > selected) ?? matches[0])
+        : (matches.findLast((m) => m < selected) ?? matches[matches.length - 1])
+    reveal(next)
+    searchInput.focus()
+  }
+
+  function onSearchKey(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      jump(e.shiftKey ? -1 : 1)
+    } else if (e.key === 'Escape') {
+      query = ''
+      void runSearch()
+      scroller.focus()
+    }
+  }
+
+  function onWindowKey(e: KeyboardEvent) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+      e.preventDefault()
+      searchInput.focus()
+      searchInput.select()
+    }
+  }
+
+  let currentMatch = $derived(matches.indexOf(selected))
+
   function onKey(e: KeyboardEvent) {
     const page = Math.max(1, Math.floor(scroller.clientHeight / ROW_HEIGHT) - 1)
     const moves: Record<string, number> = {
@@ -149,6 +208,7 @@
         // A reload swaps in a new graph; anything cached may be stale.
         cache.invalidate()
         error = p.error
+        if (query) void runSearch()
       }
       total = p.rows
       loading = !p.done
@@ -163,6 +223,8 @@
   })
 </script>
 
+<svelte:window onkeydown={onWindowKey} />
+
 <div class="graph">
   <div class="status">
     {#if error}
@@ -172,6 +234,24 @@
     {:else}
       <span>{total.toLocaleString()} commits</span>
     {/if}
+    <span class="search">
+      <input
+        bind:this={searchInput}
+        bind:value={query}
+        oninput={runSearch}
+        onkeydown={onSearchKey}
+        type="search"
+        placeholder="Search message, author or SHA"
+        aria-label="Search commits"
+      />
+      {#if query.trim()}
+        <span class="count">
+          {#if matchTotal === 0}No matches{:else}{currentMatch >= 0 ? `${currentMatch + 1} of ` : ''}{matchTotal.toLocaleString()}{/if}
+        </span>
+        <button onclick={() => jump(-1)} disabled={!matchTotal} aria-label="Previous match">↑</button>
+        <button onclick={() => jump(1)} disabled={!matchTotal} aria-label="Next match">↓</button>
+      {/if}
+    </span>
   </div>
   <div class="viewport">
     <canvas bind:this={canvas}></canvas>
@@ -214,10 +294,39 @@
   }
 
   .status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     padding: 4px 12px;
     color: var(--fg-muted);
     border-bottom: 1px solid var(--border);
     font-size: 12px;
+  }
+
+  .search {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .search input {
+    width: 260px;
+    padding: 2px 6px;
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+  }
+
+  .search button {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--fg);
+    cursor: pointer;
+  }
+
+  .count {
+    white-space: nowrap;
   }
 
   .error {

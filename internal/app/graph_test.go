@@ -65,3 +65,24 @@ func TestGraphRefsAndCommitRow(t *testing.T) {
 		t.Fatalf("unknown commit row = %d", row)
 	}
 }
+
+func TestSearchGraph(t *testing.T) {
+	a := newTestApp(t)
+	fx := gittest.WithMergeHistory(t)
+	tab, err := a.OpenRepo(fx.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for deadline := time.Now().Add(10 * time.Second); time.Now().Before(deadline); time.Sleep(20 * time.Millisecond) {
+		if page, _ := a.GraphRows(tab.Path, 0, 1); !page.Loading {
+			break
+		}
+	}
+	res, err := a.SearchGraph(tab.Path, "feature")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Total != 3 { // "feature 1", "feature 2", "Merge branch 'feature'"
+		t.Fatalf("res = %+v", res)
+	}
+}

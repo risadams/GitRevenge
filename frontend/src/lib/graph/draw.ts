@@ -73,8 +73,12 @@ export function drawRow(
   theme: Theme,
   selected: boolean,
   hovered: boolean,
+  dimmed = false,
 ) {
   const h = ROW_HEIGHT
+  ctx.save()
+  // Rows that don't match an active search fade back.
+  if (dimmed && !selected) ctx.globalAlpha = 0.3
   if (selected || hovered) {
     ctx.fillStyle = selected ? theme.selected : theme.hover
     ctx.fillRect(0, y, lay.width, h)
@@ -125,6 +129,7 @@ export function drawRow(
   left = drawLabels(ctx, refs, left, mid, Math.min(subjectRight - left, (subjectRight - left) * 0.6), laneColor(row.color), theme)
   ctx.fillStyle = theme.fg
   ctx.fillText(clip(ctx, row.subject, subjectRight - left), left, textY)
+  ctx.restore()
 }
 
 /** Sort order for labels: checked-out branch, local, remote, tags, stashes. */

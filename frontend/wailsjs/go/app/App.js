@@ -62,6 +62,10 @@ export function RunOperationAction(arg1, arg2) {
   return window['go']['app']['App']['RunOperationAction'](arg1, arg2);
 }
 
+export function SearchGraph(arg1, arg2) {
+  return window['go']['app']['App']['SearchGraph'](arg1, arg2);
+}
+
 export function SetActiveRepo(arg1) {
   return window['go']['app']['App']['SetActiveRepo'](arg1);
 }
