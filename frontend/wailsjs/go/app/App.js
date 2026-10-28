@@ -10,6 +10,10 @@ export function CloseRepo(arg1) {
   return window['go']['app']['App']['CloseRepo'](arg1);
 }
 
+export function CommitChanges(arg1, arg2, arg3) {
+  return window['go']['app']['App']['CommitChanges'](arg1, arg2, arg3);
+}
+
 export function CommitDetail(arg1, arg2) {
   return window['go']['app']['App']['CommitDetail'](arg1, arg2);
 }
@@ -22,12 +26,20 @@ export function CommitRow(arg1, arg2) {
   return window['go']['app']['App']['CommitRow'](arg1, arg2);
 }
 
+export function DiscardFiles(arg1, arg2) {
+  return window['go']['app']['App']['DiscardFiles'](arg1, arg2);
+}
+
 export function Environment() {
   return window['go']['app']['App']['Environment']();
 }
 
 export function GraphRows(arg1, arg2, arg3) {
   return window['go']['app']['App']['GraphRows'](arg1, arg2, arg3);
+}
+
+export function LastCommitMessage(arg1) {
+  return window['go']['app']['App']['LastCommitMessage'](arg1);
 }
 
 export function OpenRepo(arg1) {
@@ -70,6 +82,22 @@ export function SetActiveRepo(arg1) {
   return window['go']['app']['App']['SetActiveRepo'](arg1);
 }
 
+export function StageFiles(arg1, arg2) {
+  return window['go']['app']['App']['StageFiles'](arg1, arg2);
+}
+
+export function UnstageFiles(arg1, arg2) {
+  return window['go']['app']['App']['UnstageFiles'](arg1, arg2);
+}
+
 export function Version() {
   return window['go']['app']['App']['Version']();
+}
+
+export function WorkTreeFileDiff(arg1, arg2, arg3) {
+  return window['go']['app']['App']['WorkTreeFileDiff'](arg1, arg2, arg3);
+}
+
+export function WorkingTree(arg1) {
+  return window['go']['app']['App']['WorkingTree'](arg1);
 }

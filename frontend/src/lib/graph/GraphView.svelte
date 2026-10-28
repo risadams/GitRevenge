@@ -6,7 +6,14 @@
   import { drawRow, graphWidth, layoutColumns, ROW_HEIGHT, type Theme } from './draw'
   import { RowCache, type Page, type Row } from './rowCache'
 
-  let { path, onSelect }: { path: string; onSelect?: (row: Row | undefined) => void } = $props()
+  let {
+    path,
+    onSelect,
+  }: {
+    path: string
+    /** auto is true for the automatic selection of HEAD when the graph first loads. */
+    onSelect?: (row: Row | undefined, auto: boolean) => void
+  } = $props()
 
   /** Rows fetched beyond the viewport, so short scrolls never show blanks. */
   const OVERSCAN = 40
@@ -104,22 +111,30 @@
     scroller.focus()
   }
 
-  let autoSelected = false
+  /**
+   * Initial selection: the top row until the checked-out commit is known, then that commit.
+   * Refs load alongside history, so HEAD's label can arrive after the first rows; until the
+   * user picks something themselves, keep trying to move to HEAD.
+   */
+  let autoSelect: 'none' | 'fallback' | 'done' = 'none'
 
-  /** On first load, select the checked-out commit (or the top row) so details show. */
   function selectHeadOnce() {
-    if (autoSelected || selected >= 0 || !cache.get(0)) return
-    autoSelected = true
+    if (autoSelect === 'done' || !cache.get(0)) return
     for (let i = 0; i < 200 && cache.get(i); i++) {
       if (cache.refsFor(cache.get(i)!.id).some((r) => r.head)) {
-        select(i)
+        autoSelect = 'done'
+        if (i !== selected) select(i, true)
         return
       }
     }
-    select(0)
+    if (autoSelect === 'none') {
+      autoSelect = 'fallback'
+      select(0, true)
+    }
   }
 
-  function select(i: number) {
+  function select(i: number, auto = false) {
+    if (!auto) autoSelect = 'done'
     selected = Math.max(0, Math.min(total - 1, i))
     // Keep the selection in view.
     const y = selected * ROW_HEIGHT
@@ -127,7 +142,7 @@
     else if (y + ROW_HEIGHT > scroller.scrollTop + scroller.clientHeight) {
       scroller.scrollTop = y + ROW_HEIGHT - scroller.clientHeight
     }
-    onSelect?.(cache.get(selected))
+    onSelect?.(cache.get(selected), auto)
     schedule()
   }
 

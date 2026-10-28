@@ -2,6 +2,7 @@
   import { CommitDetail, CommitFileDiff } from '../../wailsjs/go/app/App.js'
   import type { app, git } from '../../wailsjs/go/models'
   import { formatTime } from './graph/draw'
+  import PatchView from './PatchView.svelte'
   import { session } from './session.svelte'
 
   let { path, commitId }: { path: string; commitId: string } = $props()
@@ -36,13 +37,6 @@
     const id = commitId
     const res = await session.run(() => CommitFileDiff(path, id, f.path, f.oldPath ?? ''))
     if (res && file === f && id === commitId) diff = res
-  }
-
-  function lineClass(line: string): string {
-    if (line.startsWith('+') && !line.startsWith('+++')) return 'add'
-    if (line.startsWith('-') && !line.startsWith('---')) return 'del'
-    if (line.startsWith('@@')) return 'hunk'
-    return ''
   }
 </script>
 
@@ -86,18 +80,7 @@
     </ul>
 
     {#if file}
-      <div class="diff">
-        {#if !diff}
-          <p class="muted pad">Loading diff…</p>
-        {:else if diff.binary}
-          <p class="muted pad">Binary file, no text diff.</p>
-        {:else}
-          <!-- Plain patch view until the diff viewer lands in 0.2. -->
-          <pre>{#each diff.patch.split('\n') as line, i (i)}<span class={lineClass(line)}>{line}
-</span>{/each}</pre>
-          {#if diff.truncated}<p class="muted pad">Diff truncated at 1 MB.</p>{/if}
-        {/if}
-      </div>
+      <PatchView {diff} />
     {/if}
   {/if}
 </aside>
@@ -213,35 +196,6 @@
 
   .file {
     overflow-wrap: anywhere;
-  }
-
-  .diff {
-    border-top: 1px solid var(--border);
-    margin-top: 8px;
-  }
-
-  .diff pre {
-    margin: 0;
-    padding: 8px 0;
-    overflow-x: auto;
-  }
-
-  .diff span {
-    display: block;
-    padding: 0 12px;
-    white-space: pre;
-  }
-
-  .add {
-    background: rgba(80, 160, 80, 0.2);
-  }
-
-  .del {
-    background: rgba(200, 80, 80, 0.2);
-  }
-
-  .hunk {
-    color: var(--fg-muted);
   }
 
   .muted {
