@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/base64"
 	"path/filepath"
 	"strings"
 
@@ -64,15 +65,8 @@ func (a *App) FileImage(path, mode, commit, file string) (string, error) {
 	if file == "" || filepath.IsAbs(file) || clean == ".." || strings.HasPrefix(clean, "../") {
 		return "", nil
 	}
-	var at git.FileRef
-	switch mode {
-	case DiffCommit:
-		at = git.FileRef{Rev: commit, Path: clean}
-	case DiffStaged:
-		at = git.IndexVersion(clean)
-	case DiffUnstaged:
-		at = git.WorkTreeVersion(clean)
-	default:
+	at, ok := versionRef(mode, commit, clean)
+	if !ok {
 		return "", userError("Unknown diff mode " + mode + ".")
 	}
 	fc, err := r.Git.Contents(context.Background(), clean, git.FileRef{}, at, false)
@@ -80,6 +74,41 @@ func (a *App) FileImage(path, mode, commit, file string) (string, error) {
 		return "", nil // a broken image in a document isn't an error worth a banner
 	}
 	return "data:" + fc.Mime + ";base64," + fc.New.Image, nil
+}
+
+// FileData returns a file in the repository as base64, at the version a diff of mode shows,
+// for previews of binary formats such as PDF. It returns "" when the file doesn't exist there.
+func (a *App) FileData(path, mode, commit, file string) (string, error) {
+	r, err := a.openRepo(path)
+	if err != nil {
+		return "", err
+	}
+	at, ok := versionRef(mode, commit, file)
+	if !ok {
+		return "", userError("Unknown diff mode " + mode + ".")
+	}
+	data, exists, err := r.Git.FileBytes(context.Background(), at)
+	if err != nil {
+		return "", userError(err.Error())
+	}
+	if !exists {
+		return "", nil
+	}
+	return base64.StdEncoding.EncodeToString(data), nil
+}
+
+// versionRef names the version of file a diff of mode shows: the commit's, the index's or
+// the working tree's.
+func versionRef(mode, commit, file string) (git.FileRef, bool) {
+	switch mode {
+	case DiffCommit:
+		return git.FileRef{Rev: commit, Path: file}, true
+	case DiffStaged:
+		return git.IndexVersion(file), true
+	case DiffUnstaged:
+		return git.WorkTreeVersion(file), true
+	}
+	return git.FileRef{}, false
 }
 
 // errChanged is returned when a file changed after it was displayed.

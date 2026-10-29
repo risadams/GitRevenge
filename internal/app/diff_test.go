@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/base64"
 	"errors"
 	"os"
 	"strings"
@@ -95,5 +96,27 @@ func TestFileImage(t *testing.T) {
 		if url, err := a.FileImage(tab.Path, DiffUnstaged, "", p); err != nil || url != "" {
 			t.Errorf("FileImage(%q) = %.40q, %v; want empty", p, url, err)
 		}
+	}
+}
+
+func TestFileData(t *testing.T) {
+	a := newTestApp(t)
+	fx := gittest.New(t)
+	pdf := "%PDF-1.4\n\x00\x01\x02 binary bytes\n%%EOF\n"
+	fx.WriteFile("docs/spec.pdf", pdf)
+	head := fx.Commit("add a pdf")
+	tab, err := a.OpenRepo(fx.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := a.FileData(tab.Path, DiffCommit, head, "docs/spec.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if raw, _ := base64.StdEncoding.DecodeString(got); string(raw) != pdf {
+		t.Fatalf("FileData = %q", raw)
+	}
+	if got, err := a.FileData(tab.Path, DiffUnstaged, "", "docs/missing.pdf"); err != nil || got != "" {
+		t.Fatalf("missing file = %q, %v", got, err)
 	}
 }

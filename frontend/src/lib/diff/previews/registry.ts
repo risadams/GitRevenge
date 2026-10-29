@@ -2,6 +2,7 @@ import type { Component } from 'svelte'
 import CsvPreview from './CsvPreview.svelte'
 import MarkdownPreview from './MarkdownPreview.svelte'
 import MermaidPreview from './MermaidPreview.svelte'
+import PdfPreview from './PdfPreview.svelte'
 import TexPreview from './TexPreview.svelte'
 import TreePreview from './TreePreview.svelte'
 import { formatOf } from './structured'
@@ -14,12 +15,16 @@ export interface PreviewProps {
   loadImage: (file: string) => Promise<string>
   /** Opens another file in the repository, at the same version. */
   openFile: (file: string) => void
+  /** This file's bytes as base64, for binary formats. */
+  loadData?: () => Promise<string>
 }
 
 export interface Previewer {
   id: string
   matches: (path: string) => boolean
   component: Component<PreviewProps>
+  /** Reads the file's bytes (loadData) instead of its text, and shows for binary files. */
+  binary?: boolean
 }
 
 /**
@@ -33,6 +38,7 @@ export const PREVIEWERS: Previewer[] = [
   { id: 'structured', matches: (p) => formatOf(p) !== null, component: TreePreview },
   { id: 'tex', matches: (p) => /\.(tex|latex)$/i.test(p), component: TexPreview },
   { id: 'mermaid', matches: (p) => /\.(mmd|mermaid)$/i.test(p), component: MermaidPreview },
+  { id: 'pdf', matches: (p) => /\.pdf$/i.test(p), component: PdfPreview, binary: true },
 ]
 
 export function previewerFor(path: string): Previewer | undefined {
