@@ -1,4 +1,5 @@
 import type { Component } from 'svelte'
+import CsvPreview from './CsvPreview.svelte'
 import MarkdownPreview from './MarkdownPreview.svelte'
 
 /** What every previewer is given: the file, its text and ways to reach the rest of the repo. */
@@ -24,6 +25,7 @@ export interface Previewer {
  */
 export const PREVIEWERS: Previewer[] = [
   { id: 'markdown', matches: (p) => /\.(md|markdown|mdown|mkd|mkdn)$/i.test(p), component: MarkdownPreview },
+  { id: 'csv', matches: (p) => /\.(csv|tsv|tab)$/i.test(p), component: CsvPreview },
 ]
 
 export function previewerFor(path: string): Previewer | undefined {
