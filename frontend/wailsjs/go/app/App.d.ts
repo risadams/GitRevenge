@@ -5,6 +5,8 @@ import {app} from '../models';
 import {settings} from '../models';
 import {graph} from '../models';
 
+export function AddWorktree(arg1:string,arg2:string,arg3:string):Promise<void>;
+
 export function AnswerPrompt(arg1:string,arg2:string,arg3:boolean):Promise<void>;
 
 export function Blame(arg1:string,arg2:string,arg3:string):Promise<Array<git.BlameLine>>;
@@ -107,6 +109,8 @@ export function Remotes(arg1:string):Promise<Array<git.Remote>>;
 
 export function RemoveRecentRepo(arg1:string):Promise<void>;
 
+export function RemoveWorktree(arg1:string,arg2:string,arg3:boolean):Promise<void>;
+
 export function RepoInfo(arg1:string):Promise<app.RepoTab>;
 
 export function RepoState(arg1:string):Promise<app.RepoState>;
@@ -160,3 +164,5 @@ export function UpdateSubmodules(arg1:string):Promise<void>;
 export function Version():Promise<string>;
 
 export function WorkingTree(arg1:string):Promise<app.WorkingTree>;
+
+export function Worktrees(arg1:string):Promise<Array<git.Worktree>>;
