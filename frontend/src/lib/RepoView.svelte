@@ -2,6 +2,7 @@
   import { CommitRow, WorkingTree } from '../../wailsjs/go/app/App.js'
   import ContextMenu, { type MenuItem } from './ContextMenu.svelte'
   import Dialog, { type DialogSpec } from './Dialog.svelte'
+  import RebaseEditor from './RebaseEditor.svelte'
   import RemotesDialog from './RemotesDialog.svelte'
   import Toolbar from './Toolbar.svelte'
   import { checkoutRef, commitItems, dropItems, newBranchDialog, refItems, type MenuContext } from './menus'
@@ -24,6 +25,8 @@
 
   let dialog = $state<DialogSpec | null>(null)
   let remotesOpen = $state(false)
+  /** Commit after which the interactive rebase editor rewrites history, or "" when closed. */
+  let rebaseBase = $state('')
   const ctx: MenuContext = {
     get path() {
       return path
@@ -33,6 +36,10 @@
       return head.startsWith('detached') ? '' : head
     },
     openDialog: (spec) => (dialog = spec),
+    openRebase: (base) => {
+      diff = null
+      rebaseBase = base
+    },
   }
 
   function openMenu(items: MenuItem[], x: number, y: number) {
@@ -105,7 +112,7 @@
     </button>
     <!-- The graph stays mounted while a diff is open, so scroll position and selection
          survive returning to it. -->
-    <div class="graph" class:hidden={diff}>
+    <div class="graph" class:hidden={diff || rebaseBase}>
       <GraphView bind:this={graph} {path} {onSelect} onContext={(row, refs, x, y) =>
           openMenu([...commitItems(row, refs, ctx), ...refs.flatMap((r) => refItems(r, ctx))], x, y)}
         onDrop={(source, sourceRefs, target, targetRefs, x, y) => {
@@ -116,7 +123,11 @@
               'Drop onto the checked-out branch to merge, rebase or cherry-pick into it, or drag the checked-out branch onto another commit.'
         }} />
     </div>
-    {#if diff}
+    {#if rebaseBase}
+      <div class="graph">
+        <RebaseEditor {path} base={rebaseBase} onClose={() => (rebaseBase = '')} />
+      </div>
+    {:else if diff}
       <div class="graph">
         <DiffView {path} target={diff} onClose={() => (diff = null)} />
       </div>

@@ -416,6 +416,24 @@ export namespace git {
 	        this.submodule = source["submodule"];
 	    }
 	}
+	export class RebaseItem {
+	    commit: string;
+	    subject: string;
+	    message: string;
+	    action: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RebaseItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.commit = source["commit"];
+	        this.subject = source["subject"];
+	        this.message = source["message"];
+	        this.action = source["action"];
+	    }
+	}
 	export class Ref {
 	    name: string;
 	    short: string;

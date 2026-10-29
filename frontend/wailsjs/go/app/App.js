@@ -58,6 +58,10 @@ export function Integrate(arg1, arg2, arg3) {
   return window['go']['app']['App']['Integrate'](arg1, arg2, arg3);
 }
 
+export function InteractiveRebase(arg1, arg2, arg3) {
+  return window['go']['app']['App']['InteractiveRebase'](arg1, arg2, arg3);
+}
+
 export function LastCommitMessage(arg1) {
   return window['go']['app']['App']['LastCommitMessage'](arg1);
 }
@@ -76,6 +80,10 @@ export function PushCurrent(arg1, arg2) {
 
 export function PushRef(arg1, arg2, arg3, arg4) {
   return window['go']['app']['App']['PushRef'](arg1, arg2, arg3, arg4);
+}
+
+export function RebasePlan(arg1, arg2) {
+  return window['go']['app']['App']['RebasePlan'](arg1, arg2);
 }
 
 export function RecentRepos() {
