@@ -77,6 +77,8 @@ export function InteractiveRebase(arg1:string,arg2:string,arg3:Array<git.RebaseI
 
 export function IssueURL(arg1:string):Promise<string>;
 
+export function Keybindings():Promise<Record<string, string>>;
+
 export function LFS(arg1:string):Promise<app.LFSInfo>;
 
 export function LFSAction(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
@@ -134,6 +136,8 @@ export function SetActiveRepo(arg1:string):Promise<void>;
 export function SetCommitNote(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function SetGraphDensity(arg1:string):Promise<void>;
+
+export function SetKeybindings(arg1:Record<string, string>):Promise<void>;
 
 export function SetPreferences(arg1:app.Preferences):Promise<void>;
 
