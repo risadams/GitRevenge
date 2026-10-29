@@ -28,13 +28,15 @@ PRs that change `release.yml` run the build and packaging steps without signing 
 
 ## macOS signing secrets
 
-Set these in **Settings → Secrets and variables → Actions**. If `APPLE_CERTIFICATE_P12` or `APPLE_ID` is missing, the macOS build is published unsigned.
+Set these in **Settings → Secrets and variables → Actions**. If `APPLE_CERTIFICATE_P12` or `APPLE_API_KEY` is missing, the macOS build is published unsigned.
+
+Signing uses a Developer ID Application certificate. Notarization uses an App Store Connect API key: in App Store Connect, **Users and Access → Integrations → App Store Connect API → Team Keys**, generate a key with the **Developer** role and download its `.p8` file (it can be downloaded only once).
 
 | Secret | Value |
 |---|---|
 | `APPLE_CERTIFICATE_P12` | Your "Developer ID Application" certificate and private key, exported as `.p12` and base64-encoded (`base64 -i cert.p12 \| pbcopy`) |
 | `APPLE_CERTIFICATE_PASSWORD` | The password used when exporting the `.p12` |
 | `APPLE_SIGNING_IDENTITY` | For example `Developer ID Application: Your Name (TEAMID)` |
-| `APPLE_ID` | The Apple ID email used for notarization |
-| `APPLE_APP_PASSWORD` | An [app-specific password](https://support.apple.com/en-us/102654) for that Apple ID |
-| `APPLE_TEAM_ID` | Your 10-character Team ID |
+| `APPLE_API_KEY` | The full text of the `AuthKey_<KEY ID>.p8` file, including the `BEGIN` and `END` lines |
+| `APPLE_API_KEY_ID` | The key's Key ID, shown in its row on the Team Keys page |
+| `APPLE_API_ISSUER` | The Issuer ID, shown above the Team Keys table |
