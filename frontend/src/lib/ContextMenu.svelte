@@ -18,11 +18,15 @@
   let left = $state(0)
   let top = $state(0)
 
+  const buttons = () => [...menu.querySelectorAll<HTMLButtonElement>('button')]
+
   onMount(() => {
+    const before = document.activeElement as HTMLElement | null
     const r = menu.getBoundingClientRect()
-    left = Math.min(x, window.innerWidth - r.width - 4)
-    top = Math.min(y, window.innerHeight - r.height - 4)
-    menu.focus()
+    left = Math.max(4, Math.min(x, window.innerWidth - r.width - 4))
+    top = Math.max(4, Math.min(y, window.innerHeight - r.height - 4))
+    buttons()[0]?.focus()
+    return () => before?.focus?.()
   })
 
   async function pick(i: number) {
@@ -34,6 +38,24 @@
     onClose()
     await item.run()
   }
+
+  /** Arrow keys, Home and End move between items; Tab closes, as in native menus. */
+  function onKey(e: KeyboardEvent) {
+    const all = buttons()
+    const i = all.indexOf(document.activeElement as HTMLButtonElement)
+    const go = (j: number) => {
+      e.preventDefault()
+      all[(j + all.length) % all.length]?.focus()
+    }
+    if (e.key === 'ArrowDown') go(i + 1)
+    else if (e.key === 'ArrowUp') go(i < 0 ? all.length - 1 : i - 1)
+    else if (e.key === 'Home') go(0)
+    else if (e.key === 'End') go(all.length - 1)
+    else if (e.key === 'Tab') {
+      e.preventDefault()
+      onClose()
+    }
+  }
 </script>
 
 <svelte:window
@@ -44,9 +66,9 @@
   onblur={onClose}
 />
 
-<div class="menu" bind:this={menu} role="menu" tabindex="-1" style:left="{left}px" style:top="{top}px">
+<div class="menu" bind:this={menu} role="menu" tabindex="-1" style:left="{left}px" style:top="{top}px" onkeydown={onKey}>
   {#each items as item, i (item.label)}
-    <button role="menuitem" class:danger={item.danger} onclick={() => pick(i)}>
+    <button role="menuitem" class:danger={item.danger} class:armed={armed === i} onclick={() => pick(i)} onmouseenter={(e) => e.currentTarget.focus()}>
       {armed === i ? `Click again to ${item.label.toLowerCase()}` : item.label}
     </button>
   {/each}
@@ -56,31 +78,66 @@
   .menu {
     position: fixed;
     z-index: 100;
-    min-width: 160px;
-    padding: 4px 0;
-    background: var(--paper-warm);
+    min-width: 200px;
+    max-width: 360px;
+    padding: 5px;
+    background: var(--paper);
     border: 1px solid var(--paper-edge);
+    border-radius: 8px;
     box-shadow: var(--shadow);
     outline: none;
+    animation: open 0.16s var(--ease-ink);
   }
 
   button {
     display: block;
     width: 100%;
-    padding: 5px 14px;
+    padding: 6px 12px;
     background: none;
     border: none;
-    color: var(--ink);
-    font: inherit;
+    border-radius: 5px;
+    font-size: 14px;
     text-align: left;
-    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  button:hover {
+  /* Hover moves focus, so one highlight serves mouse and keyboard. */
+  button:hover:not(:disabled) {
+    background: none;
+  }
+
+  button:focus {
+    outline: none;
     background: var(--selected);
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: -2px;
   }
 
   .danger {
     color: var(--danger);
+  }
+
+  .armed,
+  .armed:focus {
+    background: var(--danger-wash);
+    font-style: italic;
+  }
+
+  @keyframes open {
+    from {
+      opacity: 0;
+      transform: translateY(-3px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .menu {
+      animation: none;
+    }
   }
 </style>

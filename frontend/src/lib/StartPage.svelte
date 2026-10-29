@@ -596,8 +596,12 @@
     background: linear-gradient(var(--selection), var(--selection)) 0 100% / 100% 50% no-repeat;
   }
 
+  /* Pinned to the card's corner so the action row never wraps around it. */
   .more {
-    height: 26px;
+    position: absolute;
+    top: 2px;
+    right: -6px;
+    height: 28px;
     padding: 0 6px;
   }
 

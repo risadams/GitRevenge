@@ -2,6 +2,8 @@
   import { InteractiveRebase, RebasePlan } from '../../wailsjs/go/app/App.js'
   import type { git } from '../../wailsjs/go/models'
   import { errorText } from './errors'
+  import Icon from './ui/Icon.svelte'
+  import InkButton from './ui/InkButton.svelte'
 
   let { path, base, onClose }: { path: string; base: string; onClose: () => void } = $props()
 
@@ -87,35 +89,47 @@
 
 <div class="rebase">
   <header>
-    <button class="back" onclick={onClose} title="Cancel">←</button>
-    <strong>Interactive rebase</strong>
-    <span class="muted">onto {base.slice(0, 7)} · {items.length} {items.length === 1 ? 'commit' : 'commits'}, newest first</span>
+    <button class="tool back" onclick={onClose} title="Cancel and return to the graph"><Icon name="back" />Back</button>
+    <div class="title">
+      <h2>Interactive rebase</h2>
+      <span class="meta">Onto {base.slice(0, 7)} · {items.length} {items.length === 1 ? 'commit' : 'commits'} · newest first</span>
+    </div>
     <span class="spacer"></span>
-    <button onclick={onClose}>Cancel</button>
-    <button class="primary" disabled={busy || !!problem || items.length === 0} onclick={start} title={problem}>Start rebase</button>
+    <InkButton variant="ghost" onclick={onClose}>Cancel</InkButton>
+    <InkButton arrow disabled={busy || !!problem || items.length === 0} onclick={start} title={problem}>Start rebase</InkButton>
   </header>
-  {#if error}<p class="error" role="alert">{error}</p>{:else if problem}<p class="warn">{problem}</p>{/if}
+  {#if error}<p class="form-error banner" role="alert">{error}</p>{:else if problem}<p class="warn" role="status">{problem}</p>{/if}
 
   <ol>
     {#each items as it, i (it.commit)}
       <li class={it.action}>
         <span class="move">
-          <button disabled={i === 0} onclick={() => move(i, -1)} aria-label="Move up">↑</button>
-          <button disabled={i === items.length - 1} onclick={() => move(i, 1)} aria-label="Move down">↓</button>
+          <button class="tool" disabled={i === 0} onclick={() => move(i, -1)} aria-label="Move {it.subject} up" title="Move up"><Icon name="chevron" size={14} /></button>
+          <button class="tool down" disabled={i === items.length - 1} onclick={() => move(i, 1)} aria-label="Move {it.subject} down" title="Move down"
+            ><Icon name="chevron" size={14} /></button
+          >
         </span>
-        <select value={it.action} onchange={(e) => setAction(i, (e.currentTarget as HTMLSelectElement).value as Action)} aria-label="Action for {it.subject}">
+        <select
+          class="action a-{it.action}"
+          value={it.action}
+          onchange={(e) => setAction(i, (e.currentTarget as HTMLSelectElement).value as Action)}
+          aria-label="Action for {it.subject}"
+        >
           {#each actions as a (a)}<option value={a}>{a}</option>{/each}
         </select>
         <span class="sha">{it.commit.slice(0, 7)}</span>
         <div class="text">
           <span class="subject">{it.subject}</span>
           {#if it.action === 'squash' && target(i)}
-            <span class="muted note">folds into {target(i)?.subject}</span>
+            <span class="note">folds into {target(i)?.subject}</span>
           {:else if it.action === 'fixup' && target(i)}
-            <span class="muted note">folds into {target(i)?.subject}, discarding this message</span>
+            <span class="note">folds into {target(i)?.subject}, discarding this message</span>
           {/if}
           {#if it.action === 'reword' || it.action === 'squash'}
-            <textarea bind:value={it.message} rows="3" aria-label="New message for {it.subject}"></textarea>
+            <label class="form-field">
+              <span class="visually-hidden">New message for {it.subject}</span>
+              <textarea bind:value={it.message} rows="3"></textarea>
+            </label>
           {/if}
         </div>
       </li>
@@ -133,59 +147,59 @@
 
   header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    padding: 4px 8px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--paper-edge);
+  }
+
+  .back {
+    margin-right: 6px;
+  }
+
+  .title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
   }
 
   .spacer {
     flex: 1;
   }
 
-  button,
-  select {
-    padding: 2px 8px;
-    background: none;
-    border: 1px solid var(--paper-edge);
-    color: var(--ink);
-    font: inherit;
-    cursor: pointer;
+  .banner {
+    margin: 10px 16px 0;
   }
 
-  select {
-    background: var(--paper);
-  }
-
-  button:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-
-  .primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
-  }
-
-  .back {
-    border: none;
-    font-size: 16px;
+  .warn {
+    margin: 10px 16px 0;
+    padding: 8px 12px;
+    border-radius: 5px;
+    background: var(--warning-wash);
+    font-size: 13px;
   }
 
   ol {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 4px 0;
     overflow-y: auto;
   }
 
   li {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
-    padding: 6px 8px;
-    border-bottom: 1px solid var(--paper-edge);
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px dashed var(--hairline);
   }
 
   li.drop .subject {
@@ -195,17 +209,52 @@
 
   .move {
     display: flex;
-    gap: 2px;
   }
 
-  .move button {
+  .move .tool {
+    height: 28px;
     padding: 0 5px;
+    transform: rotate(180deg);
+  }
+
+  .move .tool.down {
+    transform: none;
+  }
+
+  .move .tool:hover:not(:disabled) {
+    transform: rotate(180deg) translateY(1px);
+  }
+
+  .move .tool.down:hover:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .action {
+    height: 28px;
+    padding: 0 6px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    border-radius: 4px;
+  }
+
+  .a-reword {
+    color: var(--accent-a);
+  }
+
+  .a-squash,
+  .a-fixup {
+    color: var(--accent-b);
+  }
+
+  .a-drop {
+    color: var(--danger);
   }
 
   .sha {
     font-family: var(--font-mono);
+    font-size: 12px;
     color: var(--ink-mute);
-    padding-top: 2px;
+    padding-top: 6px;
   }
 
   .text {
@@ -213,36 +262,25 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
+    padding-top: 3px;
   }
 
-  textarea {
-    background: var(--paper);
-    color: var(--ink);
-    border: 1px solid var(--paper-edge);
-    font: inherit;
-    padding: 4px 6px;
-    resize: vertical;
+  .subject {
+    font-size: 15px;
   }
 
   .note {
-    font-size: 12px;
-  }
-
-  .muted {
+    font-size: 13px;
+    font-style: italic;
     color: var(--ink-mute);
   }
 
-  .warn {
-    margin: 0;
-    padding: 4px 8px;
-    color: var(--warning);
-  }
-
-  .error {
-    margin: 0;
-    padding: 4px 8px;
-    color: var(--danger);
-    white-space: pre-wrap;
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
 </style>

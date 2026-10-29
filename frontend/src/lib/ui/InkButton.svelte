@@ -2,7 +2,7 @@
   import type { Snippet } from 'svelte'
 
   /** The brand's call to action: a serif label on a torn ink blob. One primary per view;
-   * ghost (an ink outline) for the actions beside it. */
+   * ghost (an ink outline) for the actions beside it; danger for destructive confirmations. */
   let {
     variant = 'primary',
     arrow = false,
@@ -12,7 +12,7 @@
     onclick,
     children,
   }: {
-    variant?: 'primary' | 'ghost'
+    variant?: 'primary' | 'ghost' | 'danger'
     arrow?: boolean
     type?: 'button' | 'submit'
     disabled?: boolean
@@ -79,6 +79,19 @@
 
   .primary:hover:not(:disabled)::before {
     opacity: 1;
+  }
+
+  .ink:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .danger {
+    color: var(--on-accent);
+  }
+
+  .danger::before {
+    background: var(--danger);
   }
 
   .ghost {
