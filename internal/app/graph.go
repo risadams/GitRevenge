@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+
 	"github.com/risadams/gitrevenge/internal/git"
 	"github.com/risadams/gitrevenge/internal/graph"
 	"github.com/risadams/gitrevenge/internal/session"
@@ -17,6 +19,10 @@ type GraphPage struct {
 	// Total is the number of rows laid out so far.
 	Total   int  `json:"total"`
 	Loading bool `json:"loading"`
+	// Paused means the reader stopped ahead of the viewport; asking for later rows resumes it.
+	Paused bool `json:"paused"`
+	// Estimate is about how many rows the whole history has, or 0 until known.
+	Estimate int `json:"estimate"`
 }
 
 // GraphProgress is the payload of the "graph:progress" event.
@@ -25,11 +31,18 @@ type GraphProgress struct {
 	Rows int    `json:"rows"`
 	Done bool   `json:"done"`
 	// RefsReady means refs just arrived during a first load; re-fetch rows for labels.
-	RefsReady bool   `json:"refsReady"`
-	Error     string `json:"error"`
+	RefsReady bool `json:"refsReady"`
+	// Paused means the reader stopped ahead of the viewport.
+	Paused bool `json:"paused"`
+	// Estimate is about how many rows the whole history has, or 0 until known.
+	Estimate int `json:"estimate"`
+	// Reset means a reloaded graph replaced the displayed one; cached rows are stale.
+	Reset bool   `json:"reset"`
+	Error string `json:"error"`
 }
 
-// GraphRows returns up to count rows of the commit graph starting at start.
+// GraphRows returns up to count rows of the commit graph starting at start. Asking for rows
+// past those loaded makes a paused reader read on; they arrive with later progress events.
 func (a *App) GraphRows(path string, start, count int) (GraphPage, error) {
 	m, err := a.sessions()
 	if err != nil {
@@ -39,11 +52,14 @@ func (a *App) GraphRows(path string, start, count int) (GraphPage, error) {
 	if r == nil {
 		return GraphPage{}, userError("That repository isn't open.")
 	}
+	count = min(count, maxGraphPage)
+	r.DemandRows(start + count)
 	g, loading := r.Graph()
 	if g == nil {
 		return GraphPage{Rows: []graph.Row{}, Refs: map[string][]git.Ref{}, Loading: true}, nil
 	}
-	rows := g.Rows(start, min(count, maxGraphPage))
+	paused, estimate := r.GraphStatus()
+	rows := g.Rows(start, count)
 	idx := r.Refs()
 	refs := map[string][]git.Ref{}
 	for _, row := range rows {
@@ -51,7 +67,7 @@ func (a *App) GraphRows(path string, start, count int) (GraphPage, error) {
 			refs[row.ID] = rs
 		}
 	}
-	return GraphPage{Rows: rows, Refs: refs, Total: g.Len(), Loading: loading}, nil
+	return GraphPage{Rows: rows, Refs: refs, Total: g.Len(), Loading: loading, Paused: paused, Estimate: estimate}, nil
 }
 
 // Refs lists the branches, remote branches, tags and stashes shown in the graph.
@@ -67,20 +83,18 @@ func (a *App) Refs(path string) ([]git.Ref, error) {
 	return refs, nil
 }
 
-// CommitRow returns the graph row of a commit, or -1 if it isn't in the loaded graph.
+// CommitRow returns the graph row of a commit, reading on through the history until it
+// loads, or -1 if the commit isn't in the history. Progress events report the reading.
 func (a *App) CommitRow(path, id string) (int, error) {
 	r, err := a.openRepo(path)
 	if err != nil {
 		return -1, err
 	}
-	g, _ := r.Graph()
-	if g == nil {
-		return -1, nil
+	row, ok, err := r.FindRow(context.Background(), id)
+	if err != nil || !ok {
+		return -1, err
 	}
-	if row, ok := g.RowOf(id); ok {
-		return row, nil
-	}
-	return -1, nil
+	return row, nil
 }
 
 // openRepo returns the open repository at path.
@@ -97,7 +111,7 @@ func (a *App) openRepo(path string) (*session.Repo, error) {
 }
 
 func (a *App) emitGraphProgress(path string, p session.GraphProgress) {
-	ev := GraphProgress{Path: path, Rows: p.Rows, Done: p.Done, RefsReady: p.RefsReady}
+	ev := GraphProgress{Path: path, Rows: p.Rows, Done: p.Done, RefsReady: p.RefsReady, Paused: p.Paused, Estimate: p.Estimate, Reset: p.Reset}
 	if p.Err != nil {
 		ev.Error = p.Err.Error()
 	}
@@ -108,13 +122,16 @@ func (a *App) emitGraphProgress(path string, p session.GraphProgress) {
 const maxSearchRows = 10000
 
 // SearchGraph finds commits whose subject or author contains query, or whose ID starts
-// with it.
+// with it. It searches the whole history, so it first reads the rest of it.
 func (a *App) SearchGraph(path, query string) (graph.SearchResult, error) {
 	r, err := a.openRepo(path)
 	if err != nil {
 		return graph.SearchResult{}, err
 	}
-	g, _ := r.Graph()
+	g, err := r.FullGraph(context.Background())
+	if err != nil {
+		return graph.SearchResult{}, err
+	}
 	if g == nil {
 		return graph.SearchResult{Rows: []int{}}, nil
 	}

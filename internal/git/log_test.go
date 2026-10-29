@@ -149,3 +149,23 @@ func TestLogVeryLongSubject(t *testing.T) {
 		t.Fatalf("got %d commits; long subject intact = %v", len(got), len(got) > 1 && got[1].Subject == long)
 	}
 }
+
+func TestCountCommitsMatchesLog(t *testing.T) {
+	fx := gittest.New(t)
+	repo := OpenRepo(newTestRunner(t), fx.Dir)
+	if n, err := repo.CountCommits(context.Background(), LogOptions{}); err != nil || n != 0 {
+		t.Fatalf("empty repo count = %d, %v", n, err)
+	}
+	fx.Linear(3)
+	fx.Branch("side")
+	fx.Checkout("side")
+	fx.CommitFile("side.txt", "x", "side")
+	fx.Checkout("main")
+	n, err := repo.CountCommits(context.Background(), LogOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := len(readLog(t, fx, LogOptions{})); n != want {
+		t.Fatalf("count = %d, log has %d", n, want)
+	}
+}

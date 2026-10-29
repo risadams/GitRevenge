@@ -7,7 +7,7 @@
   import { provideCommands } from '../commands.svelte'
   import Icon from '../ui/Icon.svelte'
   import { drawRow, graphWidth, LANE_COUNT, layoutColumns, METRICS, setLaneColors, type Theme } from './draw'
-  import { RowCache, type Page, type Ref, type Row } from './rowCache'
+  import { RowCache, type GraphProgress, type Page, type Ref, type Row } from './rowCache'
 
   let {
     path,
@@ -36,6 +36,11 @@
   let canvas: HTMLCanvasElement
   let total = $state(0)
   let loading = $state(true)
+  let paused = $state(false)
+  let estimate = $state(0)
+  /** Rows the scroll area spans: the estimated whole history while it's still loading, so
+   * the scrollbar is about right and scrolling past the loaded rows reads them in. */
+  let span = $derived(loading && estimate > total ? estimate : total)
   let error = $state('')
   let selected = $state(-1)
   let hovered = -1
@@ -58,6 +63,8 @@
     () => {
       total = cache.total
       loading = cache.loading
+      paused = cache.paused
+      estimate = cache.estimate
       selectHeadOnce()
       schedule()
     },
@@ -101,7 +108,7 @@
 
     const top = scroller.scrollTop
     const first = Math.floor(top / rowH)
-    const last = Math.min(total, Math.ceil((top + h) / rowH))
+    const last = Math.min(span, Math.ceil((top + h) / rowH))
     cache.ensure(first - OVERSCAN, last + OVERSCAN)
 
     let lanes = 1
@@ -121,7 +128,7 @@
   function rowAt(e: MouseEvent): number {
     const rect = scroller.getBoundingClientRect()
     const i = Math.floor((e.clientY - rect.top + scroller.scrollTop) / rowH)
-    return i >= 0 && i < total ? i : -1
+    return i >= 0 && i < span ? i : -1
   }
 
   /** Scrolls to and selects row i (e.g. when a branch is picked in the sidebar). */
@@ -176,7 +183,7 @@
 
   function select(i: number, auto = false) {
     if (!auto) autoSelect = 'done'
-    selected = Math.max(0, Math.min(total - 1, i))
+    selected = Math.max(0, Math.min(span - 1, i))
     // Keep the selection in view.
     const y = selected * rowH
     if (y < scroller.scrollTop) scroller.scrollTop = y
@@ -258,7 +265,7 @@
     if (e.key in moves) {
       e.preventDefault()
       const d = moves[e.key]
-      select(d === -Infinity ? 0 : d === Infinity ? total - 1 : (selected < 0 ? 0 : selected + d))
+      select(d === -Infinity ? 0 : d === Infinity ? span - 1 : (selected < 0 ? 0 : selected + d))
     }
   }
 
@@ -283,10 +290,16 @@
     // The canvas paints with the bundled fonts; repaint once they finish loading.
     void document.fonts.ready.then(schedule)
     document.fonts.addEventListener('loadingdone', schedule)
-    const off = EventsOn('graph:progress', (p: { path: string; rows: number; done: boolean; refsReady: boolean; error: string }) => {
+    const off = EventsOn('graph:progress', (p: GraphProgress) => {
       if (p.path !== path) return
-      cache.setTotal(p.rows, !p.done)
+      cache.setTotal(p.rows, !p.done, p.paused, p.estimate)
       if (p.refsReady) cache.invalidate() // labels arrived after the first rows
+      if (p.reset && !p.done) {
+        // A reload swapped in part way through its history: rows are stale.
+        cache.invalidate()
+        if (query) void runSearch()
+        void followSelection()
+      }
       if (p.done) {
         // A reload swaps in a new graph; anything cached may be stale.
         cache.invalidate()
@@ -296,6 +309,8 @@
       }
       total = p.rows
       loading = !p.done
+      paused = p.paused
+      if (p.estimate) estimate = p.estimate
       schedule()
     })
     cache.ensure(0, 200)
@@ -312,6 +327,10 @@
   <div class="status">
     {#if error}
       <span class="error">Couldn't read history: {error}</span>
+    {:else if loading && paused}
+      <span class="meta" title="More history loads as you scroll, search or jump to a commit"
+        >{total.toLocaleString()}{estimate > total ? ` of about ${estimate.toLocaleString()}` : ''} commits loaded</span
+      >
     {:else if loading}
       <span class="meta">Loading history… {total.toLocaleString()} commits</span>
     {:else}
@@ -355,7 +374,7 @@
       tabindex="0"
       role="grid"
       aria-label="Commit history"
-      aria-rowcount={total}
+      aria-rowcount={span}
       onscroll={schedule}
       onkeydown={onKey}
       onclick={(e) => {
@@ -408,7 +427,7 @@
         schedule()
       }}
     >
-      <div class="spacer" style:height="{total * rowH}px"></div>
+      <div class="spacer" style:height="{span * rowH}px"></div>
     </div>
   </div>
 </div>
