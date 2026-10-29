@@ -7,6 +7,7 @@
   import { session } from './session.svelte'
   import { reflow } from './text'
   import { asPerson, valueParts } from './trailers'
+  import MessageBody from './MessageBody.svelte'
 
   let {
     path,
@@ -34,6 +35,25 @@
       })
       .catch(() => {})
   })
+
+  // Messages render as markdown; the raw text is a toggle away, remembered across sessions.
+  const RAW_KEY = 'gitrevenge.rawMessages'
+  let raw = $state(readRaw())
+  function readRaw(): boolean {
+    try {
+      return localStorage.getItem(RAW_KEY) === 'on'
+    } catch {
+      return false
+    }
+  }
+  function toggleRaw() {
+    raw = !raw
+    try {
+      localStorage.setItem(RAW_KEY, raw ? 'on' : 'off')
+    } catch {
+      // Storage unavailable; the choice lasts for this session only.
+    }
+  }
 
   function openLink(e: MouseEvent, href: string) {
     e.preventDefault()
@@ -72,7 +92,14 @@
     <header>
       <span class="hand">this commit</span>
       <h2>{c.subject}</h2>
-      {#if c.body}<p class="body">{reflow(c.body)}</p>{/if}
+      {#if c.body}
+        <div class="message">
+          <button class="raw-toggle meta" aria-pressed={raw} onclick={toggleRaw} title={raw ? 'Show the message rendered as markdown' : 'Show the message as plain text'}
+            >{raw ? 'Raw' : 'Markdown'}</button
+          >
+          {#if raw}<p class="body">{reflow(c.body)}</p>{:else}<MessageBody text={c.body} {issueURL} />{/if}
+        </div>
+      {/if}
       {#if c.trailers.length}
         <dl class="trailers" aria-label="Trailers">
           {#each c.trailers as t, i (i)}
@@ -209,6 +236,32 @@
     margin: 0;
     overflow-wrap: anywhere;
     font-size: 14px;
+  }
+
+  .message {
+    position: relative;
+    margin: 0 0 12px;
+  }
+
+  .message .body {
+    margin: 0;
+  }
+
+  /* A quiet switch above the message's top right corner. */
+  .raw-toggle {
+    position: absolute;
+    top: -22px;
+    right: 0;
+    height: 20px;
+    padding: 0 6px;
+    background: none;
+    border: none;
+    border-radius: 3px;
+  }
+
+  .raw-toggle:hover:not(:disabled) {
+    background: var(--wash-hover);
+    color: var(--ink);
   }
 
   /* Trailers read as a short record under the message: key, then person or value. */
