@@ -1,7 +1,8 @@
 <script lang="ts" module>
   /** What to compare. Opened from the commit panel or the working tree panel. */
   export interface DiffTarget {
-    mode: 'commit' | 'staged' | 'unstaged'
+    /** 'conflict' opens the conflict tool instead of a diff. */
+    mode: 'commit' | 'staged' | 'unstaged' | 'conflict'
     file: string
     oldPath?: string
     commit?: string
@@ -83,7 +84,7 @@
     return {}
   })
 
-  const modeLabel = { commit: '', staged: 'Staged', unstaged: 'Unstaged' }
+  const modeLabel = { commit: '', staged: 'Staged', unstaged: 'Unstaged', conflict: 'Conflict' }
 </script>
 
 <div class="diffview">

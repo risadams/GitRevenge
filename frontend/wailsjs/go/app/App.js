@@ -34,6 +34,10 @@ export function CommitRow(arg1, arg2) {
   return window['go']['app']['App']['CommitRow'](arg1, arg2);
 }
 
+export function ConflictFile(arg1, arg2) {
+  return window['go']['app']['App']['ConflictFile'](arg1, arg2);
+}
+
 export function DiscardFiles(arg1, arg2) {
   return window['go']['app']['App']['DiscardFiles'](arg1, arg2);
 }
@@ -110,6 +114,10 @@ export function RepoState(arg1) {
   return window['go']['app']['App']['RepoState'](arg1);
 }
 
+export function ResolveConflict(arg1, arg2, arg3) {
+  return window['go']['app']['App']['ResolveConflict'](arg1, arg2, arg3);
+}
+
 export function RestoreSession() {
   return window['go']['app']['App']['RestoreSession']();
 }
@@ -144,6 +152,10 @@ export function StashAction(arg1, arg2, arg3) {
 
 export function StashSave(arg1, arg2, arg3) {
   return window['go']['app']['App']['StashSave'](arg1, arg2, arg3);
+}
+
+export function TakeConflictSide(arg1, arg2, arg3) {
+  return window['go']['app']['App']['TakeConflictSide'](arg1, arg2, arg3);
 }
 
 export function Undo(arg1) {
