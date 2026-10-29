@@ -105,6 +105,50 @@ export interface Theme {
   hover: string
   /** Tags wear this wash whatever their lane. */
   tag: string
+  /** Signature seals: verified, failed, and couldn't verify. */
+  good: string
+  bad: string
+  warn: string
+}
+
+/** A commit's signature as the graph shows it; unsigned commits get no seal. */
+export type Seal = 'good' | 'bad' | 'warn'
+
+/** The seal for a git signature status ("good", "bad", "unknown", "expired", …, "none"). */
+export function sealOf(status: string | undefined): Seal | undefined {
+  if (!status || status === 'none') return undefined
+  return status === 'good' ? 'good' : status === 'bad' ? 'bad' : 'warn'
+}
+
+/** A small seal: a ring with a tick, a cross or a bang, so the mark carries the meaning. */
+function drawSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, seal: Seal, theme: Theme) {
+  const color = theme[seal]
+  ctx.save()
+  ctx.strokeStyle = color
+  ctx.lineWidth = 1.5
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  ctx.beginPath()
+  ctx.arc(cx, cy, 5.5, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.beginPath()
+  if (seal === 'good') {
+    ctx.moveTo(cx - 2.5, cy)
+    ctx.lineTo(cx - 0.5, cy + 2)
+    ctx.lineTo(cx + 2.7, cy - 2)
+  } else if (seal === 'bad') {
+    ctx.moveTo(cx - 2, cy - 2)
+    ctx.lineTo(cx + 2, cy + 2)
+    ctx.moveTo(cx + 2, cy - 2)
+    ctx.lineTo(cx - 2, cy + 2)
+  } else {
+    ctx.moveTo(cx, cy - 2.6)
+    ctx.lineTo(cx, cy + 0.6)
+    ctx.moveTo(cx, cy + 2.6)
+    ctx.lineTo(cx, cy + 2.7)
+  }
+  ctx.stroke()
+  ctx.restore()
 }
 
 export interface Layout {
@@ -154,6 +198,7 @@ export function drawRow(
   hovered: boolean,
   dimmed: boolean,
   nowSeconds: number,
+  seal?: Seal,
 ) {
   const { m } = lay
   const h = m.rowH
@@ -235,6 +280,7 @@ export function drawRow(
   ctx.fillStyle = theme.muted
   ctx.textAlign = 'right'
   ctx.fillText(row.id.slice(0, 7), right, line1)
+  if (seal) drawSeal(ctx, right - ctx.measureText(row.id.slice(0, 7)).width - 10, line1 - 4, seal, theme)
   right -= lay.shaW
   if (lay.dateW) {
     setFont(ctx, `11px ${MONO}`)

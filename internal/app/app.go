@@ -32,6 +32,7 @@ type App struct {
 	// updateURL overrides the GitHub releases endpoint; tests use it.
 	updateURL string
 	searches  searches
+	sigs      sigCache
 }
 
 // Environment reports the git installation the app will use.
