@@ -209,6 +209,20 @@ export namespace app {
 		    return a;
 		}
 	}
+	export class UndoInfo {
+	    undo: string;
+	    redo: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UndoInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.undo = source["undo"];
+	        this.redo = source["redo"];
+	    }
+	}
 	export class WorkingTree {
 	    status: git.Status;
 	    signing: git.Signing;

@@ -86,6 +86,10 @@ export function RecentRepos() {
   return window['go']['app']['App']['RecentRepos']();
 }
 
+export function Redo(arg1) {
+  return window['go']['app']['App']['Redo'](arg1);
+}
+
 export function Refs(arg1) {
   return window['go']['app']['App']['Refs'](arg1);
 }
@@ -152,6 +156,14 @@ export function StashSave(arg1, arg2, arg3) {
 
 export function TakeConflictSide(arg1, arg2, arg3) {
   return window['go']['app']['App']['TakeConflictSide'](arg1, arg2, arg3);
+}
+
+export function Undo(arg1) {
+  return window['go']['app']['App']['Undo'](arg1);
+}
+
+export function UndoState(arg1) {
+  return window['go']['app']['App']['UndoState'](arg1);
 }
 
 export function UnstageFiles(arg1, arg2) {

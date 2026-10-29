@@ -84,10 +84,11 @@
     onPick={pick}
     onActivate={(ref) => checkoutRef(path, ref)}
     onNewBranch={() => (dialog = newBranchDialog(ctx))}
+    onManageRemotes={() => (remotesOpen = true)}
     onContext={(ref, x, y) => openMenu(refItems(ref, ctx), x, y)}
   />
   <div class="main">
-    <Toolbar {path} onManageRemotes={() => (remotesOpen = true)} />
+    <Toolbar {path} />
     <button
       class="wip"
       class:active={view === 'wip'}
