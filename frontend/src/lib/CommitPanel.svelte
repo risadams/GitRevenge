@@ -8,7 +8,6 @@
   import { reflow } from './text'
   import { asPerson, valueParts } from './trailers'
   import Markdown from './Markdown.svelte'
-  import MessageBody from './MessageBody.svelte'
   import Icon from './ui/Icon.svelte'
 
   let {
