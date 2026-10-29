@@ -19,6 +19,8 @@ export function CheckForUpdate(arg1:boolean):Promise<app.UpdateInfo>;
 
 export function ChooseAndOpenRepo():Promise<app.RepoTab>;
 
+export function ChooseFile(arg1:string):Promise<string>;
+
 export function ChooseFolder(arg1:string):Promise<string>;
 
 export function Clone(arg1:string,arg2:string,arg3:string):Promise<string>;
@@ -81,6 +83,8 @@ export function LastCommitMessage(arg1:string):Promise<string>;
 
 export function OpenRepo(arg1:string):Promise<app.RepoTab>;
 
+export function Preferences():Promise<app.Preferences>;
+
 export function Pull(arg1:string,arg2:string):Promise<void>;
 
 export function PushCurrent(arg1:string,arg2:boolean):Promise<void>;
@@ -118,6 +122,8 @@ export function SetActiveRepo(arg1:string):Promise<void>;
 export function SetCommitNote(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function SetGraphDensity(arg1:string):Promise<void>;
+
+export function SetPreferences(arg1:app.Preferences):Promise<void>;
 
 export function SetStagedContent(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
