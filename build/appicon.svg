@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Git Revenge app icon, the "merge flag": a flag on a mast with two branches merging
+       into one commit, cut from the cloth. Source for build/appicon.png (macOS) and the
+       large sizes of build/windows/icon.ico. 1024 canvas, 824 tile (Apple's icon grid). -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="#f4ecdd"/>
+  <rect x="100.5" y="100.5" width="823" height="823" rx="184.5" fill="none" stroke="#d8c9ad" stroke-width="1"/>
+  <g transform="translate(206 206) scale(9.5625)">
+    <path d="M13 9 H18 V58 H13 Z" fill="#1a5b6e"/>
+    <circle cx="15.5" cy="7.5" r="4" fill="#1a5b6e"/>
+    <path d="M18 12 C28 7 38 17 54 11 V37 C38 43 28 33 18 38 Z" fill="#cb0162"/>
+    <path d="M24 19 C32 19 34 25 44 25 M24 31 C32 31 34 25 44 25" fill="none" stroke="#f4ecdd" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="45" cy="25" r="4.5" fill="#f4ecdd"/>
+  </g>
+</svg>

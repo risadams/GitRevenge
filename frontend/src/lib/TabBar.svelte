@@ -2,6 +2,7 @@
   import { session } from './session.svelte'
   import { theme } from './theme.svelte'
   import Icon from './ui/Icon.svelte'
+  import Mark from './ui/Mark.svelte'
 
   function onAuxClick(e: MouseEvent, path: string) {
     // Middle-click closes a tab, as in browsers.
@@ -14,7 +15,7 @@
 <nav class="tabs" aria-label="Open repositories">
   <div class="scroll">
     <button class="tab home" class:active={session.active === ''} onclick={() => session.select('')} title="Start page" aria-label="Start page">
-      <Icon name="home" />
+      <Mark size={18} />
     </button>
     {#each session.tabs as tab (tab.path)}
       <div class="tab" class:active={session.active === tab.path} title={tab.path}>
