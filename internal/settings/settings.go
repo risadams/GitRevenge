@@ -40,6 +40,12 @@ type Settings struct {
 	// UpdateChecksOff stops the check for a newer release at startup. A check the user
 	// asks for still runs.
 	UpdateChecksOff bool `json:"updateChecksOff,omitempty"`
+	// GitPath is a git executable to use instead of the one found on PATH, or empty.
+	GitPath string `json:"gitPath,omitempty"`
+	// CloneDir is the folder the clone dialog starts in, or empty for the last repo's.
+	CloneDir string `json:"cloneDir,omitempty"`
+	// Zoom scales the whole interface, as a percentage; 0 means 100.
+	Zoom int `json:"zoom,omitempty"`
 }
 
 // Group is a named collection of repository paths.
@@ -92,6 +98,16 @@ func DefaultPath() (string, error) {
 		return "", err
 	}
 	return filepath.Join(dir, "GitRevenge", "settings.json"), nil
+}
+
+// Read loads settings from path without opening a store, for reading a setting before the
+// store exists (the git executable, at startup). A missing or unreadable file gives defaults.
+func Read(path string) Settings {
+	s := defaults()
+	if data, err := os.ReadFile(path); err == nil {
+		_ = json.Unmarshal(data, &s)
+	}
+	return s
 }
 
 // Store loads and saves Settings. It is safe for concurrent use.

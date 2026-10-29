@@ -79,6 +79,14 @@ func Discover(ctx context.Context) (*Install, error) {
 	if err != nil {
 		return nil, err
 	}
+	return Probe(ctx, path)
+}
+
+// Probe checks the git at path like Discover does: its version, and git-lfs beside it.
+func Probe(ctx context.Context, path string) (*Install, error) {
+	if info, err := os.Stat(path); err != nil || info.IsDir() {
+		return nil, fmt.Errorf("%s: %w", path, ErrNotFound)
+	}
 	r := NewRunner(path)
 	out, err := r.Output(ctx, Cmd{Args: []string{"version"}})
 	if err != nil {

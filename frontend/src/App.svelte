@@ -5,6 +5,7 @@
   import { BrowserOpenURL } from '../wailsjs/runtime/runtime.js'
   import CloneDialog from './lib/CloneDialog.svelte'
   import CommandPalette from './lib/CommandPalette.svelte'
+  import SettingsDialog from './lib/SettingsDialog.svelte'
   import ShortcutsDialog from './lib/ShortcutsDialog.svelte'
   import { commands, provideCommands, type Command } from './lib/commands.svelte'
   import OperationBanner from './lib/OperationBanner.svelte'
@@ -14,6 +15,7 @@
   import StartPage from './lib/StartPage.svelte'
   import TabBar from './lib/TabBar.svelte'
   import { theme } from './lib/theme.svelte'
+  import { prefs } from './lib/prefs.svelte'
   import { update } from './lib/update.svelte'
   import Icon from './lib/ui/Icon.svelte'
   import InkButton from './lib/ui/InkButton.svelte'
@@ -38,6 +40,7 @@
       { id: 'app.shortcuts', group: 'App', title: 'Keyboard shortcuts', keywords: 'keys help cheat sheet', shortcut: 'Mod+/', whenTyping: true, run: () => (commands.shortcutsOpen = true) },
       { id: 'app.open', group: 'App', title: 'Open repository…', shortcut: 'Mod+O', whenTyping: true, run: () => session.choose() },
       { id: 'app.clone', group: 'App', title: 'Clone a repository…', run: () => (commands.cloneOpen = true) },
+      { id: 'app.settings', group: 'App', title: 'Settings…', keywords: 'preferences options configuration zoom git path', shortcut: 'Mod+,', whenTyping: true, run: () => (commands.settingsOpen = true) },
       {
         id: 'app.theme',
         group: 'View',
@@ -94,6 +97,7 @@
 
   onMount(async () => {
     ;[version, env] = await Promise.all([Version(), Environment(), theme.load()])
+    void prefs.load()
     if (!env.problem) {
       await session.restore()
       void update.startup()
@@ -109,6 +113,10 @@
 {#if commands.shortcutsOpen}
   <ShortcutsDialog onClose={() => (commands.shortcutsOpen = false)} />
 {/if}
+{#if commands.settingsOpen}
+  <SettingsDialog onClose={() => (commands.settingsOpen = false)} />
+{/if}
+
 {#if commands.cloneOpen}
   <CloneDialog onClose={() => (commands.cloneOpen = false)} />
 {/if}

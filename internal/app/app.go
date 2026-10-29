@@ -65,9 +65,12 @@ func (a *App) Shutdown(context.Context) {
 	}
 }
 
-func discover(ctx context.Context) Environment {
+func discover(ctx context.Context, override string) Environment {
 	env := Environment{MinVersion: git.MinVersion.String()}
 	in, err := git.Discover(ctx)
+	if override != "" {
+		in, err = git.Probe(ctx, override)
+	}
 	if in != nil {
 		env.GitPath = in.Path
 		env.GitVersion = in.Version.String()
@@ -76,6 +79,8 @@ func discover(ctx context.Context) Environment {
 	var tooOld *git.TooOldError
 	switch {
 	case err == nil:
+	case errors.Is(err, git.ErrNotFound) && override != "":
+		env.Problem = "The git set in Settings wasn't found at " + override + ". Fix the path in settings.json or remove gitPath from it."
 	case errors.Is(err, git.ErrNotFound):
 		env.Problem = "Git Revenge needs git, but no git installation was found."
 	case errors.As(err, &tooOld):
@@ -94,6 +99,6 @@ func (a *App) Version() string {
 // Environment returns the git installation details. Discovery runs once, on first call,
 // so it never races Wails' startup ordering.
 func (a *App) Environment() Environment {
-	a.envOnce.Do(func() { a.env = discover(context.Background()) })
+	a.envOnce.Do(func() { a.env = discover(context.Background(), a.gitOverride()) })
 	return a.env
 }
