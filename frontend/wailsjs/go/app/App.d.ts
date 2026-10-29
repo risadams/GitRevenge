@@ -13,6 +13,8 @@ export function Blame(arg1:string,arg2:string,arg3:string):Promise<Array<git.Bla
 
 export function BranchAction(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
 
+export function BranchAges(arg1:string):Promise<Array<git.BranchAge>>;
+
 export function CancelClone():Promise<void>;
 
 export function CancelNetwork(arg1:string):Promise<void>;
@@ -115,11 +117,15 @@ export function RepoInfo(arg1:string):Promise<app.RepoTab>;
 
 export function RepoState(arg1:string):Promise<app.RepoState>;
 
+export function RepoStats(arg1:string,arg2:number,arg3:number,arg4:string):Promise<git.Stats>;
+
 export function ResolveConflict(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function RestoreSession():Promise<app.SessionState>;
 
 export function RunOperationAction(arg1:string,arg2:string):Promise<void>;
+
+export function SaveFile(arg1:string,arg2:string,arg3:string):Promise<string>;
 
 export function SearchGraph(arg1:string,arg2:string):Promise<graph.SearchResult>;
 
