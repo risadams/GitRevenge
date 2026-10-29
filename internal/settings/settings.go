@@ -30,6 +30,14 @@ type Settings struct {
 	OpenTabs []string `json:"openTabs"`
 	// ActiveTab is the path of the selected tab, or empty.
 	ActiveTab string `json:"activeTab"`
+	// Groups are user-defined collections of repositories. A repo may be in several.
+	Groups []Group `json:"groups"`
+}
+
+// Group is a named collection of repository paths.
+type Group struct {
+	Name  string   `json:"name"`
+	Paths []string `json:"paths"`
 }
 
 // RecentRepo is an entry in the recent repositories list.
@@ -39,13 +47,18 @@ type RecentRepo struct {
 }
 
 func defaults() Settings {
-	return Settings{Version: schemaVersion, Recent: []RecentRepo{}, OpenTabs: []string{}}
+	return Settings{Version: schemaVersion, Recent: []RecentRepo{}, OpenTabs: []string{}, Groups: []Group{}}
 }
 
 // clone returns a deep copy so callers can't mutate the store's state.
 func (s Settings) clone() Settings {
 	s.Recent = slices.Clone(s.Recent)
 	s.OpenTabs = slices.Clone(s.OpenTabs)
+	groups := make([]Group, len(s.Groups))
+	for i, g := range s.Groups {
+		groups[i] = Group{Name: g.Name, Paths: slices.Clone(g.Paths)}
+	}
+	s.Groups = groups
 	return s
 }
 
@@ -109,6 +122,9 @@ func Open(path string) (*Store, error) {
 	if loaded.OpenTabs == nil {
 		loaded.OpenTabs = []string{}
 	}
+	if loaded.Groups == nil {
+		loaded.Groups = []Group{}
+	}
 	s.cur = loaded
 	return s, nil
 }
@@ -169,4 +185,28 @@ func writeAtomic(path string, v Settings) error {
 		return fmt.Errorf("saving settings: %w", err)
 	}
 	return nil
+}
+
+// GroupIndex returns the index of the group named name, or -1.
+func (s *Settings) GroupIndex(name string) int {
+	return slices.IndexFunc(s.Groups, func(g Group) bool { return g.Name == name })
+}
+
+// AddToGroup adds path to the named group unless it is already there.
+func (s *Settings) AddToGroup(name, path string) bool {
+	i := s.GroupIndex(name)
+	if i < 0 {
+		return false
+	}
+	if !slices.ContainsFunc(s.Groups[i].Paths, func(p string) bool { return fsutil.SamePath(p, path) }) {
+		s.Groups[i].Paths = append(s.Groups[i].Paths, path)
+	}
+	return true
+}
+
+// RemoveFromGroup removes path from the named group.
+func (s *Settings) RemoveFromGroup(name, path string) {
+	if i := s.GroupIndex(name); i >= 0 {
+		s.Groups[i].Paths = slices.DeleteFunc(s.Groups[i].Paths, func(p string) bool { return fsutil.SamePath(p, path) })
+	}
 }

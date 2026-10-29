@@ -161,3 +161,35 @@ func TestConcurrentUpdates(t *testing.T) {
 		t.Fatalf("recent entries = %d, want 20", got)
 	}
 }
+
+func TestGroups(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	s, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = s.Update(func(st *Settings) {
+		st.Groups = append(st.Groups, Group{Name: "work", Paths: []string{}})
+		st.AddToGroup("work", "/r/a")
+		st.AddToGroup("work", "/r/a") // no duplicate
+		st.AddToGroup("work", "/r/b")
+		st.RemoveFromGroup("work", "/r/a")
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st := s.Get(); st.AddToGroup("missing", "/x") {
+		t.Fatal("adding to an unknown group should report false")
+	}
+	reopened, _ := Open(path)
+	g := reopened.Get().Groups
+	if len(g) != 1 || g[0].Name != "work" || len(g[0].Paths) != 1 || g[0].Paths[0] != "/r/b" {
+		t.Fatalf("groups = %+v", g)
+	}
+	// Get returns a deep copy.
+	got := reopened.Get()
+	got.Groups[0].Paths[0] = "/mutated"
+	if reopened.Get().Groups[0].Paths[0] != "/r/b" {
+		t.Fatal("Get must deep-copy groups")
+	}
+}

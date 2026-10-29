@@ -234,3 +234,8 @@ func gitMessage(stderr string) userError {
 	}
 	return userError(strings.Join(lines, "\n"))
 }
+
+// ChooseFolder shows a folder picker and returns the chosen path, or "" if cancelled.
+func (a *App) ChooseFolder(title string) (string, error) {
+	return runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{Title: title})
+}
