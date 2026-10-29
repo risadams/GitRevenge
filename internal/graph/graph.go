@@ -73,11 +73,6 @@ type state struct {
 	nextColor int
 }
 
-func (st state) clone() state {
-	st.lanes = append([]lane(nil), st.lanes...)
-	return st
-}
-
 // checkpoint is a state stored compactly: each lane as the position of the parent it waits
 // for (-1 for a free lane) and its color. On a wide history (the Linux kernel runs to
 // about 800 lanes) this is a sixth of the size of the state itself.
