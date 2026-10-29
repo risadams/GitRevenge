@@ -4,7 +4,8 @@
   import { session } from '../session.svelte'
   import { EventsOn } from '../../../wailsjs/runtime/runtime.js'
   import { theme as colorTheme } from '../theme.svelte'
-  import { drawRow, graphWidth, LANE_COUNT, layoutColumns, ROW_HEIGHT, setLaneColors, type Theme } from './draw'
+  import Icon from '../ui/Icon.svelte'
+  import { drawRow, graphWidth, LANE_COUNT, layoutColumns, METRICS, setLaneColors, type Theme } from './draw'
   import { RowCache, type Page, type Ref, type Row } from './rowCache'
 
   let {
@@ -26,6 +27,9 @@
   const OVERSCAN = 40
   /** The graph column never takes more than this share of the width. */
   const MAX_GRAPH_SHARE = 0.4
+
+  let density = $derived(colorTheme.density)
+  let rowH = $derived(METRICS[density].rowH)
 
   let scroller: HTMLDivElement
   let canvas: HTMLCanvasElement
@@ -65,9 +69,12 @@
     return {
       bg: token('--paper'),
       fg: token('--ink'),
+      soft: token('--ink-soft'),
       muted: token('--ink-mute'),
+      deep: token('--paper-deep'),
       selected: token('--selected'),
       hover: token('--wash-hover'),
+      tag: token('--lane-4'),
     }
   }
 
@@ -90,29 +97,29 @@
     const ctx = canvas.getContext('2d')!
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, w, h)
-    ctx.font = '13px system-ui, -apple-system, "Segoe UI", sans-serif'
 
     const top = scroller.scrollTop
-    const first = Math.floor(top / ROW_HEIGHT)
-    const last = Math.min(total, Math.ceil((top + h) / ROW_HEIGHT))
+    const first = Math.floor(top / rowH)
+    const last = Math.min(total, Math.ceil((top + h) / rowH))
     cache.ensure(first - OVERSCAN, last + OVERSCAN)
 
     let lanes = 1
     for (let i = first; i < last; i++) lanes = Math.max(lanes, cache.get(i)?.width ?? 0)
-    const lay = layoutColumns(w, graphWidth(lanes, w * MAX_GRAPH_SHARE))
+    const lay = layoutColumns(w, graphWidth(lanes, w * MAX_GRAPH_SHARE, METRICS[density]), density)
     const th = theme()
+    const now = Date.now() / 1000
     for (let i = first; i < last; i++) {
       const row = cache.get(i)
-      const y = i * ROW_HEIGHT - top
+      const y = i * rowH - top
       // The drop target is highlighted like a selection while dragging.
       if (row)
-        drawRow(ctx, row, cache.refsFor(row.id), y, lay, th, i === selected || i === dropTarget, i === hovered, !!matchSet && !matchSet.has(i))
+        drawRow(ctx, row, cache.refsFor(row.id), y, lay, th, i === selected || i === dropTarget, i === hovered, !!matchSet && !matchSet.has(i), now)
     }
   }
 
   function rowAt(e: MouseEvent): number {
     const rect = scroller.getBoundingClientRect()
-    const i = Math.floor((e.clientY - rect.top + scroller.scrollTop) / ROW_HEIGHT)
+    const i = Math.floor((e.clientY - rect.top + scroller.scrollTop) / rowH)
     return i >= 0 && i < total ? i : -1
   }
 
@@ -120,7 +127,7 @@
   export function reveal(i: number) {
     if (i < 0) return
     // Center it rather than pinning it to an edge.
-    scroller.scrollTop = Math.max(0, i * ROW_HEIGHT - scroller.clientHeight / 2)
+    scroller.scrollTop = Math.max(0, i * rowH - scroller.clientHeight / 2)
     select(i)
     scroller.focus()
   }
@@ -170,10 +177,10 @@
     if (!auto) autoSelect = 'done'
     selected = Math.max(0, Math.min(total - 1, i))
     // Keep the selection in view.
-    const y = selected * ROW_HEIGHT
+    const y = selected * rowH
     if (y < scroller.scrollTop) scroller.scrollTop = y
-    else if (y + ROW_HEIGHT > scroller.scrollTop + scroller.clientHeight) {
-      scroller.scrollTop = y + ROW_HEIGHT - scroller.clientHeight
+    else if (y + rowH > scroller.scrollTop + scroller.clientHeight) {
+      scroller.scrollTop = y + rowH - scroller.clientHeight
     }
     selectedId = cache.get(selected)?.id ?? ''
     onSelect?.(cache.get(selected), auto)
@@ -231,7 +238,7 @@
   let currentMatch = $derived(matches.indexOf(selected))
 
   function onKey(e: KeyboardEvent) {
-    const page = Math.max(1, Math.floor(scroller.clientHeight / ROW_HEIGHT) - 1)
+    const page = Math.max(1, Math.floor(scroller.clientHeight / rowH) - 1)
     const moves: Record<string, number> = {
       ArrowDown: 1,
       ArrowUp: -1,
@@ -253,9 +260,21 @@
     schedule()
   })
 
+  // Switching density keeps the same commit at the top of the view.
+  let lastRowH = 0
+  $effect(() => {
+    const h = rowH
+    if (scroller && lastRowH && lastRowH !== h) scroller.scrollTop = (scroller.scrollTop / lastRowH) * h
+    lastRowH = h
+    schedule()
+  })
+
   onMount(() => {
     const ro = new ResizeObserver(schedule)
     ro.observe(scroller)
+    // The canvas paints with the bundled fonts; repaint once they finish loading.
+    void document.fonts.ready.then(schedule)
+    document.fonts.addEventListener('loadingdone', schedule)
     const off = EventsOn('graph:progress', (p: { path: string; rows: number; done: boolean; refsReady: boolean; error: string }) => {
       if (p.path !== path) return
       cache.setTotal(p.rows, !p.done)
@@ -274,6 +293,7 @@
     cache.ensure(0, 200)
     return () => {
       ro.disconnect()
+      document.fonts.removeEventListener('loadingdone', schedule)
       off()
       cancelAnimationFrame(frame)
     }
@@ -287,11 +307,20 @@
     {#if error}
       <span class="error">Couldn't read history: {error}</span>
     {:else if loading}
-      <span>Loading history… {total.toLocaleString()} commits</span>
+      <span class="meta">Loading history… {total.toLocaleString()} commits</span>
     {:else}
-      <span>{total.toLocaleString()} commits</span>
+      <span class="meta">{total.toLocaleString()} commits</span>
     {/if}
+    <button
+      class="tool density"
+      onclick={() => session.run(() => colorTheme.toggleDensity())}
+      title={density === 'compact' ? 'Show the timeline: two-line rows with authors' : 'Show compact single-line rows'}
+      aria-pressed={density === 'compact'}
+    >
+      <Icon name={density === 'compact' ? 'rows' : 'list'} size={14} />{density === 'compact' ? 'Compact' : 'Timeline'}
+    </button>
     <span class="search">
+      <Icon name="search" size={14} />
       <input
         bind:this={searchInput}
         bind:value={query}
@@ -305,8 +334,10 @@
         <span class="count">
           {#if matchTotal === 0}No matches{:else}{currentMatch >= 0 ? `${currentMatch + 1} of ` : ''}{matchTotal.toLocaleString()}{/if}
         </span>
-        <button onclick={() => jump(-1)} disabled={!matchTotal} aria-label="Previous match">↑</button>
-        <button onclick={() => jump(1)} disabled={!matchTotal} aria-label="Next match">↓</button>
+        <button class="tool step up" onclick={() => jump(-1)} disabled={!matchTotal} aria-label="Previous match" title="Previous match (Shift+Enter)"
+          ><Icon name="chevron" size={13} /></button
+        >
+        <button class="tool step" onclick={() => jump(1)} disabled={!matchTotal} aria-label="Next match" title="Next match (Enter)"><Icon name="chevron" size={13} /></button>
       {/if}
     </span>
   </div>
@@ -371,7 +402,7 @@
         schedule()
       }}
     >
-      <div class="spacer" style:height="{total * ROW_HEIGHT}px"></div>
+      <div class="spacer" style:height="{total * rowH}px"></div>
     </div>
   </div>
 </div>
@@ -387,11 +418,17 @@
   .status {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 4px 12px;
-    color: var(--ink-mute);
+    gap: 10px;
+    min-height: 40px;
+    padding: 0 12px 0 16px;
     border-bottom: 1px solid var(--paper-edge);
-    font-size: 12px;
+  }
+
+  .density {
+    height: 26px;
+    padding: 0 8px;
+    font-size: 13px;
+    color: var(--ink-soft);
   }
 
   .search {
@@ -399,24 +436,40 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    color: var(--ink-mute);
   }
 
   .search input {
     width: 260px;
-    padding: 2px 6px;
-    background: var(--paper);
-    color: var(--ink);
-    border: 1px solid var(--paper-edge);
+    height: 28px;
+    padding: 0 10px;
+    font-size: 13px;
+    border-radius: 5px;
   }
 
-  .search button {
-    background: none;
-    border: 1px solid var(--paper-edge);
-    color: var(--ink);
-    cursor: pointer;
+  .search input:focus {
+    border-color: var(--link);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--selection);
+  }
+
+  .step {
+    height: 26px;
+    padding: 0 5px;
+  }
+
+  .step.up {
+    transform: rotate(180deg);
+  }
+
+  .step.up:hover:not(:disabled) {
+    transform: rotate(180deg) translateY(1px);
   }
 
   .count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-mute);
     white-space: nowrap;
   }
 
