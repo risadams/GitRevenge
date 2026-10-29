@@ -6,6 +6,7 @@
   import { BrowserOpenURL } from '../../wailsjs/runtime/runtime.js'
   import MarkdownImage from './MarkdownImage.svelte'
   import MathView from './markdown/MathView.svelte'
+  import MermaidDiagram from './markdown/MermaidDiagram.svelte'
   import { mathMarked, type MathToken } from './markdown/math'
   import { valueParts } from './trailers'
 
@@ -77,6 +78,8 @@
       <p>{@render inline((t as Tokens.Paragraph).tokens)}</p>
     {:else if t.type === 'heading'}
       <svelte:element this={headingTag((t as Tokens.Heading).depth)}>{@render inline((t as Tokens.Heading).tokens)}</svelte:element>
+    {:else if t.type === 'code' && document && (t as Tokens.Code).lang?.trim().toLowerCase() === 'mermaid'}
+      <MermaidDiagram code={(t as Tokens.Code).text} />
     {:else if t.type === 'code'}
       <pre><code>{(t as Tokens.Code).text}</code></pre>
     {:else if t.type === 'blockquote'}

@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 // The Wails runtime only exists in the app; links don't need it to render.
 vi.mock('../../wailsjs/runtime/runtime.js', () => ({ BrowserOpenURL: vi.fn() }))
+// The theme store reads window when it loads; diagrams only need to know light or dark.
+vi.mock('./theme.svelte', () => ({ theme: { resolved: 'light' } }))
 
 const { default: Markdown } = await import('./Markdown.svelte')
 
@@ -51,5 +53,12 @@ describe('Markdown', () => {
     expect(out).not.toMatch(/<img[^>]*example\.com/)
     expect(out).toContain('href="https://example.com/logo.png"')
     expect(out).toContain('[dot]') // placeholder until the repository image loads
+  })
+
+  it('draws mermaid blocks in documents only', () => {
+    const md = '```mermaid\ngraph TD; A-->B\n```'
+    expect(html(md, '', { document: true })).toContain('Drawing…')
+    expect(html(md)).toContain('<pre><code>graph TD; A--')
+    expect(html(md)).not.toContain('Drawing')
   })
 })
