@@ -28,7 +28,13 @@ func (r *Repo) Worktrees(ctx context.Context) ([]Worktree, error) {
 	if err != nil {
 		return nil, err
 	}
-	return parseWorktrees(out, r.dir), nil
+	// Compare with git's own spelling of this worktree's path: r.dir may differ from it by
+	// a symlink (macOS /var → /private/var) or a Windows short name (RUNNER~1).
+	top, err := r.ReadString(ctx, "rev-parse", "--show-toplevel")
+	if err != nil {
+		top = r.dir
+	}
+	return parseWorktrees(out, filepath.FromSlash(strings.TrimSpace(top))), nil
 }
 
 // parseWorktrees reads `git worktree list --porcelain`: blank-line separated records of
