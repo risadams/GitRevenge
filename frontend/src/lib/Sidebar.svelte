@@ -2,7 +2,9 @@
   import { Refs } from '../../wailsjs/go/app/App.js'
   import { EventsOn } from '../../wailsjs/runtime/runtime.js'
   import { onMount } from 'svelte'
+  import type { DialogSpec } from './Dialog.svelte'
   import type { Ref } from './graph/rowCache'
+  import RepoExtras from './RepoExtras.svelte'
   import { session } from './session.svelte'
 
   let {
@@ -12,6 +14,7 @@
     onNewBranch,
     onManageRemotes,
     onContext,
+    openDialog,
   }: {
     path: string
     onPick: (ref: Ref) => void
@@ -20,6 +23,7 @@
     onNewBranch?: () => void
     onManageRemotes?: () => void
     onContext?: (ref: Ref, x: number, y: number) => void
+    openDialog: (spec: DialogSpec) => void
   } = $props()
 
   /** Groups render at most this many items; the filter narrows the rest. Keeps the DOM
@@ -113,6 +117,7 @@
         {/if}
       </section>
     {/each}
+    <RepoExtras {path} {openDialog} />
   </div>
 </aside>
 
