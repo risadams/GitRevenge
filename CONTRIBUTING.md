@@ -35,7 +35,7 @@ Also run `golangci-lint run`. CI runs everything on Windows and macOS.
 - **Wails bindings.** `frontend/wailsjs` is generated from the Go API. Commit exactly what `wails generate module` writes, and don't reorder it by hand.
 - **Git calls** go through the git layer in `internal/git`, which runs the system git ([ADR 0002](docs/adr/0002-system-git-cli.md)). Don't shell out elsewhere.
 - **Match the surrounding code**: naming, comment density and idiom.
-- **Accessibility.** UI changes must work with the keyboard and in both themes. See [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md).
+- **Accessibility.** UI changes must work with the keyboard and in both themes. See [ACCESSIBILITY.md](docs/ACCESSIBILITY.md).
 - **Performance.** The targets are in [docs/PLAN.md](docs/PLAN.md#performance-targets). Say so in the PR if a change could affect them.
 
 ## Architecture decisions

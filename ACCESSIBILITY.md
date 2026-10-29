@@ -11,7 +11,7 @@ Git Revenge aims to be usable with a keyboard alone, with a screen reader, and b
 
 ## Known gaps
 
-- **Commit graph.** It is drawn on a canvas ([ADR 0003](adr/0003-svelte-canvas-graph.md)), so it has no built-in accessibility tree. Keyboard navigation and a screen-reader-friendly list of the same rows are needed.
+- **Commit graph.** It is drawn on a canvas ([ADR 0003](docs/adr/0003-svelte-canvas-graph.md)), so it has no built-in accessibility tree. Keyboard navigation and a screen-reader-friendly list of the same rows are needed.
 - **Diff, blame and conflict views.** These use CodeMirror 6, whose screen-reader support is good but has not been tested with this app.
 - **Testing.** There has been no audit with NVDA, JAWS or VoiceOver yet.
 
