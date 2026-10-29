@@ -1,6 +1,7 @@
 import type { Component } from 'svelte'
 import CsvPreview from './CsvPreview.svelte'
 import MarkdownPreview from './MarkdownPreview.svelte'
+import MermaidPreview from './MermaidPreview.svelte'
 import TexPreview from './TexPreview.svelte'
 import TreePreview from './TreePreview.svelte'
 import { formatOf } from './structured'
@@ -31,6 +32,7 @@ export const PREVIEWERS: Previewer[] = [
   { id: 'csv', matches: (p) => /\.(csv|tsv|tab)$/i.test(p), component: CsvPreview },
   { id: 'structured', matches: (p) => formatOf(p) !== null, component: TreePreview },
   { id: 'tex', matches: (p) => /\.(tex|latex)$/i.test(p), component: TexPreview },
+  { id: 'mermaid', matches: (p) => /\.(mmd|mermaid)$/i.test(p), component: MermaidPreview },
 ]
 
 export function previewerFor(path: string): Previewer | undefined {
