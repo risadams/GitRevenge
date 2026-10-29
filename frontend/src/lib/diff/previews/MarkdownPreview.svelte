@@ -18,7 +18,7 @@
   }
 </script>
 
-<div class="preview"><Markdown {text} document {resolveImage} {onLink} /></div>
+<div class="preview"><Markdown {text} document math {resolveImage} {onLink} /></div>
 
 <style>
   .preview {
