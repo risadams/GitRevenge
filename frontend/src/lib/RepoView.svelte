@@ -5,6 +5,7 @@
   import Dialog, { type DialogSpec } from './Dialog.svelte'
   import RebaseEditor from './RebaseEditor.svelte'
   import RemotesDialog from './RemotesDialog.svelte'
+  import WorktreesDialog from './WorktreesDialog.svelte'
   import Toolbar from './Toolbar.svelte'
   import Icon from './ui/Icon.svelte'
   import { branchAtDialog, checkoutRef, commitItems, dropItems, groups, newBranchDialog, refItems, type MenuContext } from './menus'
@@ -31,6 +32,7 @@
 
   let dialog = $state<DialogSpec | null>(null)
   let remotesOpen = $state(false)
+  let worktreesOpen = $state(false)
   /** Commit after which the interactive rebase editor rewrites history, or "" when closed. */
   let rebaseBase = $state('')
   /** The ref whose reflog is open, or "" when closed. */
@@ -57,6 +59,7 @@
     ...(diff ? [{ id: 'view.close', group: 'View', title: 'Back to the graph', keywords: 'close diff', shortcut: 'Escape', run: () => (diff = null) }] : []),
     { id: 'repo.remotes', group: 'Repository', title: 'Manage remotes…', keywords: 'origin url', run: () => (remotesOpen = true) },
     { id: 'repo.reflog', group: 'Repository', title: 'Show the reflog…', keywords: 'history head moves recover lost commit', run: () => (reflogRef = 'HEAD') },
+    { id: 'repo.worktrees', group: 'Repository', title: 'Manage worktrees…', keywords: 'worktree checkout folder parallel', run: () => (worktreesOpen = true) },
     {
       id: 'view.changes',
       group: 'View',
@@ -218,6 +221,10 @@
     }}
     onClose={() => (reflogRef = '')}
   />
+{/if}
+
+{#if worktreesOpen}
+  <WorktreesDialog {path} onClose={() => (worktreesOpen = false)} />
 {/if}
 
 {#if remotesOpen}

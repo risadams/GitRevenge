@@ -1,6 +1,8 @@
 package app
 
 import (
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -146,5 +148,37 @@ func TestCommitSignaturesCachesUnsigned(t *testing.T) {
 	}
 	if n := len(a.sigs.byRe[tab.Path]); n != 2 {
 		t.Fatalf("cache holds %d entries, want 2", n)
+	}
+}
+
+func TestWorktreeBindings(t *testing.T) {
+	a := newTestApp(t)
+	fx := gittest.New(t)
+	fx.Linear(1)
+	fx.Git("branch", "existing")
+	tab, err := a.OpenRepo(fx.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base := t.TempDir()
+	if err := a.AddWorktree(tab.Path, filepath.Join(base, "a"), "existing"); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.AddWorktree(tab.Path, filepath.Join(base, "b"), "brand-new"); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.AddWorktree(tab.Path, "relative/path", "x"); err == nil {
+		t.Fatal("a relative path was accepted")
+	}
+	// The same branch can't be checked out twice; git's reason comes through.
+	if err := a.AddWorktree(tab.Path, filepath.Join(base, "c"), "existing"); err == nil || !strings.Contains(err.Error(), "existing") {
+		t.Fatalf("second checkout of a branch = %v", err)
+	}
+	list, err := a.Worktrees(tab.Path)
+	if err != nil || len(list) != 3 || list[1].Branch != "existing" || list[2].Branch != "brand-new" {
+		t.Fatalf("worktrees = %+v, %v", list, err)
+	}
+	if err := a.RemoveWorktree(tab.Path, list[2].Path, false); err != nil {
+		t.Fatal(err)
 	}
 }
