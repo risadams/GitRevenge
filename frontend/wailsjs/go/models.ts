@@ -1,5 +1,23 @@
 export namespace app {
 	
+	export class BatchResult {
+	    path: string;
+	    ok: boolean;
+	    message: string;
+	    skipped: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new BatchResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.ok = source["ok"];
+	        this.message = source["message"];
+	        this.skipped = source["skipped"];
+	    }
+	}
 	export class CommitInfo {
 	    commit: git.CommitDetail;
 	    files: git.FileChange[];
@@ -101,6 +119,38 @@ export namespace app {
 		    }
 		    return a;
 		}
+	}
+	export class GroupRepo {
+	    path: string;
+	    name: string;
+	    exists: boolean;
+	    branch: string;
+	    upstream: string;
+	    ahead: number;
+	    behind: number;
+	    changes: number;
+	    conflicts: number;
+	    lastFetch: number;
+	    error: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new GroupRepo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.name = source["name"];
+	        this.exists = source["exists"];
+	        this.branch = source["branch"];
+	        this.upstream = source["upstream"];
+	        this.ahead = source["ahead"];
+	        this.behind = source["behind"];
+	        this.changes = source["changes"];
+	        this.conflicts = source["conflicts"];
+	        this.lastFetch = source["lastFetch"];
+	        this.error = source["error"];
+	    }
 	}
 	export class LFSInfo {
 	    available: boolean;
@@ -799,6 +849,25 @@ export namespace graph {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.rows = source["rows"];
 	        this.total = source["total"];
+	    }
+	}
+
+}
+
+export namespace settings {
+	
+	export class Group {
+	    name: string;
+	    paths: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Group(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.paths = source["paths"];
 	    }
 	}
 

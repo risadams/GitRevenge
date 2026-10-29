@@ -18,6 +18,10 @@ export function ChooseAndOpenRepo() {
   return window['go']['app']['App']['ChooseAndOpenRepo']();
 }
 
+export function ChooseFolder(arg1) {
+  return window['go']['app']['App']['ChooseFolder'](arg1);
+}
+
 export function CloseRepo(arg1) {
   return window['go']['app']['App']['CloseRepo'](arg1);
 }
@@ -56,6 +60,22 @@ export function FileContents(arg1, arg2, arg3, arg4, arg5, arg6) {
 
 export function GraphRows(arg1, arg2, arg3) {
   return window['go']['app']['App']['GraphRows'](arg1, arg2, arg3);
+}
+
+export function GroupAction(arg1, arg2) {
+  return window['go']['app']['App']['GroupAction'](arg1, arg2);
+}
+
+export function GroupBatch(arg1, arg2) {
+  return window['go']['app']['App']['GroupBatch'](arg1, arg2);
+}
+
+export function GroupDashboard(arg1) {
+  return window['go']['app']['App']['GroupDashboard'](arg1);
+}
+
+export function Groups() {
+  return window['go']['app']['App']['Groups']();
 }
 
 export function Integrate(arg1, arg2, arg3) {
