@@ -5,6 +5,7 @@
   import { BrowserOpenURL } from '../wailsjs/runtime/runtime.js'
   import CloneDialog from './lib/CloneDialog.svelte'
   import CommandPalette from './lib/CommandPalette.svelte'
+  import ShortcutsDialog from './lib/ShortcutsDialog.svelte'
   import { commands, provideCommands, type Command } from './lib/commands.svelte'
   import OperationBanner from './lib/OperationBanner.svelte'
   import PromptDialog from './lib/PromptDialog.svelte'
@@ -23,7 +24,18 @@
 
   provideCommands(() => {
     const list: Command[] = [
-      { id: 'app.open', group: 'App', title: 'Open repository…', shortcut: 'Mod+O', run: () => session.choose() },
+      {
+        id: 'app.palette',
+        group: 'App',
+        title: 'Command palette',
+        shortcut: 'Mod+K',
+        aliases: ['Mod+Shift+P'],
+        hidden: true,
+        global: true,
+        run: () => (commands.paletteOpen = !commands.paletteOpen),
+      },
+      { id: 'app.shortcuts', group: 'App', title: 'Keyboard shortcuts', keywords: 'keys help cheat sheet', shortcut: 'Mod+/', whenTyping: true, run: () => (commands.shortcutsOpen = true) },
+      { id: 'app.open', group: 'App', title: 'Open repository…', shortcut: 'Mod+O', whenTyping: true, run: () => session.choose() },
       { id: 'app.clone', group: 'App', title: 'Clone a repository…', run: () => (commands.cloneOpen = true) },
       {
         id: 'app.theme',
@@ -40,10 +52,23 @@
         run: () => session.run(() => theme.toggleDensity()),
       },
     ]
-    if (session.active) list.push({ id: 'tabs.home', group: 'Tabs', title: 'Go to the start page', keywords: 'home groups recent', run: () => session.select('') })
-    for (const t of session.tabs) {
-      if (t.path === session.active) list.push({ id: `tabs.close`, group: 'Tabs', title: `Close ${t.name}`, keywords: 'tab', run: () => session.close(t.path) })
+    if (session.active)
+      list.push({ id: 'tabs.home', group: 'Tabs', title: 'Go to the start page', keywords: 'home groups recent', shortcut: 'Mod+Shift+H', run: () => session.select('') })
+    session.tabs.forEach((t, i) => {
+      if (t.path === session.active)
+        list.push({ id: `tabs.close`, group: 'Tabs', title: `Close ${t.name}`, keywords: 'tab', shortcut: 'Mod+W', whenTyping: true, run: () => session.close(t.path) })
       else list.push({ id: `tabs.${t.path}`, group: 'Tabs', title: `Switch to ${t.name}`, keywords: `tab ${t.path} ${t.head}`, run: () => session.select(t.path) })
+      // Mod+1 … Mod+9 jump straight to a tab, as in browsers.
+      if (i < 9) list.push({ id: `tabs.n${i + 1}`, group: 'Tabs', title: `Tab ${i + 1}`, shortcut: `Mod+${i + 1}`, hidden: true, whenTyping: true, run: () => session.select(t.path) })
+    })
+    if (session.tabs.length > 0) {
+      // Cycle through the start page and every tab.
+      const order = ['', ...session.tabs.map((t) => t.path)]
+      const step = (d: number) => () => session.select(order[(order.indexOf(session.active) + d + order.length) % order.length])
+      list.push(
+        { id: 'tabs.next', group: 'Tabs', title: 'Next tab', shortcut: 'Mod+Tab', hidden: true, whenTyping: true, run: step(1) },
+        { id: 'tabs.prev', group: 'Tabs', title: 'Previous tab', shortcut: 'Mod+Shift+Tab', hidden: true, whenTyping: true, run: step(-1) },
+      )
     }
     const open = new Set(session.tabs.map((t) => t.path))
     for (const r of session.recent) {
@@ -52,17 +77,10 @@
     return list
   })
 
-  /** Ctrl+K or Ctrl+Shift+P (⌘ on macOS) opens the command palette from anywhere. */
+  /** Every app-wide shortcut is a command's; the dispatcher finds and runs it. */
   function onKey(e: KeyboardEvent) {
-    if (!(e.ctrlKey || e.metaKey) || e.altKey || env?.problem) return
-    const k = e.key.toLowerCase()
-    if ((k === 'k' && !e.shiftKey) || (k === 'p' && e.shiftKey)) {
-      e.preventDefault()
-      commands.paletteOpen = !commands.paletteOpen
-    } else if (k === 'o' && !e.shiftKey) {
-      e.preventDefault()
-      void session.choose()
-    }
+    if (!env || env.problem) return
+    commands.dispatch(e)
   }
 
   onMount(async () => {
@@ -76,6 +94,9 @@
 <PromptDialog />
 <InkFilters />
 <CommandPalette />
+{#if commands.shortcutsOpen}
+  <ShortcutsDialog onClose={() => (commands.shortcutsOpen = false)} />
+{/if}
 {#if commands.cloneOpen}
   <CloneDialog onClose={() => (commands.cloneOpen = false)} />
 {/if}

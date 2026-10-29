@@ -29,7 +29,7 @@
   $effect(() => {
     if (!commands.paletteOpen) return
     restore = document.activeElement as HTMLElement | null
-    all = commands.all()
+    all = commands.all().filter((c) => !c.hidden)
     query = ''
     active = 0
     void tick().then(() => input?.focus())
