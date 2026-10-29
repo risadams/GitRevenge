@@ -29,6 +29,8 @@ type graphLoader struct {
 	refs    *RefIndex
 	loading bool
 	cancel  context.CancelFunc
+	// wg tracks load goroutines so stop can wait for their git processes to exit.
+	wg sync.WaitGroup
 }
 
 // RefIndex holds a repository's refs, indexed by the commit they point at.
@@ -80,7 +82,7 @@ func (l *graphLoader) reload() {
 	l.loading = true
 	l.mu.Unlock()
 
-	go func() {
+	l.wg.Go(func() {
 		// Read refs alongside the log rather than before it: with thousands of refs they can
 		// take longer than the first screen of history.
 		type refResult struct {
@@ -151,14 +153,17 @@ func (l *graphLoader) reload() {
 		if l.onProgress != nil {
 			l.onProgress(GraphProgress{Rows: g.Len(), Done: true, Err: err})
 		}
-	}()
+	})
 }
 
+// stop cancels any load and waits for it to finish, so no git process is left holding
+// files in the repository (on Windows that would block deleting or moving it).
 func (l *graphLoader) stop() {
 	l.mu.Lock()
-	defer l.mu.Unlock()
 	if l.cancel != nil {
 		l.cancel()
 		l.cancel = nil
 	}
+	l.mu.Unlock()
+	l.wg.Wait()
 }
