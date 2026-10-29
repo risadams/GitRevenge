@@ -169,3 +169,27 @@ func TestCountCommitsMatchesLog(t *testing.T) {
 		t.Fatalf("count = %d, log has %d", n, want)
 	}
 }
+
+func TestLogIncludesTagsOutsideBranches(t *testing.T) {
+	fx := gittest.New(t)
+	fx.Linear(2)
+	fx.Tag("v1", "")
+	fx.Branch("side")
+	fx.Checkout("side")
+	lone := fx.CommitFile("side.txt", "x", "only reachable from a tag")
+	fx.Tag("lone", "annotated")
+	fx.Checkout("main")
+	fx.Git("branch", "-D", "side")
+
+	ids := map[string]bool{}
+	for _, c := range readLog(t, fx, LogOptions{}) {
+		ids[c.ID] = true
+	}
+	if !ids[lone] || len(ids) != 3 {
+		t.Fatalf("log has %d commits (tag-only commit included: %v), want 3 with it", len(ids), ids[lone])
+	}
+	repo := OpenRepo(newTestRunner(t), fx.Dir)
+	if n, err := repo.CountCommits(context.Background(), LogOptions{}); err != nil || n != 3 {
+		t.Fatalf("count = %d, %v; want 3", n, err)
+	}
+}
