@@ -6,6 +6,10 @@ export function AnswerPrompt(arg1, arg2, arg3) {
   return window['go']['app']['App']['AnswerPrompt'](arg1, arg2, arg3);
 }
 
+export function Blame(arg1, arg2, arg3) {
+  return window['go']['app']['App']['Blame'](arg1, arg2, arg3);
+}
+
 export function BranchAction(arg1, arg2, arg3) {
   return window['go']['app']['App']['BranchAction'](arg1, arg2, arg3);
 }
@@ -56,6 +60,10 @@ export function Fetch(arg1, arg2) {
 
 export function FileContents(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['app']['App']['FileContents'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+export function FileHistory(arg1, arg2) {
+  return window['go']['app']['App']['FileHistory'](arg1, arg2);
 }
 
 export function GraphRows(arg1, arg2, arg3) {

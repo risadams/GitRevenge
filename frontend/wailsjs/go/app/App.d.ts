@@ -7,6 +7,8 @@ import {graph} from '../models';
 
 export function AnswerPrompt(arg1:string,arg2:string,arg3:boolean):Promise<void>;
 
+export function Blame(arg1:string,arg2:string,arg3:string):Promise<Array<git.BlameLine>>;
+
 export function BranchAction(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
 
 export function CancelNetwork(arg1:string):Promise<void>;
@@ -32,6 +34,8 @@ export function Environment():Promise<app.Environment>;
 export function Fetch(arg1:string,arg2:string):Promise<void>;
 
 export function FileContents(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:boolean):Promise<git.FileContents>;
+
+export function FileHistory(arg1:string,arg2:string):Promise<Array<git.FileCommit>>;
 
 export function GraphRows(arg1:string,arg2:number,arg3:number):Promise<app.GraphPage>;
 

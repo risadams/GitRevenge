@@ -342,6 +342,28 @@ export namespace app {
 
 export namespace git {
 	
+	export class BlameLine {
+	    commit: string;
+	    author: string;
+	    time: number;
+	    summary: string;
+	    line: string;
+	    origLine: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlameLine(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.commit = source["commit"];
+	        this.author = source["author"];
+	        this.time = source["time"];
+	        this.summary = source["summary"];
+	        this.line = source["line"];
+	        this.origLine = source["origLine"];
+	    }
+	}
 	export class Signature {
 	    name: string;
 	    email: string;
@@ -474,6 +496,30 @@ export namespace git {
 	        this.status = source["status"];
 	        this.path = source["path"];
 	        this.oldPath = source["oldPath"];
+	    }
+	}
+	export class FileCommit {
+	    id: string;
+	    author: string;
+	    time: number;
+	    subject: string;
+	    path: string;
+	    oldPath?: string;
+	    status: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FileCommit(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.author = source["author"];
+	        this.time = source["time"];
+	        this.subject = source["subject"];
+	        this.path = source["path"];
+	        this.oldPath = source["oldPath"];
+	        this.status = source["status"];
 	    }
 	}
 	export class FileContents {
