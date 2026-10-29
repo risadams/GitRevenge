@@ -1,5 +1,6 @@
 import { SvelteMap } from 'svelte/reactivity'
-import { isTyping, matchesShortcut } from './shortcuts'
+import { Keybindings, SetKeybindings } from '../../wailsjs/go/app/App.js'
+import { isTyping, matchesShortcut, parseShortcut } from './shortcuts'
 
 export interface Command {
   /** Stable id, unique across providers; also the list key. */
@@ -19,6 +20,8 @@ export interface Command {
   whenTyping?: boolean
   /** Its keys work even while a dialog or menu is open. */
   global?: boolean
+  /** The shortcut the command comes with, when the user has changed it (set by all()). */
+  defaultShortcut?: string
   run: () => unknown
 }
 
@@ -44,6 +47,37 @@ class Commands {
   /** The clone dialog lives at the top level so the palette can open it from anywhere. */
   cloneOpen = $state(false)
   settingsOpen = $state(false)
+  keybindingsOpen = $state(false)
+  /** The user's shortcut changes, by command id; "" unbinds the command. */
+  overrides = $state<Record<string, string>>({})
+
+  /** Loads the user's shortcut changes. Until then, and if they can't be read, the defaults stand. */
+  async loadBindings() {
+    try {
+      this.overrides = (await Keybindings()) ?? {}
+    } catch {
+      // Keep the defaults.
+    }
+  }
+
+  /** Changes a command's shortcut ("" unbinds it; null restores the default) and saves. */
+  async rebind(id: string, keys: string | null) {
+    const next = { ...this.overrides }
+    if (keys === null) delete next[id]
+    else next[id] = keys
+    this.overrides = next
+    await SetKeybindings(next)
+  }
+
+  /** The commands, other than except, whose keys include shortcut. */
+  conflicts(shortcut: string, except: string): Command[] {
+    const want = parseShortcut(shortcut)
+    const same = (s: string) => {
+      const k = parseShortcut(s)
+      return k.mod === want.mod && k.shift === want.shift && k.alt === want.alt && k.key === want.key
+    }
+    return this.all().filter((c) => c.id !== except && [c.shortcut, ...(c.aliases ?? [])].some((s) => s && same(s)))
+  }
 
   /** Adds a provider; returns the function that removes it. */
   add(provider: Provider): () => void {
@@ -61,7 +95,10 @@ class Commands {
       for (const c of p()) {
         if (seen[c.id]) continue
         seen[c.id] = true
-        out.push(c)
+        if (c.id in this.overrides) {
+          // A changed shortcut replaces the default and its aliases.
+          out.push({ ...c, shortcut: this.overrides[c.id] || undefined, aliases: [], defaultShortcut: c.shortcut ?? '' })
+        } else out.push(c)
       }
     }
     return out

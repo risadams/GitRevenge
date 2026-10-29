@@ -5,6 +5,7 @@
   import { BrowserOpenURL } from '../wailsjs/runtime/runtime.js'
   import CloneDialog from './lib/CloneDialog.svelte'
   import CommandPalette from './lib/CommandPalette.svelte'
+  import KeybindingsDialog from './lib/KeybindingsDialog.svelte'
   import SettingsDialog from './lib/SettingsDialog.svelte'
   import ShortcutsDialog from './lib/ShortcutsDialog.svelte'
   import { commands, provideCommands, type Command } from './lib/commands.svelte'
@@ -40,6 +41,7 @@
       { id: 'app.shortcuts', group: 'App', title: 'Keyboard shortcuts', keywords: 'keys help cheat sheet', shortcut: 'Mod+/', whenTyping: true, run: () => (commands.shortcutsOpen = true) },
       { id: 'app.open', group: 'App', title: 'Open repository…', shortcut: 'Mod+O', whenTyping: true, run: () => session.choose() },
       { id: 'app.clone', group: 'App', title: 'Clone a repository…', run: () => (commands.cloneOpen = true) },
+      { id: 'app.keybindings', group: 'App', title: 'Customize keyboard shortcuts…', keywords: 'keys keybindings rebind hotkeys', run: () => (commands.keybindingsOpen = true) },
       { id: 'app.settings', group: 'App', title: 'Settings…', keywords: 'preferences options configuration zoom git path', shortcut: 'Mod+,', whenTyping: true, run: () => (commands.settingsOpen = true) },
       {
         id: 'app.theme',
@@ -98,6 +100,7 @@
   onMount(async () => {
     ;[version, env] = await Promise.all([Version(), Environment(), theme.load()])
     void prefs.load()
+    void commands.loadBindings()
     if (!env.problem) {
       await session.restore()
       void update.startup()
@@ -113,6 +116,10 @@
 {#if commands.shortcutsOpen}
   <ShortcutsDialog onClose={() => (commands.shortcutsOpen = false)} />
 {/if}
+{#if commands.keybindingsOpen}
+  <KeybindingsDialog onClose={() => (commands.keybindingsOpen = false)} />
+{/if}
+
 {#if commands.settingsOpen}
   <SettingsDialog onClose={() => (commands.settingsOpen = false)} />
 {/if}

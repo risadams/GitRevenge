@@ -2,6 +2,7 @@
   // The settings panel: appearance, git, repositories and updates, saved to the local
   // settings file (ADR 0005).
   import { ChooseFile, ChooseFolder, Preferences, SetPreferences } from '../../wailsjs/go/app/App.js'
+  import { commands } from './commands.svelte'
   import type { app } from '../../wailsjs/go/models'
   import { errorText } from './errors'
   import { prefs } from './prefs.svelte'
@@ -117,6 +118,20 @@
             <button type="button" class="tool" onclick={chooseCloneDir}><Icon name="folder" size={14} />Choose…</button>
           </span>
         </label>
+      </fieldset>
+
+      <fieldset>
+        <legend class="meta">Keyboard</legend>
+        <span>
+          <button
+            type="button"
+            class="tool"
+            onclick={() => {
+              onClose()
+              commands.keybindingsOpen = true
+            }}><Icon name="keyboard" size={14} />Customize keyboard shortcuts…</button
+          >
+        </span>
       </fieldset>
 
       <fieldset>

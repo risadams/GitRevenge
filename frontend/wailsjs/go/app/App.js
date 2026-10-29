@@ -142,6 +142,10 @@ export function IssueURL(arg1) {
   return window['go']['app']['App']['IssueURL'](arg1);
 }
 
+export function Keybindings() {
+  return window['go']['app']['App']['Keybindings']();
+}
+
 export function LFS(arg1) {
   return window['go']['app']['App']['LFS'](arg1);
 }
@@ -248,6 +252,10 @@ export function SetCommitNote(arg1, arg2, arg3) {
 
 export function SetGraphDensity(arg1) {
   return window['go']['app']['App']['SetGraphDensity'](arg1);
+}
+
+export function SetKeybindings(arg1) {
+  return window['go']['app']['App']['SetKeybindings'](arg1);
 }
 
 export function SetPreferences(arg1) {

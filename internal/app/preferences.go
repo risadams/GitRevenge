@@ -126,3 +126,50 @@ func (a *App) SetPreferences(p Preferences) error {
 func (a *App) ChooseFile(title string) (string, error) {
 	return runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{Title: title})
 }
+
+// Keybindings returns the shortcuts the user has changed, by command id ("" for unbound).
+func (a *App) Keybindings() (map[string]string, error) {
+	m, err := a.sessions()
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]string{}
+	for id, keys := range m.Settings().Get().Keybindings {
+		out[id] = keys
+	}
+	return out, nil
+}
+
+// SetKeybindings replaces the user's shortcut changes. Each value is "" (unbound) or keys in
+// "Mod+Shift+K" form ending in one key.
+func (a *App) SetKeybindings(bindings map[string]string) error {
+	for id, keys := range bindings {
+		if id == "" || len(id) > 200 {
+			return userError("A shortcut has no command.")
+		}
+		if keys == "" {
+			continue
+		}
+		parts := strings.Split(keys, "+")
+		if parts[len(parts)-1] == "" && !strings.HasSuffix(keys, "++") {
+			return userError("The shortcut " + keys + " has no key.")
+		}
+		for _, mod := range parts[:len(parts)-1] {
+			switch mod {
+			case "Mod", "Shift", "Alt", "Ctrl", "Meta", "":
+			default:
+				return userError("Unknown modifier " + mod + " in " + keys + ".")
+			}
+		}
+	}
+	m, err := a.sessions()
+	if err != nil {
+		return err
+	}
+	return m.Settings().Update(func(s *settings.Settings) {
+		s.Keybindings = map[string]string{}
+		for id, keys := range bindings {
+			s.Keybindings[id] = keys
+		}
+	})
+}

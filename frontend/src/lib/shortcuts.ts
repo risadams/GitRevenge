@@ -9,7 +9,9 @@ export interface Keys {
 
 export function parseShortcut(s: string): Keys {
   const parts = s.split('+')
-  const key = parts.pop() ?? ''
+  let key = parts.pop() ?? ''
+  // "+" itself is written "Plus", since "+" separates the parts.
+  if (key === 'Plus') key = '+'
   return {
     mod: parts.includes('Mod'),
     shift: parts.includes('Shift'),
@@ -33,6 +35,29 @@ export function matchesShortcut(e: KeyEventLike, shortcut: string, mac: boolean)
   if (key === k.key) return true
   // Option on macOS turns letters into symbols (⌥Z types Ω); the physical key still says which.
   return k.alt && /^[a-z]$/.test(k.key) && e.code === `Key${k.key.toUpperCase()}`
+}
+
+const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'CapsLock', 'OS'])
+
+/**
+ * The shortcut a key press makes, in "Mod+Shift+K" form, for recording a keybinding; null
+ * while only modifiers are down, or for the other platform's command key (⌃ on a Mac, the
+ * Windows key elsewhere), which matchesShortcut never accepts.
+ */
+export function eventToShortcut(e: KeyEventLike, mac: boolean): string | null {
+  if (MODIFIER_KEYS.has(e.key)) return null
+  if (mac ? e.ctrlKey : e.metaKey) return null
+  let key: string
+  if (/^Digit[0-9]$/.test(e.code)) key = e.code.slice(5)
+  else if (e.altKey && /^Key[A-Z]$/.test(e.code)) key = e.code.slice(3) // Option types a symbol
+  else if (e.key === '+') key = 'Plus'
+  else if (e.key === ' ') key = 'Space'
+  else key = e.key.length === 1 ? e.key.toUpperCase() : e.key
+  const parts = []
+  if (mac ? e.metaKey : e.ctrlKey) parts.push('Mod')
+  if (e.shiftKey) parts.push('Shift')
+  if (e.altKey) parts.push('Alt')
+  return [...parts, key].join('+')
 }
 
 /** Whether the event comes from somewhere text is typed, where most shortcuts stand aside. */
