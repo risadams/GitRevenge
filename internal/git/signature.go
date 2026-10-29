@@ -42,17 +42,23 @@ func (r *Repo) VerifySignatures(ctx context.Context, ids []string) (map[string]S
 	if len(ids) == 0 {
 		return out, nil
 	}
-	args := append([]string{"log", "--no-walk=unsorted", "--format=%H%x1f%G?%x1f%GS%x1f%GK%x1f%GF%x1e"}, ids...)
+	args := append([]string{"log", "--no-walk=unsorted", "--format=%H%x1f%G?%x1f%GS%x1f%GK%x1f%GF%x1f%GG%x1e"}, ids...)
 	text, err := r.ReadString(ctx, append(args, "--")...)
 	if err != nil {
 		return nil, err
 	}
 	for rec := range strings.SplitSeq(text, "\x1e") {
 		f := strings.Split(strings.TrimLeft(rec, "\n"), "\x1f")
-		if len(f) < 5 || f[0] == "" {
+		if len(f) < 6 || f[0] == "" {
 			continue
 		}
 		c := SignatureCheck{ID: f[0], Status: statusOf(f[1]), Signer: f[2], Key: f[3]}
+		// git says "no signature" (N) when it can't run the check at all, e.g. an SSH
+		// signature with no gpg.ssh.allowedSignersFile; its verification output then holds
+		// the complaint. The commit is signed, just not checkable.
+		if c.Status == "none" && strings.TrimSpace(f[5]) != "" {
+			c.Status = "unknown"
+		}
 		if c.Status != "none" {
 			c.Format = formatOf(f[3], f[4])
 		}

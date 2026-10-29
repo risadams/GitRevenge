@@ -52,6 +52,8 @@ func TestVerifySignaturesSSH(t *testing.T) {
 		t.Fatal(err)
 	}
 	fx.Git("config", "gpg.format", "ssh")
+	// No allowed signers, whatever the machine's global config says.
+	fx.Git("config", "gpg.ssh.allowedSignersFile", "")
 	fx.Git("config", "user.signingkey", key)
 	fx.WriteFile("signed.txt", "x")
 	fx.Git("add", "signed.txt")
@@ -66,8 +68,8 @@ func TestVerifySignaturesSSH(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got[signed].Status == "good" || got[signed].Status == "none" {
-		t.Fatalf("unverifiable signature = %+v, want unknown or bad", got[signed])
+	if got[signed].Status != "unknown" {
+		t.Fatalf("unverifiable signature = %+v, want unknown", got[signed])
 	}
 
 	allowed := filepath.Join(t.TempDir(), "allowed_signers")
