@@ -2,6 +2,7 @@
   import { SvelteSet } from 'svelte/reactivity'
   import { highlightLines, languageFor, type Token } from './highlight'
   import { applyChanges, diffLines, splitLines, toHunks, type Hunk } from './lineDiff'
+  import Icon from '../ui/Icon.svelte'
 
   /** What the hunk and line buttons do, and how the result is written. */
   export type Actions = {
@@ -98,7 +99,7 @@
 
 <div class="unified">
   {#if hunks.length === 0}
-    <p class="muted">No changes.</p>
+    <p class="muted"><Icon name="diff" size={24} wash="teal" />No changes.</p>
   {/if}
   {#each hunks as h (h.start)}
     <section class="hunk">
@@ -281,6 +282,9 @@
   }
 
   .muted {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     margin: 0;
     padding: 10px 14px;
     color: var(--ink-mute);

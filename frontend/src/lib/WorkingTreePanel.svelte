@@ -19,7 +19,7 @@
   import type { app, git } from '../../wailsjs/go/models'
   import type { DiffTarget } from './diff/DiffView.svelte'
   import { session } from './session.svelte'
-  import Icon from './ui/Icon.svelte'
+  import Icon, { type IconName } from './ui/Icon.svelte'
   import InkButton from './ui/InkButton.svelte'
 
   let {
@@ -149,17 +149,35 @@
     }
   }
 
-  function code(f: git.FileStatus, inStaged: boolean): string {
-    if (f.untracked) return 'A'
-    if (f.conflicted) return '!'
-    return inStaged ? f.index : f.workTree
+  interface StatusGlyph {
+    icon: IconName
+    label: string
+    /** Picks the colour; the icon's shape carries the meaning on its own. */
+    kind: 'added' | 'modified' | 'deleted' | 'renamed' | 'untracked' | 'conflict'
+  }
+
+  const STATUS: Record<string, StatusGlyph> = {
+    A: { icon: 'st-added', label: 'Added', kind: 'added' },
+    M: { icon: 'st-modified', label: 'Modified', kind: 'modified' },
+    T: { icon: 'st-modified', label: 'Type changed', kind: 'modified' },
+    D: { icon: 'st-deleted', label: 'Deleted', kind: 'deleted' },
+    R: { icon: 'st-renamed', label: 'Renamed', kind: 'renamed' },
+    C: { icon: 'st-renamed', label: 'Copied', kind: 'renamed' },
+    '?': { icon: 'st-untracked', label: 'Untracked', kind: 'untracked' },
+    '!': { icon: 'st-conflict', label: 'Conflicted', kind: 'conflict' },
+  }
+
+  function status(f: git.FileStatus, inStaged: boolean): StatusGlyph {
+    const code = f.untracked ? '?' : f.conflicted ? '!' : inStaged ? f.index : f.workTree
+    return STATUS[code] ?? STATUS.M
   }
 </script>
 
 {#snippet fileRow(f: git.FileStatus, inStaged: boolean)}
+  {@const st = status(f, inStaged)}
   <li class:active={isOpen(f, inStaged)}>
     <button class="name" onclick={() => show(f, inStaged)} title={f.origPath ? `${f.origPath} → ${f.path}` : f.path}>
-      <span class="code c-{code(f, inStaged)}">{code(f, inStaged)}</span>
+      <span class="code s-{st.kind}" title={st.label}><Icon name={st.icon} size={14} /><span class="visually-hidden">{st.label}</span></span>
       <span class="path">{f.origPath ? `${f.origPath} → ${f.path}` : f.path}</span>
     </button>
     {#if confirmDiscard?.length === 1 && confirmDiscard[0] === f.path}
@@ -467,32 +485,29 @@
   }
 
   .code {
-    width: 12px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    font-weight: 600;
+    display: inline-flex;
+    flex: none;
   }
 
-  .c-A {
+  .s-added {
     color: var(--success);
   }
 
-  .c-D {
+  .s-modified {
+    color: var(--warning);
+  }
+
+  .s-deleted,
+  .s-conflict {
     color: var(--danger);
   }
 
-  .c-M,
-  .c-T {
-    color: var(--accent-c);
-  }
-
-  .c-R,
-  .c-C {
+  .s-renamed {
     color: var(--accent-a);
   }
 
-  .c-\! {
-    color: var(--danger);
+  .s-untracked {
+    color: var(--ink-mute);
   }
 
   .confirm {

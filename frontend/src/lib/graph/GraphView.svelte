@@ -323,7 +323,7 @@
       title={density === 'compact' ? 'Show the timeline: two-line rows with authors' : 'Show compact single-line rows'}
       aria-pressed={density === 'compact'}
     >
-      <Icon name={density === 'compact' ? 'rows' : 'list'} size={14} />{density === 'compact' ? 'Compact' : 'Timeline'}
+      <Icon name={density === 'compact' ? 'rows' : 'timeline'} size={14} />{density === 'compact' ? 'Compact' : 'Timeline'}
     </button>
     <span class="search">
       <Icon name="search" size={14} />
