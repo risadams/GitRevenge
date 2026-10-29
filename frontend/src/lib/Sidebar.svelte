@@ -4,6 +4,7 @@
   import { onMount } from 'svelte'
   import type { DialogSpec } from './Dialog.svelte'
   import type { Ref } from './graph/rowCache'
+  import { provideCommands, type Command } from './commands.svelte'
   import RepoExtras from './RepoExtras.svelte'
   import { session } from './session.svelte'
   import Icon from './ui/Icon.svelte'
@@ -53,6 +54,18 @@
     // Newest-looking tags first (v2.0 before v1.9).
     out.tag.sort((a, b) => b.short.localeCompare(a.short, undefined, { numeric: true }))
     return out
+  })
+
+  provideCommands(() => {
+    const list: Command[] = []
+    for (const r of refs) {
+      if (r.kind === 'stash') continue
+      if (r.kind === 'local' && !r.head && onActivate)
+        list.push({ id: `checkout.${r.name}`, group: 'Branch', title: `Check out ${r.short}`, keywords: 'switch branch', run: () => onActivate(r) })
+      const what = r.kind === 'tag' ? 'tag' : r.kind === 'remote' ? 'remote branch' : 'branch'
+      list.push({ id: `goto.${r.name}`, group: 'Go to', title: `Go to ${r.short}`, keywords: `${what} show reveal graph`, run: () => onPick(r) })
+    }
+    return list
   })
 
   async function load() {

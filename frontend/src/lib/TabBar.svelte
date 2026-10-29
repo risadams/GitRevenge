@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { commands, formatShortcut } from './commands.svelte'
   import { session } from './session.svelte'
   import { theme } from './theme.svelte'
   import Icon from './ui/Icon.svelte'
@@ -32,6 +33,11 @@
       <Icon name="plus" />
     </button>
   </div>
+  <button class="palette" onclick={() => (commands.paletteOpen = true)} title="Command palette" aria-label="Open the command palette">
+    <Icon name="search" size={14} />
+    <span>Commands</span>
+    <kbd>{formatShortcut('Mod+K')}</kbd>
+  </button>
   <button class="theme" onclick={() => session.run(() => theme.toggle())} aria-label={toggleLabel} title={toggleLabel}>
     <Icon name={theme.resolved === 'dark' ? 'sun' : 'moon'} size={17} />
   </button>
@@ -147,6 +153,35 @@
   .close:hover:not(:disabled) {
     background: var(--wash-hover);
     color: var(--ink);
+  }
+
+  .palette {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 28px;
+    margin-right: 6px;
+    padding: 0 6px 0 10px;
+    border: 1px solid var(--paper-edge);
+    border-radius: 6px;
+    background: var(--paper);
+    color: var(--ink-mute);
+    font-size: 13px;
+  }
+
+  .palette:hover:not(:disabled) {
+    background: var(--paper);
+    color: var(--ink);
+    border-color: var(--ink-faint);
+  }
+
+  .palette kbd {
+    padding: 0 5px;
+    border-radius: 3px;
+    background: var(--wash-hover);
+    font-family: var(--font-mono);
+    font-size: 11px;
   }
 
   .theme {
