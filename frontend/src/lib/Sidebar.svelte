@@ -6,6 +6,7 @@
   import type { Ref } from './graph/rowCache'
   import RepoExtras from './RepoExtras.svelte'
   import { session } from './session.svelte'
+  import Icon from './ui/Icon.svelte'
 
   let {
     path,
@@ -68,20 +69,26 @@
 </script>
 
 <aside class="sidebar">
-  <input class="filter" type="search" placeholder="Filter branches and tags" bind:value={filter} />
+  <header>
+    <div class="repo-name">{session.activeTab?.name ?? ''}</div>
+    <label class="filter">
+      <Icon name="search" size={14} />
+      <input type="search" placeholder="Filter branches and tags" aria-label="Filter branches and tags" bind:value={filter} />
+    </label>
+  </header>
   <div class="groups">
     {#each groups as g (g.kind)}
       {@const items = byKind[g.kind]}
       <section>
         <button class="group" onclick={() => (open[g.kind] = !open[g.kind])} aria-expanded={open[g.kind] || !!filter}>
-          <span class="caret">{open[g.kind] || filter ? '▾' : '▸'}</span>
-          {g.title}
-          <span class="count">{items.length.toLocaleString()}</span>
+          <span class="caret" class:open={open[g.kind] || filter}><Icon name="right" size={12} /></span>
+          <span class="meta title">{g.title}</span>
+          <span class="meta count">{items.length.toLocaleString()}</span>
         </button>
         {#if g.kind === 'local' && onNewBranch}
-          <button class="add" onclick={onNewBranch} title="New branch from HEAD" aria-label="New branch">+</button>
+          <button class="add" onclick={onNewBranch} title="New branch from HEAD" aria-label="New branch"><Icon name="plus" size={14} /></button>
         {:else if g.kind === 'remote' && onManageRemotes}
-          <button class="add" onclick={onManageRemotes} title="Add, edit or remove remotes" aria-label="Manage remotes">⚙</button>
+          <button class="add" onclick={onManageRemotes} title="Add, edit or remove remotes" aria-label="Manage remotes"><Icon name="gear" size={14} /></button>
         {/if}
         {#if open[g.kind] || filter}
           <ul>
@@ -99,6 +106,7 @@
                   }}
                   title={r.subject ?? r.name}
                 >
+                  {#if r.head}<span class="here" aria-label="checked out"></span>{/if}
                   <span class="name">{r.kind === 'stash' ? r.subject : r.short}</span>
                   {#if r.gone}
                     <span class="track" title="Upstream branch was deleted">gone</span>
@@ -125,40 +133,76 @@
   .sidebar {
     display: flex;
     flex-direction: column;
-    width: 240px;
+    width: 248px;
     min-width: 180px;
     border-right: 1px solid var(--paper-edge);
     background: var(--paper-warm);
   }
 
+  header {
+    padding: 14px 12px 8px;
+  }
+
+  .repo-name {
+    padding: 0 4px 8px;
+    font-size: 19px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variation-settings:
+      'SOFT' 50,
+      'WONK' 1;
+  }
+
   .filter {
-    margin: 8px;
-    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
     background: var(--paper);
-    color: var(--ink);
     border: 1px solid var(--paper-edge);
+    border-radius: 4px;
+    color: var(--ink-mute);
+  }
+
+  .filter:focus-within {
+    outline: 2px solid var(--link);
+    outline-offset: 1px;
+  }
+
+  .filter input {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    padding: 0;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 13px;
   }
 
   .groups {
     flex: 1;
     overflow-y: auto;
+    padding-bottom: 12px;
   }
 
   button {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
     width: 100%;
     background: none;
     border: none;
-    color: inherit;
-    font: inherit;
+    border-radius: 0;
     text-align: left;
-    cursor: pointer;
-    padding: 3px 10px;
+    padding: 4px 12px;
   }
 
-  button:hover {
+  button:hover:not(:disabled) {
     background: var(--wash-hover);
   }
 
@@ -167,30 +211,48 @@
   }
 
   .group {
-    font-weight: 600;
-    padding: 6px 8px;
+    padding: 10px 12px 4px;
+  }
+
+  .title {
+    color: var(--ink-soft);
   }
 
   .add {
     position: absolute;
-    right: 44px;
-    top: 3px;
+    right: 46px;
+    top: 6px;
     width: auto;
-    padding: 2px 6px;
+    padding: 3px 5px;
+    border-radius: 4px;
     color: var(--ink-mute);
   }
 
+  .add:hover:not(:disabled) {
+    color: var(--ink);
+  }
+
   .caret {
-    width: 10px;
+    display: grid;
+    place-items: center;
+    width: 12px;
     color: var(--ink-mute);
+    transition: transform 0.2s var(--ease-ink);
+  }
+
+  .caret.open {
+    transform: rotate(90deg);
   }
 
   .count,
   .track {
     margin-left: auto;
-    color: var(--ink-mute);
-    font-weight: normal;
+  }
+
+  .track {
+    font-family: var(--font-mono);
     font-size: 11px;
+    color: var(--link);
   }
 
   ul {
@@ -200,11 +262,32 @@
   }
 
   .ref {
-    padding-left: 26px;
+    min-height: 28px;
+    padding-left: 32px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    transition:
+      background-color 0.2s,
+      transform 0.3s var(--ease-ink);
+  }
+
+  .ref:hover:not(:disabled) {
+    color: var(--ink);
+    transform: translateX(3px);
   }
 
   .ref.head {
+    color: var(--ink);
     font-weight: 600;
+  }
+
+  .here {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    margin-left: -15px;
+    border-radius: 50%;
+    background: var(--link);
   }
 
   .name {
@@ -214,8 +297,20 @@
   }
 
   .more {
-    padding: 3px 26px;
+    padding: 4px 32px;
     color: var(--ink-mute);
     font-size: 12px;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .caret,
+    .ref {
+      transition: none;
+    }
+
+    .ref:hover:not(:disabled) {
+      transform: none;
+    }
   }
 </style>

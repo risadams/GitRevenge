@@ -2,6 +2,7 @@
   import { RepoState, RunOperationAction } from '../../wailsjs/go/app/App.js'
   import type { app } from '../../wailsjs/go/models'
   import { session } from './session.svelte'
+  import Icon from './ui/Icon.svelte'
 
   let { path }: { path: string } = $props()
 
@@ -37,8 +38,9 @@
 
 {#if opState?.operation}
   <div class="op" role="status">
+    <Icon name="warning" />
     <strong>{labels[opState.operation] ?? opState.operation} in progress</strong>
-    {#if opState.total > 0}<span>step {opState.step} of {opState.total}</span>{/if}
+    {#if opState.total > 0}<span class="meta">Step {opState.step} of {opState.total}</span>{/if}
     {#if opState.conflicts.length > 0}
       <span class="conflicts" title={opState.conflicts.join('\n')}>
         {opState.conflicts.length} conflicted {opState.conflicts.length === 1 ? 'file' : 'files'}
@@ -46,7 +48,7 @@
     {/if}
     <span class="actions">
       {#each opState.actions as action (action)}
-        <button disabled={busy} onclick={() => act(action)}>
+        <button class="tool" class:primary={action === 'continue'} disabled={busy} onclick={() => act(action)}>
           {action === 'abort' && opState.operation === 'bisect' ? 'Stop bisect' : action[0].toUpperCase() + action.slice(1)}
         </button>
       {/each}
@@ -57,11 +59,20 @@
 <style>
   .op {
     display: flex;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 6px 12px;
     align-items: center;
-    padding: 6px 12px;
+    padding: 6px 8px 6px 14px;
     background: var(--warning-wash);
     border-bottom: 1px solid var(--paper-edge);
+  }
+
+  .op > :global(svg) {
+    color: var(--warning);
+  }
+
+  strong {
+    font-weight: 600;
   }
 
   .conflicts {
@@ -71,6 +82,15 @@
   .actions {
     margin-left: auto;
     display: flex;
-    gap: 6px;
+    gap: 4px;
+  }
+
+  .primary {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .primary:hover:not(:disabled) {
+    background: var(--accent);
   }
 </style>

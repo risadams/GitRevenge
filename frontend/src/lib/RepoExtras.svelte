@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from './ui/Icon.svelte'
   import { LFS, LFSAction, LFSLocks, Submodules, UpdateSubmodules } from '../../wailsjs/go/app/App.js'
   import type { app, git } from '../../wailsjs/go/models'
   import type { DialogSpec } from './Dialog.svelte'
@@ -78,9 +79,9 @@
   <section>
     <div class="head">
       <button class="group" onclick={() => (open.subs = !open.subs)}>
-        <span class="caret">{open.subs ? '▾' : '▸'}</span> Submodules <span class="count">{subs.length}</span>
+        <span class="caret" class:open={open.subs}><Icon name="right" size={12} /></span> <span class="meta title">Submodules</span> <span class="meta count">{subs.length}</span>
       </button>
-      <button class="tool" disabled={busy} onclick={() => run(() => UpdateSubmodules(path))} title="Initialize and update all submodules"
+      <button class="mini" disabled={busy} onclick={() => run(() => UpdateSubmodules(path))} title="Initialize and update all submodules"
         >Update</button
       >
     </div>
@@ -103,9 +104,9 @@
   <section>
     <div class="head">
       <button class="group" onclick={() => (open.lfs = !open.lfs)}>
-        <span class="caret">{open.lfs ? '▾' : '▸'}</span> LFS <span class="count">{lfs.status.files.length}</span>
+        <span class="caret" class:open={open.lfs}><Icon name="right" size={12} /></span> <span class="meta title">LFS</span> <span class="meta count">{lfs.status.files.length}</span>
       </button>
-      <button class="tool" onclick={track} title="Track a pattern with LFS">+</button>
+      <button class="mini" onclick={track} title="Track a pattern with LFS" aria-label="Track a pattern with LFS"><Icon name="plus" size={13} /></button>
     </div>
     {#if open.lfs}
       <ul>
@@ -124,9 +125,9 @@
       {#if lfs.status.files.length}
         <div class="head">
           <button class="group sub" onclick={() => (open.files = !open.files)}>
-            <span class="caret">{open.files ? '▾' : '▸'}</span> Files <span class="count">{lfs.status.files.length}</span>
+            <span class="caret" class:open={open.files}><Icon name="right" size={12} /></span> <span class="meta title">Files</span> <span class="meta count">{lfs.status.files.length}</span>
           </button>
-          <button class="tool" disabled={busy} onclick={checkLocks} title="Ask the LFS server which files are locked">Check locks</button>
+          <button class="mini" disabled={busy} onclick={checkLocks} title="Ask the LFS server which files are locked">Check locks</button>
         </div>
         {#if open.files}
           <ul>
@@ -136,12 +137,12 @@
                 <span class="name" title={f.name}>{f.name}</span>
                 {#if !f.downloaded}<span class="badge" title="Only the pointer is here; content not downloaded">pointer</span>{/if}
                 {#if lock}
-                  <span class="badge" class:mine={lock.ours} title="Locked {lock.lockedAt}">🔒 {lock.ours ? 'you' : lock.owner}</span>
-                  <button class="tool" disabled={busy} onclick={() => lockAction(f.name, 'unlock', !lock.ours)}
+                  <span class="badge" class:mine={lock.ours} title="Locked {lock.lockedAt}">locked · {lock.ours ? 'you' : lock.owner}</span>
+                  <button class="mini" disabled={busy} onclick={() => lockAction(f.name, 'unlock', !lock.ours)}
                     >{lock.ours ? 'Unlock' : 'Force unlock'}</button
                   >
                 {:else if locks}
-                  <button class="tool" disabled={busy} onclick={() => lockAction(f.name, 'lock')}>Lock</button>
+                  <button class="mini" disabled={busy} onclick={() => lockAction(f.name, 'lock')}>Lock</button>
                 {/if}
               </li>
             {/each}
@@ -154,7 +155,7 @@
 
 <style>
   section {
-    border-top: 1px solid var(--paper-edge);
+    border-top: 1px dashed var(--hairline);
   }
 
   .head {
@@ -173,31 +174,55 @@
 
   .group {
     flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     text-align: left;
-    font-weight: 600;
-    padding: 6px 8px;
+    padding: 10px 12px 4px;
+  }
+
+  .group:hover {
+    background: var(--wash-hover);
   }
 
   .group.sub {
-    font-weight: normal;
-    padding-left: 22px;
+    padding-left: 32px;
+  }
+
+  .title {
+    color: var(--ink-soft);
   }
 
   .caret {
+    display: grid;
+    place-items: center;
+    width: 12px;
     color: var(--ink-mute);
+    transition: transform 0.2s var(--ease-ink);
+  }
+
+  .caret.open {
+    transform: rotate(90deg);
   }
 
   .count {
-    color: var(--ink-mute);
-    font-weight: normal;
-    font-size: 11px;
+    margin-left: auto;
   }
 
-  .tool {
-    padding: 0 6px;
+  .mini {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    background: none;
     border: 1px solid var(--paper-edge);
-    font-size: 11px;
+    border-radius: 3px;
+    font-size: 12px;
     color: var(--ink-mute);
+  }
+
+  .mini:hover:not(:disabled) {
+    color: var(--ink);
+    background: var(--wash-hover);
   }
 
   ul {
@@ -233,9 +258,13 @@
   }
 
   .badge {
-    font-size: 10px;
-    padding: 0 4px;
-    border: 1px solid var(--paper-edge);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0 5px;
+    border-radius: 3px;
+    background: var(--wash-hover);
     color: var(--ink-mute);
     white-space: nowrap;
   }
