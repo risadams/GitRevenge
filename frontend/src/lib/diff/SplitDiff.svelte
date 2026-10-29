@@ -5,14 +5,16 @@
   import { syntaxHighlighting } from '@codemirror/language'
   import { classHighlighter } from '@lezer/highlight'
   import { languageFor } from './highlight'
+  import { wrap } from './wrap.svelte'
 
   let { path, oldText, newText }: { path: string; oldText: string; newText: string } = $props()
 
   let host: HTMLDivElement
 
-  // Rebuild the read-only merge view whenever the inputs change.
+  // Rebuild the read-only merge view whenever the inputs or word wrap change. MergeView pads
+  // the shorter side of each chunk, so wrapped rows stay level across the panes.
   $effect(() => {
-    const [p, a, b] = [path, oldText, newText]
+    const [p, a, b, wrapped] = [path, oldText, newText, wrap.on]
     let view: MergeView | undefined
     let cancelled = false
     void languageFor(p).then((lang) => {
@@ -23,6 +25,7 @@
         lineNumbers(),
         syntaxHighlighting(classHighlighter),
         EditorView.theme({}, { dark: true }),
+        ...(wrapped ? [EditorView.lineWrapping] : []),
         ...(lang ? [lang] : []),
       ]
       view = new MergeView({

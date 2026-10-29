@@ -3,6 +3,7 @@
   import { highlightLines, languageFor, type Token } from './highlight'
   import { applyChanges, diffLines, splitLines, toHunks, type Hunk } from './lineDiff'
   import Icon from '../ui/Icon.svelte'
+  import { wrap } from './wrap.svelte'
 
   /** What the hunk and line buttons do, and how the result is written. */
   export type Actions = {
@@ -117,7 +118,7 @@
           >
         {/if}
       </header>
-      <table>
+      <table class:wrap={wrap.on}>
         <tbody>
           {#each opIndexes(h) as i (i)}
             {@const op = ops[i]}
@@ -235,6 +236,12 @@
 
   .code {
     width: 100%;
+  }
+
+  /* Wrapped lines keep their numbers and sign on the first visual line (cells align top). */
+  .wrap .code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   tr.add,

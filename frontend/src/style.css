@@ -281,6 +281,12 @@ textarea {
   background: none;
 }
 
+/* A toggle that's on, such as word wrap. */
+.tool[aria-pressed='true'] {
+  background: var(--selected);
+  color: var(--link);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tool {
     transition: none;

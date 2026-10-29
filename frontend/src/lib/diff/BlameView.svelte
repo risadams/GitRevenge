@@ -3,9 +3,11 @@
   import { Blame } from '../../../wailsjs/go/app/App.js'
   import type { git } from '../../../wailsjs/go/models'
   import { formatTime, laneVar } from '../graph/draw'
+  import { formatShortcut, provideCommands } from '../commands.svelte'
   import { session } from '../session.svelte'
   import type { DiffTarget } from './DiffView.svelte'
   import { highlightLines, languageFor, type Token } from './highlight'
+  import { toggleWrap, wrap, wrapCommand } from './wrap.svelte'
 
   let {
     path,
@@ -48,6 +50,8 @@
     })
   })
 
+  provideCommands(() => [wrapCommand()])
+
   const uncommitted = (c: string) => /^0+$/.test(c)
 </script>
 
@@ -58,13 +62,16 @@
     <span class="view-file" title={file}>{file}</span>
     {#if rev}<span class="meta">at {rev.slice(0, 7)}</span>{/if}
     <span class="spacer"></span>
+    <button class="tool" aria-pressed={wrap.on} onclick={toggleWrap} title="Wrap long lines ({formatShortcut('Alt+Z')})"
+      ><Icon name="wrap" />Wrap</button
+    >
     <button class="tool" onclick={() => onOpen({ mode: 'history', file })}>History</button>
   </header>
   <div class="body code-ground">
     {#if !lines}
       <p class="muted">Loading…</p>
     {:else}
-      <table>
+      <table class:wrap={wrap.on}>
         <tbody>
           {#each lines as l, i (i)}
             {@const start = i === 0 || lines[i - 1].commit !== l.commit}
@@ -169,6 +176,17 @@
   .code {
     font-family: var(--font-mono);
     tab-size: 4;
+  }
+
+  /* Wrapped lines keep the gutter and line number on their first visual line. */
+  table.wrap {
+    width: 100%;
+  }
+
+  .wrap .code {
+    width: 100%;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .muted {
