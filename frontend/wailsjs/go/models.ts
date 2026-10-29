@@ -772,6 +772,24 @@ export namespace git {
 	        this.subject = source["subject"];
 	    }
 	}
+	export class ReflogEntry {
+	    selector: string;
+	    commit: string;
+	    action: string;
+	    time: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ReflogEntry(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.selector = source["selector"];
+	        this.commit = source["commit"];
+	        this.action = source["action"];
+	        this.time = source["time"];
+	    }
+	}
 	export class Remote {
 	    name: string;
 	    fetchUrl: string;

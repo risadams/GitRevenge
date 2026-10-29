@@ -93,6 +93,8 @@ export function RecentRepos():Promise<Array<app.RecentRepo>>;
 
 export function Redo(arg1:string):Promise<void>;
 
+export function Reflog(arg1:string,arg2:string):Promise<Array<git.ReflogEntry>>;
+
 export function Refs(arg1:string):Promise<Array<git.Ref>>;
 
 export function RemoteAction(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
