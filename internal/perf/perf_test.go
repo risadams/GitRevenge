@@ -30,6 +30,7 @@ const (
 	targetHeapBytes  = 500 << 20
 	windowReads      = 1000
 	targetWindowRead = 16 * time.Millisecond // one frame at 60fps
+	targetStatus     = 500 * time.Millisecond
 )
 
 func benchRepo(t *testing.T) *git.Repo {
@@ -114,6 +115,19 @@ func TestTargets(t *testing.T) {
 	}
 	refsTime := time.Since(start)
 
+	// Status, cold then warm: the second run has the index and file system caches.
+	start = time.Now()
+	if _, err := r.Status(ctx); err != nil {
+		t.Fatal(err)
+	}
+	statusCold := time.Since(start)
+	start = time.Now()
+	st, err := r.Status(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	statusWarm := time.Since(start)
+
 	t.Logf("repository:           %s", os.Getenv("GITREVENGE_BENCH_REPO"))
 	t.Logf("commits:              %d", n)
 	t.Logf("refs:                 %d (read in %v)", len(refs), refsTime.Round(time.Millisecond))
@@ -122,6 +136,7 @@ func TestTargets(t *testing.T) {
 	t.Logf("heap in use:          %d MB (target < %d MB)", ms.HeapInuse>>20, targetHeapBytes>>20)
 	t.Logf("100-row window:       avg %v, worst %v (target < %v)", avgWindow.Round(time.Microsecond), worst.Round(time.Microsecond), targetWindowRead)
 	t.Logf("search \"fix\":         %v (%d matches)", search.Round(time.Millisecond), res.Total)
+	t.Logf("status:               cold %v, warm %v (target < %v), %d changed files", statusCold.Round(time.Millisecond), statusWarm.Round(time.Millisecond), targetStatus, len(st.Files))
 
 	if firstPage > targetFirstPage {
 		t.Errorf("first page took %v, target %v", firstPage, targetFirstPage)
@@ -131,6 +146,9 @@ func TestTargets(t *testing.T) {
 	}
 	if worst > targetWindowRead {
 		t.Errorf("worst window read %v, target %v", worst, targetWindowRead)
+	}
+	if statusWarm > targetStatus {
+		t.Errorf("warm status took %v, target %v", statusWarm, targetStatus)
 	}
 }
 
