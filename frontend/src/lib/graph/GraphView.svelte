@@ -4,6 +4,7 @@
   import { session } from '../session.svelte'
   import { EventsOn } from '../../../wailsjs/runtime/runtime.js'
   import { theme as colorTheme } from '../theme.svelte'
+  import { provideCommands } from '../commands.svelte'
   import Icon from '../ui/Icon.svelte'
   import { drawRow, graphWidth, LANE_COUNT, layoutColumns, METRICS, setLaneColors, type Theme } from './draw'
   import { RowCache, type Page, type Ref, type Row } from './rowCache'
@@ -234,6 +235,20 @@
       searchInput.select()
     }
   }
+
+  provideCommands(() => [
+    {
+      id: 'graph.search',
+      group: 'View',
+      title: 'Search commits',
+      keywords: 'find message author sha history',
+      shortcut: 'Mod+F',
+      run: () => {
+        searchInput.focus()
+        searchInput.select()
+      },
+    },
+  ])
 
   let currentMatch = $derived(matches.indexOf(selected))
 

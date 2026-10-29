@@ -1,5 +1,6 @@
 <script lang="ts">
   import { CommitRow, WorkingTree } from '../../wailsjs/go/app/App.js'
+  import { provideCommands } from './commands.svelte'
   import ContextMenu, { type MenuItem } from './ContextMenu.svelte'
   import Dialog, { type DialogSpec } from './Dialog.svelte'
   import RebaseEditor from './RebaseEditor.svelte'
@@ -44,6 +45,21 @@
       rebaseBase = base
     },
   }
+
+  provideCommands(() => [
+    { id: 'branch.new', group: 'Branch', title: 'New branch…', keywords: 'create', run: () => (dialog = newBranchDialog(ctx)) },
+    { id: 'repo.remotes', group: 'Repository', title: 'Manage remotes…', keywords: 'origin url', run: () => (remotesOpen = true) },
+    {
+      id: 'view.changes',
+      group: 'View',
+      title: 'Show uncommitted changes',
+      keywords: 'working tree stage commit',
+      run: () => {
+        view = 'wip'
+        if (diff?.mode === 'commit') diff = null
+      },
+    },
+  ])
 
   function openMenu(items: MenuItem[], x: number, y: number) {
     menu = items.length ? { x, y, items } : null

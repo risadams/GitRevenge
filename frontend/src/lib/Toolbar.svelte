@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import { CancelNetwork, Fetch, Pull, PushCurrent, Redo, Undo, UndoState } from '../../wailsjs/go/app/App.js'
   import { EventsOn } from '../../wailsjs/runtime/runtime.js'
+  import { provideCommands, type Command } from './commands.svelte'
   import ContextMenu, { type MenuItem } from './ContextMenu.svelte'
   import { session } from './session.svelte'
   import Icon from './ui/Icon.svelte'
@@ -70,6 +71,21 @@
   const fetchAll = () => run('fetch', () => Fetch(path, ''))
   const pull = (mode: string) => run('pull', () => Pull(path, mode))
   const push = (force: boolean) => run('push', () => PushCurrent(path, force))
+
+  provideCommands(() => {
+    if (running) return []
+    const list: Command[] = [
+      { id: 'repo.fetch', group: 'Repository', title: 'Fetch all remotes', run: fetchAll },
+      { id: 'repo.pull', group: 'Repository', title: 'Pull', keywords: 'update download', run: () => pull('') },
+      { id: 'repo.pull-ff', group: 'Repository', title: 'Pull (fast-forward only)', run: () => pull('ff-only') },
+      { id: 'repo.pull-merge', group: 'Repository', title: 'Pull (merge)', run: () => pull('merge') },
+      { id: 'repo.pull-rebase', group: 'Repository', title: 'Pull (rebase)', run: () => pull('rebase') },
+      { id: 'repo.push', group: 'Repository', title: 'Push the current branch', keywords: 'upload publish', run: () => push(false) },
+    ]
+    if (undoLabel) list.push({ id: 'repo.undo', group: 'Repository', title: `Undo: ${undoLabel}`, shortcut: 'Mod+Z', run: undo })
+    if (redoLabel) list.push({ id: 'repo.redo', group: 'Repository', title: `Redo: ${redoLabel}`, shortcut: 'Mod+Shift+Z', run: redo })
+    return list
+  })
 
   function dropdown(e: MouseEvent, items: MenuItem[]) {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
