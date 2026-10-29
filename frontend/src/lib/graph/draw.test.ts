@@ -1,14 +1,24 @@
 import { describe, expect, it } from 'vitest'
-import { clip, graphWidth, LANE_COUNT, LANE_WIDTH, laneColor, laneVar, laneX, setLaneColors, sortRefs } from './draw'
+import { clip, graphWidth, initials, LANE_COUNT, laneColor, laneVar, laneX, layoutColumns, METRICS, relativeTime, setLaneColors, sortRefs } from './draw'
 
 describe('graph geometry', () => {
-  it('spaces lanes evenly', () => {
-    expect(laneX(1) - laneX(0)).toBe(LANE_WIDTH)
+  it('spaces lanes evenly in both densities', () => {
+    for (const m of Object.values(METRICS)) expect(laneX(1, m) - laneX(0, m)).toBe(m.laneW)
   })
 
   it('caps the graph column width', () => {
-    expect(graphWidth(3, 1000)).toBeLessThan(graphWidth(10, 1000))
-    expect(graphWidth(500, 300)).toBe(300)
+    const m = METRICS.comfortable
+    expect(graphWidth(3, 1000, m)).toBeLessThan(graphWidth(10, 1000, m))
+    expect(graphWidth(500, 300, m)).toBe(300)
+  })
+
+  it('gives the timeline taller rows and drops the compact columns', () => {
+    expect(METRICS.comfortable.rowH).toBeGreaterThan(METRICS.compact.rowH)
+    const comfy = layoutColumns(1200, 100, 'comfortable')
+    expect(comfy.authorW + comfy.dateW).toBe(0)
+    const compact = layoutColumns(1200, 100, 'compact')
+    expect(compact.authorW).toBeGreaterThan(0)
+    expect(compact.dateW).toBeGreaterThan(0)
   })
 
   it('cycles colors, including for negative indexes', () => {
@@ -45,5 +55,28 @@ describe('sortRefs', () => {
   it('puts the checked-out branch first, then local, remote, tag', () => {
     const out = sortRefs([ref('v1', 'tag'), ref('origin/main', 'remote'), ref('dev', 'local'), ref('main', 'local', true)])
     expect(out.map((r) => r.short)).toEqual(['main', 'dev', 'origin/main', 'v1'])
+  })
+})
+
+describe('relativeTime', () => {
+  const now = Date.UTC(2026, 9, 29, 12) / 1000
+
+  it('counts minutes, hours and days, then shows a date', () => {
+    expect(relativeTime(now - 30, now)).toBe('now')
+    expect(relativeTime(now - 14 * 60, now)).toBe('14m ago')
+    expect(relativeTime(now - 5 * 3600, now)).toBe('5h ago')
+    expect(relativeTime(now - 3 * 86400, now)).toBe('3d ago')
+    expect(relativeTime(now - 30 * 86400, now)).not.toMatch(/ago|20\d\d/)
+    expect(relativeTime(Date.UTC(2024, 0, 15) / 1000, now)).toMatch(/2024/)
+  })
+})
+
+describe('initials', () => {
+  it('takes the first and last word', () => {
+    expect(initials('Ris Adams')).toBe('RA')
+    expect(initials('Ana María de la Cruz')).toBe('AC')
+    expect(initials('dependabot[bot]')).toBe('D')
+    expect(initials('jane.doe')).toBe('JD')
+    expect(initials('')).toBe('?')
   })
 })

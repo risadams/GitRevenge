@@ -34,6 +34,9 @@ type Settings struct {
 	Groups []Group `json:"groups"`
 	// Theme is "light" or "dark", or empty to follow the operating system.
 	Theme string `json:"theme,omitempty"`
+	// GraphDensity is "compact" for single-line graph rows, or empty for the default
+	// two-line timeline.
+	GraphDensity string `json:"graphDensity,omitempty"`
 }
 
 // Group is a named collection of repository paths.

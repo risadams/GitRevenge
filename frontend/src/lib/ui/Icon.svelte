@@ -20,6 +20,8 @@
     folder: '<path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2.5h9A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/>',
     more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
     refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>',
+    rows: '<path d="M4 6h16M4 10h16M4 14h16M4 18h16"/>',
+    list: '<circle cx="6" cy="7" r="2.5"/><circle cx="6" cy="17" r="2.5"/><path d="M6 9.5v5M11 6h9M11 8.5h6M11 16h9M11 18.5h6"/>',
     warning: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/>',
   } as const
 

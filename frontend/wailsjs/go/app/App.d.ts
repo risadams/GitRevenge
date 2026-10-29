@@ -43,6 +43,8 @@ export function FileContents(arg1:string,arg2:string,arg3:string,arg4:string,arg
 
 export function FileHistory(arg1:string,arg2:string):Promise<Array<git.FileCommit>>;
 
+export function GraphDensity():Promise<string>;
+
 export function GraphRows(arg1:string,arg2:number,arg3:number):Promise<app.GraphPage>;
 
 export function GroupAction(arg1:string,arg2:Array<string>):Promise<void>;
@@ -102,6 +104,8 @@ export function RunOperationAction(arg1:string,arg2:string):Promise<void>;
 export function SearchGraph(arg1:string,arg2:string):Promise<graph.SearchResult>;
 
 export function SetActiveRepo(arg1:string):Promise<void>;
+
+export function SetGraphDensity(arg1:string):Promise<void>;
 
 export function SetStagedContent(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
