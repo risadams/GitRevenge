@@ -36,7 +36,7 @@ func Latest(ctx context.Context, client *http.Client, url, current string) (Rele
 	if err != nil {
 		return Release{}, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusOK {
 		return Release{}, fmt.Errorf("GitHub returned %s", res.Status)
 	}
