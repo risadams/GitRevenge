@@ -28,9 +28,9 @@ function integrateItems(ctx: MenuContext, target: string, label: string): MenuIt
   const cur = ctx.current()
   if (!cur) return []
   return [
-    { label: `Merge ${label} into ${cur}`, run: integrate(ctx.path, 'merge', target) },
-    { label: `Merge ${label} into ${cur} (no fast-forward)`, run: integrate(ctx.path, 'merge', target, 'no-ff') },
-    { label: `Rebase ${cur} onto ${label}`, run: integrate(ctx.path, 'rebase', target) },
+    { label: `Merge ${label} into ${cur}`, icon: 'merge', run: integrate(ctx.path, 'merge', target) },
+    { label: `Merge ${label} into ${cur} (no fast-forward)`, icon: 'merge', run: integrate(ctx.path, 'merge', target, 'no-ff') },
+    { label: `Rebase ${cur} onto ${label}`, icon: 'rebase', run: integrate(ctx.path, 'rebase', target) },
   ]
 }
 
@@ -61,13 +61,14 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
       return groups(
         [
           // The checked-out branch keeps these items, disabled, so the menu's shape doesn't shift.
-          { label: `Checkout ${ref.short}`, disabled: ref.head, run: () => session.run(() => branch(path, 'checkout', ref.short)) },
+          { label: `Checkout ${ref.short}`, icon: 'branch', disabled: ref.head, run: () => session.run(() => branch(path, 'checkout', ref.short)) },
           ...(ref.head ? [] : integrateItems(ctx, ref.short, ref.short)),
           ...(ref.head
             ? []
             : [
                 {
                   label: `Push ${ref.short} to ${remoteOf(ref).remote}`,
+                  icon: 'push' as const,
                   run: push(path, remoteOf(ref).remote, 'branch', ref.short),
                 },
               ]),
@@ -75,6 +76,7 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
         [
           {
             label: `Rename ${ref.short}…`,
+            icon: 'edit',
             run: () =>
               openDialog({
                 title: `Rename branch ${ref.short}`,
@@ -85,6 +87,7 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
           },
           {
             label: `Set upstream of ${ref.short}…`,
+            icon: 'remote',
             run: async () => {
               const refs = ((await session.run(() => Refs(path))) ?? []) as Ref[]
               const remotes = refs.filter((r) => r.kind === 'remote').map((r) => ({ value: r.short, label: r.short }))
@@ -109,6 +112,7 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
         [
           {
             label: `Delete ${ref.short}…`,
+            icon: 'trash',
             disabled: ref.head,
             run: () =>
               openDialog({
@@ -126,26 +130,26 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
       {
         const [remote, ...rest] = ref.short.split('/')
         return groups(
-          [{ label: `Checkout ${ref.short}`, run: () => session.run(() => branch(path, 'checkout', ref.short)) }, ...integrateItems(ctx, ref.short, ref.short)],
-          [{ label: `Delete ${ref.short} from ${remote}`, danger: true, run: push(path, remote, 'delete-branch', rest.join('/')) }],
+          [{ label: `Checkout ${ref.short}`, icon: 'branch', run: () => session.run(() => branch(path, 'checkout', ref.short)) }, ...integrateItems(ctx, ref.short, ref.short)],
+          [{ label: `Delete ${ref.short} from ${remote}`, icon: 'trash', danger: true, run: push(path, remote, 'delete-branch', rest.join('/')) }],
         )
       }
     case 'tag':
       return groups(
-        [...integrateItems(ctx, ref.name, ref.short), { label: `Push tag ${ref.short} to origin`, run: push(path, 'origin', 'tag', ref.short) }],
+        [...integrateItems(ctx, ref.name, ref.short), { label: `Push tag ${ref.short} to origin`, icon: 'push', run: push(path, 'origin', 'tag', ref.short) }],
         [
-          { label: `Delete tag ${ref.short}`, danger: true, run: () => session.run(() => branch(path, 'untag', ref.short)) },
-          { label: `Delete tag ${ref.short} from origin`, danger: true, run: push(path, 'origin', 'delete-tag', ref.short) },
+          { label: `Delete tag ${ref.short}`, icon: 'trash', danger: true, run: () => session.run(() => branch(path, 'untag', ref.short)) },
+          { label: `Delete tag ${ref.short} from origin`, icon: 'trash', danger: true, run: push(path, 'origin', 'delete-tag', ref.short) },
         ],
       )
     case 'stash': {
       const act = (action: string) => () => session.run(() => StashAction(path, ref.commit, action))
       return groups(
         [
-          { label: 'Apply stash', run: act('apply') },
-          { label: 'Pop stash', run: act('pop') },
+          { label: 'Apply stash', icon: 'stash', run: act('apply') },
+          { label: 'Pop stash', icon: 'pull', run: act('pop') },
         ],
-        [{ label: 'Drop stash', danger: true, run: act('drop') }],
+        [{ label: 'Drop stash', icon: 'trash', danger: true, run: act('drop') }],
       )
     }
   }
@@ -159,6 +163,7 @@ export function commitItems(row: Row, refs: Ref[], ctx: MenuContext): MenuItem[]
   return [
     {
       label: 'Create branch here…',
+      icon: 'branch',
       run: () =>
         openDialog({
           title: `New branch at ${short}`,
@@ -172,6 +177,7 @@ export function commitItems(row: Row, refs: Ref[], ctx: MenuContext): MenuItem[]
     },
     {
       label: 'Create tag here…',
+      icon: 'tag',
       run: () =>
         openDialog({
           title: `New tag at ${short}`,
@@ -185,17 +191,19 @@ export function commitItems(row: Row, refs: Ref[], ctx: MenuContext): MenuItem[]
     },
     {
       label: `Checkout ${short} (detached)`,
+      icon: 'commit',
       separator: true,
       run: () => session.run(() => branch(path, 'checkout', row.id)),
     },
     ...(ctx.current() && !refs.some((r) => r.head)
-      ? [{ label: `Cherry-pick ${short} onto ${ctx.current()}`, run: integrate(path, 'cherry-pick', row.id) }]
+      ? [{ label: `Cherry-pick ${short} onto ${ctx.current()}`, icon: 'cherry-pick' as const, run: integrate(path, 'cherry-pick', row.id) }]
       : []),
     ...(ctx.current() && !refs.some((r) => r.head)
-      ? [{ label: `Interactive rebase ${ctx.current()} from here…`, run: () => ctx.openRebase(row.id) }]
+      ? [{ label: `Interactive rebase ${ctx.current()} from here…`, icon: 'rebase' as const, run: () => ctx.openRebase(row.id) }]
       : []),
     {
       label: `Reset ${ctx.current() || 'HEAD'} to ${short}…`,
+      icon: 'reset',
       separator: true,
       run: () =>
         openDialog({
@@ -223,6 +231,7 @@ export function commitItems(row: Row, refs: Ref[], ctx: MenuContext): MenuItem[]
     row.parents > 1
       ? {
           label: `Revert merge ${short}…`,
+          icon: 'revert',
           run: () =>
             openDialog({
               title: `Revert merge ${short}`,
@@ -240,7 +249,7 @@ export function commitItems(row: Row, refs: Ref[], ctx: MenuContext): MenuItem[]
               run: (v) => attempt(() => Integrate(path, 'revert', [row.id, String(v.mainline)])),
             }),
         }
-      : { label: `Revert ${short}`, run: integrate(path, 'revert', row.id, '') },
+      : { label: `Revert ${short}`, icon: 'revert', run: integrate(path, 'revert', row.id, '') },
   ]
 }
 
@@ -261,7 +270,7 @@ export function dropItems(source: Row, sourceRefs: Ref[], target: Row, targetRef
     return [
       ...integrateItems(ctx, s.target, s.label),
       ...(named(sourceRefs).length === 0
-        ? [{ label: `Cherry-pick ${s.label} onto ${cur}`, run: integrate(ctx.path, 'cherry-pick', source.id) }]
+        ? [{ label: `Cherry-pick ${s.label} onto ${cur}`, icon: 'cherry-pick' as const, run: integrate(ctx.path, 'cherry-pick', source.id) }]
         : []),
     ]
   }
