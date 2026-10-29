@@ -62,6 +62,10 @@ export function CommitRow(arg1, arg2) {
   return window['go']['app']['App']['CommitRow'](arg1, arg2);
 }
 
+export function CommitSignatures(arg1, arg2) {
+  return window['go']['app']['App']['CommitSignatures'](arg1, arg2);
+}
+
 export function ConflictFile(arg1, arg2) {
   return window['go']['app']['App']['ConflictFile'](arg1, arg2);
 }

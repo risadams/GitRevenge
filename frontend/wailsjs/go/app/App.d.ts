@@ -35,6 +35,8 @@ export function CommitNotes(arg1:string,arg2:string):Promise<Array<git.Note>>;
 
 export function CommitRow(arg1:string,arg2:string):Promise<number>;
 
+export function CommitSignatures(arg1:string,arg2:Array<string>):Promise<Array<git.SignatureCheck>>;
+
 export function ConflictFile(arg1:string,arg2:string):Promise<git.ConflictFile>;
 
 export function DiscardFiles(arg1:string,arg2:Array<string>):Promise<void>;
