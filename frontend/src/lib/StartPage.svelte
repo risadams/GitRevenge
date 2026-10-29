@@ -178,7 +178,7 @@
         <section class="recent" aria-labelledby="recent-h">
           <h2 id="recent-h">Recent</h2>
           {#if session.recent.length === 0}
-            <p class="empty">Repositories you open show up here.</p>
+            <p class="empty"><Icon name="folder-open" size={28} wash="teal" />Repositories you open show up here.</p>
           {:else}
             <ul>
               {#each session.recent as r (r.path)}
@@ -203,7 +203,9 @@
             <button class="tool" onclick={newGroup}><Icon name="plus" />New group</button>
           </div>
           {#if groups.length === 0}
-            <p class="empty">Group related repositories to open them together, see their status side by side, and fetch or pull them in one go.</p>
+            <p class="empty">
+              <Icon name="worktree" size={28} wash="rose" />Group related repositories to open them together, see their status side by side, and fetch or pull them in one go.
+            </p>
           {/if}
           <div class="cards">
             {#each groups as g, i (g.name)}
@@ -371,9 +373,16 @@
   }
 
   .empty {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
     color: var(--ink-mute);
     font-style: italic;
     line-height: 1.6;
+  }
+
+  .empty :global(svg) {
+    color: var(--ink-soft);
   }
 
   ul {
