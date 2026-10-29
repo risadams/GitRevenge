@@ -170,6 +170,14 @@
     return i >= 0 && i < span ? i : -1
   }
 
+  /** Searches the graph for q and moves to the first match, e.g. a trailer from the
+   * commit panel. */
+  export async function search(q: string) {
+    query = q
+    await runSearch()
+    jump(1)
+  }
+
   /** Scrolls to and selects row i (e.g. when a branch is picked in the sidebar). */
   export function reveal(i: number) {
     if (i < 0) return
@@ -232,7 +240,18 @@
     schedule()
   }
 
+  // Typing searches once it pauses: a trailer search reads every commit message.
+  let searchTimer: ReturnType<typeof setTimeout> | undefined
+  let searchPending = false
+  function searchSoon() {
+    clearTimeout(searchTimer)
+    searchPending = true
+    searchTimer = setTimeout(() => void runSearch(), 300)
+  }
+
   async function runSearch() {
+    clearTimeout(searchTimer)
+    searchPending = false
     const seq = ++searchSeq
     const q = query
     if (!q.trim()) {
@@ -264,7 +283,10 @@
   function onSearchKey(e: KeyboardEvent) {
     if (e.key === 'Enter') {
       e.preventDefault()
-      jump(e.shiftKey ? -1 : 1)
+      const dir = e.shiftKey ? -1 : 1
+      // Enter right after typing waits for that search rather than using the last one.
+      if (searchPending) void runSearch().then(() => jump(dir))
+      else jump(dir)
     } else if (e.key === 'Escape') {
       query = ''
       void runSearch()
@@ -358,6 +380,7 @@
       scroller.removeEventListener('wheel', onWheel)
       document.fonts.removeEventListener('loadingdone', schedule)
       off()
+      clearTimeout(searchTimer)
       cancelAnimationFrame(frame)
     }
   })
@@ -389,10 +412,11 @@
       <input
         bind:this={searchInput}
         bind:value={query}
-        oninput={runSearch}
+        oninput={searchSoon}
         onkeydown={onSearchKey}
         type="search"
         placeholder="Search message, author or SHA"
+        title="Search subjects, authors and SHAs, or a trailer such as Co-authored-by: name or Closes: #12"
         aria-label="Search commits"
       />
       {#if query.trim()}

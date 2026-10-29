@@ -86,3 +86,46 @@ func TestSearchGraph(t *testing.T) {
 		t.Fatalf("res = %+v", res)
 	}
 }
+
+func TestSearchGraphByTrailer(t *testing.T) {
+	a := newTestApp(t)
+	fx := gittest.New(t)
+	fx.Linear(2)
+	paired := fx.CommitFile("a.txt", "a", "Pair work\n\nCo-authored-by: Ada <ada@example.com>")
+	fx.CommitFile("b.txt", "b", "fix: the crash\n\nCo-authored-by: Bo <bo@example.com>")
+	tab, err := a.OpenRepo(fx.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := a.SearchGraph(tab.Path, "co-authored-by: ada")
+	if err != nil {
+		t.Fatal(err)
+	}
+	row, _ := a.CommitRow(tab.Path, paired)
+	if res.Total != 1 || res.Rows[0] != row {
+		t.Fatalf("trailer search = %+v, want only row %d", res, row)
+	}
+	// A conventional-commit prefix is a text search, not a trailer key.
+	if res, _ := a.SearchGraph(tab.Path, "fix: the"); res.Total != 1 {
+		t.Fatalf("text search for %q = %+v", "fix: the", res)
+	}
+}
+
+func TestSearchesCancelThePreviousOne(t *testing.T) {
+	var s searches
+	first, doneFirst := s.start("/r")
+	second, doneSecond := s.start("/r")
+	if first.Err() == nil {
+		t.Fatal("starting a second search didn't cancel the first")
+	}
+	other, doneOther := s.start("/other")
+	doneFirst() // finishing the superseded search must not drop the newer one
+	if second.Err() != nil || other.Err() != nil {
+		t.Fatal("a search was cancelled by another repo's or an older one's end")
+	}
+	doneSecond()
+	doneOther()
+	if len(s.running) != 0 {
+		t.Fatalf("searches left running: %v", s.running)
+	}
+}

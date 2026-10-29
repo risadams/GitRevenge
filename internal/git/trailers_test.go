@@ -1,8 +1,11 @@
 package git
 
 import (
+	"context"
 	"reflect"
 	"testing"
+
+	"github.com/risadams/gitrevenge/internal/gittest"
 )
 
 func TestSplitTrailers(t *testing.T) {
@@ -71,5 +74,55 @@ func TestSplitTrailers(t *testing.T) {
 				t.Errorf("SplitTrailers(%q) = %q, %v; want %q, %v", c.body, rest, trailers, c.rest, c.trailers)
 			}
 		})
+	}
+}
+
+func TestParseTrailerQuery(t *testing.T) {
+	cases := []struct {
+		in   string
+		want TrailerQuery
+		ok   bool
+	}{
+		{"Co-authored-by: ada", TrailerQuery{"Co-authored-by", "ada"}, true},
+		{"signed-off-by:", TrailerQuery{"signed-off-by", ""}, true},
+		{"Closes: #12", TrailerQuery{"Closes", "#12"}, true},
+		{"link: patch.msgid", TrailerQuery{"link", "patch.msgid"}, true},
+		{"fix: crash on start", TrailerQuery{}, false},
+		{"feat: icons", TrailerQuery{}, false},
+		{"just text", TrailerQuery{}, false},
+	}
+	for _, c := range cases {
+		got, ok := ParseTrailerQuery(c.in)
+		if ok != c.ok || got != c.want {
+			t.Errorf("ParseTrailerQuery(%q) = %+v, %v; want %+v, %v", c.in, got, ok, c.want, c.ok)
+		}
+	}
+}
+
+func TestTrailerQueryMatchesIssueRefsWhole(t *testing.T) {
+	q := TrailerQuery{"closes", "#12"}
+	for value, want := range map[string]bool{"#12": true, "#11, #12": true, "#123": false, "#112": false} {
+		if got := q.Matches(Trailer{"Closes", value}); got != want {
+			t.Errorf("closes #12 vs %q = %v, want %v", value, got, want)
+		}
+	}
+}
+
+func TestCommitsWithTrailer(t *testing.T) {
+	fx := gittest.New(t)
+	fx.Linear(1)
+	ada := fx.CommitFile("a.txt", "a", "Pair work\n\nCo-authored-by: Ada Lovelace <ada@example.com>")
+	fx.CommitFile("b.txt", "b", "Mentions it in prose\n\nCo-authored-by: Ada was here, said the note.\nMore prose after.")
+	closes := fx.CommitFile("c.txt", "c", "Fix it\n\nCloses #12")
+	fx.CommitFile("d.txt", "d", "Other\n\nCloses #123")
+	repo := OpenRepo(newTestRunner(t), fx.Dir)
+
+	got, err := repo.CommitsWithTrailer(context.Background(), TrailerQuery{"co-authored-by", "ada"})
+	if err != nil || !reflect.DeepEqual(got, []string{ada}) {
+		t.Fatalf("co-authored-by ada = %v, %v; want only %s", got, err, ada)
+	}
+	got, err = repo.CommitsWithTrailer(context.Background(), TrailerQuery{"Closes", "#12"})
+	if err != nil || !reflect.DeepEqual(got, []string{closes}) {
+		t.Fatalf("closes #12 = %v, %v; want only %s", got, err, closes)
 	}
 }
