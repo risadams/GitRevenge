@@ -14,11 +14,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/risadams/gitrevenge/internal/git"
 	"github.com/risadams/gitrevenge/internal/graph"
+	"github.com/risadams/gitrevenge/internal/session"
+	"github.com/risadams/gitrevenge/internal/settings"
 )
 
 const (
@@ -128,6 +131,88 @@ func TestTargets(t *testing.T) {
 	}
 	if worst > targetWindowRead {
 		t.Errorf("worst window read %v, target %v", worst, targetWindowRead)
+	}
+}
+
+// TestReadAhead measures the app's own loader, which pauses DefaultReadAhead rows ahead of
+// the viewport (#163): time and heap at the first pause, the scrollbar estimate, and how
+// long jumping to the oldest commit takes when it isn't loaded yet.
+func TestReadAhead(t *testing.T) {
+	r := benchRepo(t)
+	dir := os.Getenv("GITREVENGE_BENCH_REPO")
+	ctx := context.Background()
+	bin, _ := exec.LookPath("git")
+	store, err := settings.Open(filepath.Join(t.TempDir(), "settings.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := session.NewManager(git.NewRunner(bin), store)
+	defer m.CloseAll()
+
+	type event struct {
+		p  session.GraphProgress
+		at time.Duration
+	}
+	events := make(chan event, 1024)
+	start := time.Now()
+	m.OnGraph(func(_ string, p session.GraphProgress) {
+		select {
+		case events <- event{p, time.Since(start)}:
+		default:
+		}
+	})
+	repo, err := m.Open(ctx, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var firstPause, estimateAt time.Duration
+	estimate := 0
+	deadline := time.After(5 * time.Minute)
+	for firstPause == 0 || estimate == 0 {
+		select {
+		case e := <-events:
+			if e.p.Estimate > 0 && estimate == 0 {
+				estimate, estimateAt = e.p.Estimate, e.at
+			}
+			if e.p.Paused && firstPause == 0 {
+				firstPause = e.at
+			}
+			if e.p.Done {
+				t.Skipf("history has only %d commits, under the read-ahead of %d", e.p.Rows, session.DefaultReadAhead)
+			}
+		case <-deadline:
+			t.Fatal("the loader never paused")
+		}
+	}
+	g, _ := repo.Graph()
+	loaded := g.Len()
+	runtime.GC()
+	var ms runtime.MemStats
+	runtime.ReadMemStats(&ms)
+
+	roots, err := r.ReadString(ctx, "rev-list", "--max-parents=0", "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The last root in rev-list's order is the oldest one.
+	fields := strings.Fields(roots)
+	oldest := fields[len(fields)-1]
+	start = time.Now()
+	row, ok, err := repo.FindRow(ctx, oldest)
+	if err != nil || !ok {
+		t.Fatalf("FindRow(oldest root) = %d, %v, %v", row, ok, err)
+	}
+	find := time.Since(start)
+
+	t.Logf("read-ahead:           %d rows", session.DefaultReadAhead)
+	t.Logf("first pause:          %v, %d rows loaded", firstPause.Round(time.Millisecond), loaded)
+	t.Logf("heap at first pause:  %d MB", ms.HeapInuse>>20)
+	t.Logf("estimate:             %d commits (known after %v)", estimate, estimateAt.Round(time.Millisecond))
+	t.Logf("jump to oldest root:  %v (row %d)", find.Round(time.Millisecond), row)
+
+	if ms.HeapInuse > targetHeapBytes {
+		t.Errorf("heap at first pause %d MB, target %d MB", ms.HeapInuse>>20, targetHeapBytes>>20)
 	}
 }
 

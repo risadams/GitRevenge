@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -258,5 +260,95 @@ func TestGraphShowsStashesOnTheirBase(t *testing.T) {
 	}
 	if row, ok := g.RowOf(base); !ok || row != 1 {
 		t.Fatalf("base commit row = %d, %v", row, ok)
+	}
+}
+
+// progressLog records graph progress events for a test.
+type progressLog struct {
+	mu     sync.Mutex
+	events []GraphProgress
+}
+
+func (p *progressLog) add(_ string, e GraphProgress) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.events = append(p.events, e)
+}
+
+// waitFor waits until an event matching ok arrives and returns it.
+func (p *progressLog) waitFor(t *testing.T, what string, ok func(GraphProgress) bool) GraphProgress {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		p.mu.Lock()
+		for _, e := range p.events {
+			if ok(e) {
+				p.mu.Unlock()
+				return e
+			}
+		}
+		p.mu.Unlock()
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("no progress event: %s", what)
+	return GraphProgress{}
+}
+
+func TestGraphPausesAheadOfDemand(t *testing.T) {
+	m, _ := newManager(t)
+	m.readAhead = 5
+	var log progressLog
+	m.OnGraph(log.add)
+	fx := gittest.New(t)
+	shas := fx.Linear(30)
+	r, err := m.Open(context.Background(), fx.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	log.waitFor(t, "paused at the read-ahead limit", func(p GraphProgress) bool { return p.Paused && p.Rows == 5 })
+	if g, loading := r.Graph(); g.Len() != 5 || !loading {
+		t.Fatalf("graph has %d rows, loading %v; want 5 and still loading", g.Len(), loading)
+	}
+	log.waitFor(t, "an estimate of the whole history", func(p GraphProgress) bool { return p.Estimate == 30 })
+
+	// Scrolling further reads on to the new limit and pauses again.
+	r.DemandRows(10)
+	log.waitFor(t, "paused at the new limit", func(p GraphProgress) bool { return p.Paused && p.Rows == 15 })
+
+	// Finding a commit that isn't loaded yet reads on until it appears.
+	row, ok, err := r.FindRow(context.Background(), shas[0])
+	if err != nil || !ok || row != 29 {
+		t.Fatalf("FindRow(oldest) = %d, %v, %v; want 29", row, ok, err)
+	}
+	if _, ok, _ := r.FindRow(context.Background(), strings.Repeat("0", 40)); ok {
+		t.Fatal("found a commit that isn't in the history")
+	}
+	log.waitFor(t, "done", func(p GraphProgress) bool { return p.Done && p.Rows == 30 && p.Estimate == 30 })
+}
+
+func TestGraphReloadWhilePausedSwapsAtTheLimit(t *testing.T) {
+	m, _ := newManager(t)
+	m.readAhead = 5
+	var log progressLog
+	m.OnGraph(log.add)
+	fx := gittest.New(t)
+	fx.Linear(20)
+	r, err := m.Open(context.Background(), fx.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	log.waitFor(t, "first pause", func(p GraphProgress) bool { return p.Paused })
+
+	head := fx.CommitFile("new.txt", "x", "newest")
+	log.waitFor(t, "reloaded graph swapped in", func(p GraphProgress) bool { return p.Reset && p.Paused })
+	g, _ := r.Graph()
+	if row, ok := g.RowOf(head); !ok || row != 0 {
+		t.Fatalf("new commit at row %d (found %v), want 0", row, ok)
+	}
+
+	g, err = r.FullGraph(context.Background())
+	if err != nil || g.Len() != 21 {
+		t.Fatalf("full graph = %v rows, %v; want 21", g.Len(), err)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -66,6 +67,10 @@ func (a *App) sessions() (*session.Manager, error) {
 			return
 		}
 		a.sess = session.NewManager(git.NewRunner(env.GitPath), store)
+		// GITREVENGE_READ_AHEAD tunes how far the graph reads ahead of the viewport.
+		if n, err := strconv.Atoi(os.Getenv("GITREVENGE_READ_AHEAD")); err == nil {
+			a.sess.SetReadAhead(n)
+		}
 		a.sess.OnGraph(a.emitGraphProgress)
 		a.sess.OnChange(func(path string, k watch.Kind) {
 			a.emit("repo:changed", RepoChange{Path: path, Kinds: k.Names()})
