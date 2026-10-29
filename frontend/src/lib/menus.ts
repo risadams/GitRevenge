@@ -1,4 +1,4 @@
-import { BranchAction, Refs, StashAction } from '../../wailsjs/go/app/App.js'
+import { BranchAction, PushRef, Refs, StashAction } from '../../wailsjs/go/app/App.js'
 import type { MenuItem } from './ContextMenu.svelte'
 import type { DialogSpec } from './Dialog.svelte'
 import type { Ref, Row } from './graph/rowCache'
@@ -22,6 +22,14 @@ async function attempt(fn: () => Promise<unknown>): Promise<string | void> {
 
 const branch = (path: string, action: string, ...args: string[]) => BranchAction(path, action, args)
 
+/** The remote a local branch pushes to: its upstream's remote, else "origin". */
+function remoteOf(ref: Ref): { remote: string; branch: string } {
+  const [remote, ...rest] = ref.upstream.split('/')
+  return ref.upstream ? { remote, branch: rest.join('/') } : { remote: 'origin', branch: ref.short }
+}
+
+const push = (path: string, remote: string, kind: string, name: string) => () => session.run(() => PushRef(path, remote, kind, name))
+
 /** Menu items for one ref (branch, remote branch, tag or stash). */
 export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
   const { path, openDialog } = ctx
@@ -29,6 +37,14 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
     case 'local':
       return [
         ...(ref.head ? [] : [{ label: `Checkout ${ref.short}`, run: () => session.run(() => branch(path, 'checkout', ref.short)) }]),
+        ...(ref.head
+          ? []
+          : [
+              {
+                label: `Push ${ref.short} to ${remoteOf(ref).remote}`,
+                run: push(path, remoteOf(ref).remote, 'branch', ref.short),
+              },
+            ]),
         {
           label: `Rename ${ref.short}…`,
           run: () =>
@@ -79,14 +95,22 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
             ]),
       ]
     case 'remote':
-      return [{ label: `Checkout ${ref.short}`, run: () => session.run(() => branch(path, 'checkout', ref.short)) }]
+      {
+        const [remote, ...rest] = ref.short.split('/')
+        return [
+          { label: `Checkout ${ref.short}`, run: () => session.run(() => branch(path, 'checkout', ref.short)) },
+          { label: `Delete ${ref.short} from ${remote}`, danger: true, run: push(path, remote, 'delete-branch', rest.join('/')) },
+        ]
+      }
     case 'tag':
       return [
+        { label: `Push tag ${ref.short} to origin`, run: push(path, 'origin', 'tag', ref.short) },
         {
           label: `Delete tag ${ref.short}`,
           danger: true,
           run: () => session.run(() => branch(path, 'untag', ref.short)),
         },
+        { label: `Delete tag ${ref.short} from origin`, danger: true, run: push(path, 'origin', 'delete-tag', ref.short) },
       ]
     case 'stash': {
       const act = (action: string) => () => session.run(() => StashAction(path, ref.commit, action))

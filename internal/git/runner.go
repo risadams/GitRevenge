@@ -64,6 +64,9 @@ type Cmd struct {
 	// ReadOnly sets GIT_OPTIONAL_LOCKS=0 so reads such as status never take the index
 	// lock and race with the user's own git commands.
 	ReadOnly bool
+	// Progress, if set, receives stderr line by line as git writes it. git redraws progress
+	// meters with carriage returns, so a carriage return ends a line too.
+	Progress func(line string)
 }
 
 // Run executes c and returns its stdout.
@@ -131,6 +134,9 @@ func (r *Runner) run(ctx context.Context, c Cmd, stdout io.Writer) error {
 	cmd.Stdout = stdout
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
+	if c.Progress != nil {
+		cmd.Stderr = &progressWriter{buf: &stderr, fn: c.Progress}
+	}
 
 	err := cmd.Run()
 	if err == nil {
@@ -164,3 +170,35 @@ func (e *Error) Error() string {
 }
 
 func (e *Error) Unwrap() error { return e.Err }
+
+// maxStderr bounds the stderr kept for error messages from long-running commands.
+const maxStderr = 64 << 10
+
+// progressWriter splits stderr into lines (on \n or \r) for a callback, keeping the last
+// maxStderr bytes for error reporting.
+type progressWriter struct {
+	buf     *bytes.Buffer
+	fn      func(string)
+	partial []byte
+}
+
+func (w *progressWriter) Write(p []byte) (int, error) {
+	if w.buf.Len()+len(p) > maxStderr {
+		keep := w.buf.Bytes()[max(0, w.buf.Len()+len(p)-maxStderr):]
+		rest := append([]byte(nil), keep...)
+		w.buf.Reset()
+		w.buf.Write(rest)
+	}
+	w.buf.Write(p)
+	for _, b := range p {
+		if b == '\n' || b == '\r' {
+			if len(w.partial) > 0 {
+				w.fn(string(w.partial))
+				w.partial = w.partial[:0]
+			}
+			continue
+		}
+		w.partial = append(w.partial, b)
+	}
+	return len(p), nil
+}

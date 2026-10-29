@@ -432,6 +432,22 @@ export namespace git {
 	        this.subject = source["subject"];
 	    }
 	}
+	export class Remote {
+	    name: string;
+	    fetchUrl: string;
+	    pushUrl: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Remote(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.fetchUrl = source["fetchUrl"];
+	        this.pushUrl = source["pushUrl"];
+	    }
+	}
 	
 	
 	export class Signing {
