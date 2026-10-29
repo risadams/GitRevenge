@@ -127,7 +127,10 @@
   }
 
   .hand {
+    align-self: flex-start;
+    margin-bottom: 4px;
     font-size: 20px;
+    line-height: 1.2;
   }
 
   h2 {

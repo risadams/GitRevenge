@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { CancelNetwork, Fetch, Pull, PushCurrent, Redo, Undo, UndoState } from '../../wailsjs/go/app/App.js'
   import { EventsOn } from '../../wailsjs/runtime/runtime.js'
-  import { provideCommands, type Command } from './commands.svelte'
+  import { formatShortcut, isMac, provideCommands, type Command } from './commands.svelte'
   import ContextMenu, { type MenuItem } from './ContextMenu.svelte'
   import { session } from './session.svelte'
   import Icon from './ui/Icon.svelte'
@@ -44,21 +44,6 @@
     await refreshUndo()
   }
 
-  function onKey(e: KeyboardEvent) {
-    // Leave text editing shortcuts to the field being typed in.
-    const t = e.target as HTMLElement
-    if (t.closest('input, textarea, select, [contenteditable]')) return
-    if (!(e.ctrlKey || e.metaKey)) return
-    const k = e.key.toLowerCase()
-    if (k === 'z' && !e.shiftKey) {
-      e.preventDefault()
-      void undo()
-    } else if ((k === 'z' && e.shiftKey) || k === 'y') {
-      e.preventDefault()
-      void redo()
-    }
-  }
-
   async function run(op: string, fn: () => Promise<void>) {
     running = op
     progress = ''
@@ -75,15 +60,27 @@
   provideCommands(() => {
     if (running) return []
     const list: Command[] = [
-      { id: 'repo.fetch', group: 'Repository', title: 'Fetch all remotes', run: fetchAll },
-      { id: 'repo.pull', group: 'Repository', title: 'Pull', keywords: 'update download', run: () => pull('') },
+      { id: 'repo.fetch', group: 'Repository', title: 'Fetch all remotes', shortcut: 'Mod+Shift+F', run: fetchAll },
+      { id: 'repo.pull', group: 'Repository', title: 'Pull', keywords: 'update download', shortcut: 'Mod+Shift+L', run: () => pull('') },
       { id: 'repo.pull-ff', group: 'Repository', title: 'Pull (fast-forward only)', run: () => pull('ff-only') },
       { id: 'repo.pull-merge', group: 'Repository', title: 'Pull (merge)', run: () => pull('merge') },
       { id: 'repo.pull-rebase', group: 'Repository', title: 'Pull (rebase)', run: () => pull('rebase') },
-      { id: 'repo.push', group: 'Repository', title: 'Push the current branch', keywords: 'upload publish', run: () => push(false) },
+      { id: 'repo.push', group: 'Repository', title: 'Push the current branch', keywords: 'upload publish', shortcut: 'Mod+Shift+U', run: () => push(false) },
     ]
-    if (undoLabel) list.push({ id: 'repo.undo', group: 'Repository', title: `Undo: ${undoLabel}`, shortcut: 'Mod+Z', run: undo })
-    if (redoLabel) list.push({ id: 'repo.redo', group: 'Repository', title: `Redo: ${redoLabel}`, shortcut: 'Mod+Shift+Z', run: redo })
+    // Always bound (and listed on the cheat sheet); the palette shows them only when there's
+    // something to undo or redo, and running them otherwise does nothing.
+    list.push(
+      { id: 'repo.undo', group: 'Repository', title: undoLabel ? `Undo: ${undoLabel}` : 'Undo', shortcut: 'Mod+Z', hidden: !undoLabel, run: undo },
+      {
+        id: 'repo.redo',
+        group: 'Repository',
+        title: redoLabel ? `Redo: ${redoLabel}` : 'Redo',
+        shortcut: 'Mod+Shift+Z',
+        aliases: isMac ? [] : ['Mod+Y'],
+        hidden: !redoLabel,
+        run: redo,
+      },
+    )
     return list
   })
 
@@ -100,19 +97,17 @@
   )
 </script>
 
-<svelte:window onkeydown={onKey} />
-
 <div class="toolbar" role="toolbar" aria-label="Repository actions">
-  <button class="tool" disabled={!undoLabel || !!running} onclick={undo} title={undoLabel ? `Undo: ${undoLabel} (Ctrl+Z)` : 'Nothing to undo'}>
+  <button class="tool" disabled={!undoLabel || !!running} onclick={undo} title={undoLabel ? `Undo: ${undoLabel} (${formatShortcut('Mod+Z')})` : 'Nothing to undo'}>
     <Icon name="undo" />Undo
   </button>
-  <button class="tool" disabled={!redoLabel || !!running} onclick={redo} title={redoLabel ? `Redo: ${redoLabel} (Ctrl+Shift+Z)` : 'Nothing to redo'}>
+  <button class="tool" disabled={!redoLabel || !!running} onclick={redo} title={redoLabel ? `Redo: ${redoLabel} (${formatShortcut('Mod+Shift+Z')})` : 'Nothing to redo'}>
     <Icon name="redo" />Redo
   </button>
   <span class="sep" aria-hidden="true"></span>
-  <button class="tool" disabled={!!running} onclick={fetchAll} title="Fetch all remotes"><Icon name="fetch" />Fetch</button>
+  <button class="tool" disabled={!!running} onclick={fetchAll} title="Fetch all remotes ({formatShortcut('Mod+Shift+F')})"><Icon name="fetch" />Fetch</button>
   <span class="split">
-    <button class="tool" disabled={!!running} onclick={() => pull('')} title="Pull using your git config (pull.rebase)"><Icon name="pull" />Pull</button>
+    <button class="tool" disabled={!!running} onclick={() => pull('')} title="Pull using your git config (pull.rebase) ({formatShortcut('Mod+Shift+L')})"><Icon name="pull" />Pull</button>
     <button
       class="tool caret"
       disabled={!!running}
@@ -126,7 +121,7 @@
     >
   </span>
   <span class="split">
-    <button class="tool" disabled={!!running} onclick={() => push(false)} title="Push the current branch"><Icon name="push" />Push</button>
+    <button class="tool" disabled={!!running} onclick={() => push(false)} title="Push the current branch ({formatShortcut('Mod+Shift+U')})"><Icon name="push" />Push</button>
     <button
       class="tool caret"
       disabled={!!running}

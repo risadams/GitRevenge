@@ -47,7 +47,9 @@
   }
 
   provideCommands(() => [
-    { id: 'branch.new', group: 'Branch', title: 'New branch…', keywords: 'create', run: () => (dialog = newBranchDialog(ctx)) },
+    { id: 'branch.new', group: 'Branch', title: 'New branch…', keywords: 'create', shortcut: 'Mod+B', run: () => (dialog = newBranchDialog(ctx)) },
+    // The rebase editor is left out: Escape shouldn't throw away a plan being edited.
+    ...(diff ? [{ id: 'view.close', group: 'View', title: 'Back to the graph', keywords: 'close diff', shortcut: 'Escape', run: () => (diff = null) }] : []),
     { id: 'repo.remotes', group: 'Repository', title: 'Manage remotes…', keywords: 'origin url', run: () => (remotesOpen = true) },
     {
       id: 'view.changes',

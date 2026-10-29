@@ -228,14 +228,6 @@
     }
   }
 
-  function onWindowKey(e: KeyboardEvent) {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
-      e.preventDefault()
-      searchInput.focus()
-      searchInput.select()
-    }
-  }
-
   provideCommands(() => [
     {
       id: 'graph.search',
@@ -243,6 +235,7 @@
       title: 'Search commits',
       keywords: 'find message author sha history',
       shortcut: 'Mod+F',
+      whenTyping: true,
       run: () => {
         searchInput.focus()
         searchInput.select()
@@ -314,8 +307,6 @@
     }
   })
 </script>
-
-<svelte:window onkeydown={onWindowKey} />
 
 <div class="graph">
   <div class="status">

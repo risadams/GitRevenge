@@ -3,12 +3,15 @@
     label: string
     /** Destructive items ask for a second click before running. */
     danger?: boolean
+    /** Shown beside the label, in Mod+Shift+K form. */
+    shortcut?: string
     run: () => void | Promise<void>
   }
 </script>
 
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { formatShortcut } from './commands.svelte'
 
   let { x, y, items, onClose }: { x: number; y: number; items: MenuItem[]; onClose: () => void } = $props()
 
@@ -69,7 +72,8 @@
 <div class="menu" bind:this={menu} role="menu" tabindex="-1" style:left="{left}px" style:top="{top}px" onkeydown={onKey}>
   {#each items as item, i (item.label)}
     <button role="menuitem" class:danger={item.danger} class:armed={armed === i} onclick={() => pick(i)} onmouseenter={(e) => e.currentTarget.focus()}>
-      {armed === i ? `Click again to ${item.label.toLowerCase()}` : item.label}
+      <span class="label">{armed === i ? `Click again to ${item.label.toLowerCase()}` : item.label}</span>
+      {#if item.shortcut && armed !== i}<kbd>{formatShortcut(item.shortcut)}</kbd>{/if}
     </button>
   {/each}
 </div>
@@ -90,7 +94,9 @@
   }
 
   button {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 16px;
     width: 100%;
     padding: 6px 12px;
     background: none;
@@ -116,6 +122,20 @@
   button:focus-visible {
     outline: 2px solid var(--link);
     outline-offset: -2px;
+  }
+
+  .label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  kbd {
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-mute);
   }
 
   .danger {
