@@ -223,14 +223,18 @@ func friendly(err error) error {
 }
 
 // gitMessage turns git's stderr into a message for a dialog: "error: " / "fatal: " /
-// "hint: " prefixes are dropped, since the UI already presents it as an error.
+// "hint: " prefixes are dropped, since the UI already presents it as an error, and so is
+// clone's "Cloning into ..." status line.
 func gitMessage(stderr string) userError {
-	lines := strings.Split(strings.TrimSpace(stderr), "\n")
-	for i, l := range lines {
+	var lines []string
+	for l := range strings.SplitSeq(strings.TrimSpace(stderr), "\n") {
+		if strings.HasPrefix(l, "Cloning into ") {
+			continue
+		}
 		for _, p := range []string{"error: ", "fatal: ", "hint: "} {
 			l = strings.TrimPrefix(l, p)
 		}
-		lines[i] = l
+		lines = append(lines, l)
 	}
 	return userError(strings.Join(lines, "\n"))
 }
