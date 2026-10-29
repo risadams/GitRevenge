@@ -5,6 +5,8 @@
   import { marked, type Token, type Tokens } from 'marked'
   import { BrowserOpenURL } from '../../wailsjs/runtime/runtime.js'
   import MarkdownImage from './MarkdownImage.svelte'
+  import MathView from './markdown/MathView.svelte'
+  import { mathMarked, type MathToken } from './markdown/math'
   import { valueParts } from './trailers'
 
   let {
@@ -13,6 +15,7 @@
     document = false,
     onLink,
     resolveImage,
+    math = false,
   }: {
     text: string
     issueURL?: string
@@ -22,9 +25,11 @@
     onLink?: (href: string) => void
     /** Loads a relative image as a data URL; without it, images show as links. */
     resolveImage?: (src: string) => Promise<string>
+    /** Reads $…$ and $$…$$ as math; off for commit messages, where "$5" is money. */
+    math?: boolean
   } = $props()
 
-  let tokens = $derived(marked.lexer(text, { gfm: true }))
+  let tokens = $derived(math ? mathMarked.lexer(text) : marked.lexer(text, { gfm: true }))
 
   const WEB_LINK = /^(https?:|mailto:)/i
   /** A relative path: no scheme, not protocol-relative, not just a fragment. */
@@ -62,7 +67,9 @@
           resolve={resolveImage}
         />{:else}<a href={(t as Tokens.Image).href} title="Image (not loaded)" onclick={(e) => open(e, (t as Tokens.Image).href)}
           >{(t as Tokens.Image).text || (t as Tokens.Image).href}</a
-        >{/if}{:else if t.type === 'checkbox'}<input type="checkbox" checked={(t as Tokens.Checkbox).checked} disabled />{:else}{t.raw}{/if}{/each}{/snippet}
+        >{/if}{:else if t.type === 'checkbox'}<input type="checkbox" checked={(t as Tokens.Checkbox).checked} disabled />{:else if t.type === 'math'}<MathView
+          tex={(t as unknown as MathToken).text}
+        />{:else}{t.raw}{/if}{/each}{/snippet}
 
 {#snippet blocks(list: Token[])}
   {#each list as t, i (i)}
@@ -101,6 +108,8 @@
       </div>
     {:else if t.type === 'hr'}
       <hr />
+    {:else if t.type === 'math'}
+      <MathView tex={(t as unknown as MathToken).text} display />
     {:else if t.type === 'text' || t.type === 'checkbox'}
       {@render inline([t])}
     {:else if t.type === 'html'}
