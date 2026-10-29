@@ -7,7 +7,9 @@
   import Toolbar from './Toolbar.svelte'
   import { checkoutRef, commitItems, dropItems, newBranchDialog, refItems, type MenuContext } from './menus'
   import CommitPanel from './CommitPanel.svelte'
+  import BlameView from './diff/BlameView.svelte'
   import ConflictView from './diff/ConflictView.svelte'
+  import FileHistoryView from './diff/FileHistoryView.svelte'
   import DiffView, { type DiffTarget } from './diff/DiffView.svelte'
   import GraphView from './graph/GraphView.svelte'
   import type { Ref, Row } from './graph/rowCache'
@@ -74,6 +76,18 @@
     if (!auto) view = 'commit'
   }
 
+  /** Shows a commit in the graph (from blame), closing the file view. */
+  async function revealCommit(commit: string) {
+    const row = await session.run(() => CommitRow(path, commit))
+    if (row === undefined) return
+    if (row < 0) {
+      session.error = 'That commit isn’t in the graph (it may not be on any branch).'
+      return
+    }
+    diff = null
+    graph.reveal(row)
+  }
+
   async function pick(ref: Ref) {
     const row = await session.run(() => CommitRow(path, ref.commit))
     if (row === undefined) return
@@ -135,8 +149,23 @@
           {#key diff.file}
             <ConflictView {path} file={diff.file} onClose={() => (diff = null)} />
           {/key}
+        {:else if diff.mode === 'history'}
+          {#key diff.file}
+            <FileHistoryView {path} file={diff.file} onClose={() => (diff = null)} onOpen={(t) => (diff = t)} />
+          {/key}
+        {:else if diff.mode === 'blame'}
+          {#key diff.file + (diff.commit ?? '')}
+            <BlameView
+              {path}
+              file={diff.file}
+              rev={diff.commit ?? ''}
+              onClose={() => (diff = null)}
+              onOpen={(t) => (diff = t)}
+              onReveal={revealCommit}
+            />
+          {/key}
         {:else}
-          <DiffView {path} target={diff} onClose={() => (diff = null)} />
+          <DiffView {path} target={diff} onClose={() => (diff = null)} onOpen={(t) => (diff = t)} />
         {/if}
       </div>
     {/if}

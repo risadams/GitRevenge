@@ -2,7 +2,7 @@
   /** What to compare. Opened from the commit panel or the working tree panel. */
   export interface DiffTarget {
     /** 'conflict' opens the conflict tool instead of a diff. */
-    mode: 'commit' | 'staged' | 'unstaged' | 'conflict'
+    mode: 'commit' | 'staged' | 'unstaged' | 'conflict' | 'history' | 'blame'
     file: string
     oldPath?: string
     commit?: string
@@ -17,7 +17,18 @@
   import SplitDiff from './SplitDiff.svelte'
   import UnifiedDiff, { type Actions } from './UnifiedDiff.svelte'
 
-  let { path, target, onClose }: { path: string; target: DiffTarget; onClose: () => void } = $props()
+  let {
+    path,
+    target,
+    onClose,
+    onOpen,
+  }: {
+    path: string
+    target: DiffTarget
+    onClose: () => void
+    /** Opens another view of the same file (history or blame). */
+    onOpen?: (t: DiffTarget) => void
+  } = $props()
 
   const LAYOUT_KEY = 'gitrevenge.diffLayout'
   function savedLayout(): 'unified' | 'split' {
@@ -84,7 +95,7 @@
     return {}
   })
 
-  const modeLabel = { commit: '', staged: 'Staged', unstaged: 'Unstaged', conflict: 'Conflict' }
+  const modeLabel = { commit: '', staged: 'Staged', unstaged: 'Unstaged', conflict: 'Conflict', history: '', blame: '' }
 </script>
 
 <div class="diffview">
@@ -94,6 +105,14 @@
       >{target.oldPath && target.oldPath !== target.file ? `${target.oldPath} → ` : ''}{target.file}</span
     >
     {#if modeLabel[target.mode]}<span class="badge">{modeLabel[target.mode]}</span>{/if}
+    {#if onOpen}
+      <button onclick={() => onOpen({ mode: 'history', file: target.file })}>History</button>
+      <button
+        onclick={() =>
+          onOpen({ mode: 'blame', file: target.file, commit: target.mode === 'commit' ? target.commit : undefined })}
+        >Blame</button
+      >
+    {/if}
     {#if contents?.kind === 'text'}
       <span class="layout">
         <button class:on={layout === 'unified'} onclick={() => setLayout('unified')}>Unified</button>
