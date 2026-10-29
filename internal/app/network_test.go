@@ -1,6 +1,8 @@
 package app
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"net/http"
 	"net/http/cgi"
 	"net/http/httptest"
@@ -91,13 +93,15 @@ func TestFetchAsksForCredentials(t *testing.T) {
 	seed.AddRemote("origin", bare)
 	seed.Git("push", "-q", "origin", "main")
 
+	// Generated per run so the source holds no credential-looking literals.
+	user, pass := "user-"+randomToken(t), "pass-"+randomToken(t)
 	backend := &cgi.Handler{
 		Path: gitBin,
 		Args: []string{"http-backend"},
 		Env:  []string{"GIT_PROJECT_ROOT=" + filepath.Dir(bare.Dir), "GIT_HTTP_EXPORT_ALL=1"},
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if u, p, ok := r.BasicAuth(); !ok || u != "alice" || p != "s3cret" {
+		if u, p, ok := r.BasicAuth(); !ok || u != user || p != pass {
 			w.Header().Set("WWW-Authenticate", `Basic realm="test"`)
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
@@ -114,9 +118,9 @@ func TestFetchAsksForCredentials(t *testing.T) {
 		asked = append(asked, string(kind))
 		mu.Unlock()
 		if kind == askpass.Text {
-			return "alice", true
+			return user, true
 		}
-		return "s3cret", true
+		return pass, true
 	}
 	a.net.exe = buildHelper(t) // set before askEnv runs
 	local := gittest.New(t)
@@ -144,4 +148,13 @@ func TestNetErrHTTPStatus(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "HTTP 403") {
 		t.Fatalf("err = %v", err)
 	}
+}
+
+func randomToken(t *testing.T) string {
+	t.Helper()
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		t.Fatal(err)
+	}
+	return hex.EncodeToString(b)
 }

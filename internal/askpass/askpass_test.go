@@ -2,6 +2,8 @@ package askpass
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"os"
 	"os/exec"
@@ -81,11 +83,13 @@ func TestGitUsesHelper(t *testing.T) {
 		t.Fatalf("building helper: %v\n%s", err, out)
 	}
 
+	// Generated per run so the source holds no credential-looking literals.
+	user, pass := "user-"+randomHex(t), "pass-"+randomHex(t)
 	s, err := Listen(func(_ context.Context, _ string, kind Kind) (string, bool) {
 		if kind == Text {
-			return "alice", true
+			return user, true
 		}
-		return "s3cret", true
+		return pass, true
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -103,7 +107,16 @@ func TestGitUsesHelper(t *testing.T) {
 	if err != nil {
 		t.Fatalf("credential fill: %v\n%s", err, out)
 	}
-	if !strings.Contains(string(out), "username=alice") || !strings.Contains(string(out), "password=s3cret") {
+	if !strings.Contains(string(out), "username="+user) || !strings.Contains(string(out), "password="+pass) {
 		t.Fatalf("git got: %s", out)
 	}
+}
+
+func randomHex(t *testing.T) string {
+	t.Helper()
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		t.Fatal(err)
+	}
+	return hex.EncodeToString(b)
 }
