@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Ref, Row } from './graph/rowCache'
-import { dropItems, type MenuContext } from './menus'
+import { dropItems, groups, refItems, type MenuContext } from './menus'
 
 const row = (id: string): Row => ({ index: 0, col: 0, color: 0, up: [], down: [], width: 1, id, parents: 1, author: '', authorTime: 0, subject: '' })
 const ref = (short: string, kind: Ref['kind'], head = false): Ref => ({
@@ -38,5 +38,25 @@ describe('dropItems', () => {
   it('offers nothing when neither side is checked out, or HEAD is detached', () => {
     expect(dropItems(row('a'.repeat(40)), [ref('x', 'local')], row('b'.repeat(40)), [ref('y', 'local')], ctx('main'))).toEqual([])
     expect(dropItems(row('a'.repeat(40)), [ref('x', 'local')], row('b'.repeat(40)), head, ctx(''))).toEqual([])
+  })
+})
+
+describe('groups', () => {
+  const item = (label: string) => ({ label, run: () => {} })
+
+  it('starts each non-empty group after the first with a separator', () => {
+    const items = groups([item('a'), item('b')], [], [item('c')])
+    expect(items.map((i) => [i.label, !!i.separator])).toEqual([
+      ['a', false],
+      ['b', false],
+      ['c', true],
+    ])
+  })
+})
+
+describe('refItems', () => {
+  it('keeps checkout and delete on the checked-out branch, disabled', () => {
+    const items = refItems(ref('main', 'local', true), ctx('main'))
+    expect(items.filter((i) => i.disabled).map((i) => i.label)).toEqual(['Checkout main', 'Delete main…'])
   })
 })

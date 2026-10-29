@@ -15,6 +15,11 @@ export interface MenuContext {
   openRebase: (base: string) => void
 }
 
+/** Joins groups of items, drawing a rule between non-empty groups. */
+export function groups(...lists: MenuItem[][]): MenuItem[] {
+  return lists.filter((l) => l.length).flatMap((l, g) => l.map((item, i) => (g > 0 && i === 0 ? { ...item, separator: true } : item)))
+}
+
 const integrate = (path: string, action: string, ...args: string[]) => () =>
   session.run(() => Integrate(path, action, args))
 
@@ -53,93 +58,95 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
   const { path, openDialog } = ctx
   switch (ref.kind) {
     case 'local':
-      return [
-        ...(ref.head ? [] : [{ label: `Checkout ${ref.short}`, run: () => session.run(() => branch(path, 'checkout', ref.short)) }]),
-        ...(ref.head ? [] : integrateItems(ctx, ref.short, ref.short)),
-        ...(ref.head
-          ? []
-          : [
-              {
-                label: `Push ${ref.short} to ${remoteOf(ref).remote}`,
-                run: push(path, remoteOf(ref).remote, 'branch', ref.short),
-              },
-            ]),
-        {
-          label: `Rename ${ref.short}…`,
-          run: () =>
-            openDialog({
-              title: `Rename branch ${ref.short}`,
-              fields: [{ key: 'name', label: 'New name', value: ref.short }],
-              submit: 'Rename',
-              run: (v) => attempt(() => branch(path, 'rename', ref.short, String(v.name).trim())),
-            }),
-        },
-        {
-          label: `Set upstream of ${ref.short}…`,
-          run: async () => {
-            const refs = ((await session.run(() => Refs(path))) ?? []) as Ref[]
-            const remotes = refs.filter((r) => r.kind === 'remote').map((r) => ({ value: r.short, label: r.short }))
-            openDialog({
-              title: `Upstream for ${ref.short}`,
-              message: ref.upstream ? `Currently tracking ${ref.upstream}.` : 'Not tracking a remote branch.',
-              fields: [
+      return groups(
+        [
+          // The checked-out branch keeps these items, disabled, so the menu's shape doesn't shift.
+          { label: `Checkout ${ref.short}`, disabled: ref.head, run: () => session.run(() => branch(path, 'checkout', ref.short)) },
+          ...(ref.head ? [] : integrateItems(ctx, ref.short, ref.short)),
+          ...(ref.head
+            ? []
+            : [
                 {
-                  key: 'upstream',
-                  label: 'Track',
-                  type: 'select',
-                  value: ref.upstream,
-                  options: [{ value: '', label: '(none)' }, ...remotes],
+                  label: `Push ${ref.short} to ${remoteOf(ref).remote}`,
+                  run: push(path, remoteOf(ref).remote, 'branch', ref.short),
                 },
-              ],
-              submit: 'Save',
-              run: (v) => attempt(() => branch(path, 'upstream', ref.short, String(v.upstream))),
-            })
+              ]),
+        ],
+        [
+          {
+            label: `Rename ${ref.short}…`,
+            run: () =>
+              openDialog({
+                title: `Rename branch ${ref.short}`,
+                fields: [{ key: 'name', label: 'New name', value: ref.short }],
+                submit: 'Rename',
+                run: (v) => attempt(() => branch(path, 'rename', ref.short, String(v.name).trim())),
+              }),
           },
-        },
-        ...(ref.head
-          ? []
-          : [
-              {
-                label: `Delete ${ref.short}…`,
-                run: () =>
-                  openDialog({
-                    title: `Delete branch ${ref.short}?`,
-                    message: 'The branch is removed locally. Its commits stay reachable from other branches if merged.',
-                    fields: [{ key: 'force', label: 'Delete even if it has unmerged commits', type: 'checkbox' }],
-                    submit: 'Delete',
-                    danger: true,
-                    run: (v) => attempt(() => branch(path, 'delete', ref.short, v.force ? 'true' : '')),
-                  }),
-              },
-            ]),
-      ]
+          {
+            label: `Set upstream of ${ref.short}…`,
+            run: async () => {
+              const refs = ((await session.run(() => Refs(path))) ?? []) as Ref[]
+              const remotes = refs.filter((r) => r.kind === 'remote').map((r) => ({ value: r.short, label: r.short }))
+              openDialog({
+                title: `Upstream for ${ref.short}`,
+                message: ref.upstream ? `Currently tracking ${ref.upstream}.` : 'Not tracking a remote branch.',
+                fields: [
+                  {
+                    key: 'upstream',
+                    label: 'Track',
+                    type: 'select',
+                    value: ref.upstream,
+                    options: [{ value: '', label: '(none)' }, ...remotes],
+                  },
+                ],
+                submit: 'Save',
+                run: (v) => attempt(() => branch(path, 'upstream', ref.short, String(v.upstream))),
+              })
+            },
+          },
+        ],
+        [
+          {
+            label: `Delete ${ref.short}…`,
+            disabled: ref.head,
+            run: () =>
+              openDialog({
+                title: `Delete branch ${ref.short}?`,
+                message: 'The branch is removed locally. Its commits stay reachable from other branches if merged.',
+                fields: [{ key: 'force', label: 'Delete even if it has unmerged commits', type: 'checkbox' }],
+                submit: 'Delete',
+                danger: true,
+                run: (v) => attempt(() => branch(path, 'delete', ref.short, v.force ? 'true' : '')),
+              }),
+          },
+        ],
+      )
     case 'remote':
       {
         const [remote, ...rest] = ref.short.split('/')
-        return [
-          { label: `Checkout ${ref.short}`, run: () => session.run(() => branch(path, 'checkout', ref.short)) },
-          ...integrateItems(ctx, ref.short, ref.short),
-          { label: `Delete ${ref.short} from ${remote}`, danger: true, run: push(path, remote, 'delete-branch', rest.join('/')) },
-        ]
+        return groups(
+          [{ label: `Checkout ${ref.short}`, run: () => session.run(() => branch(path, 'checkout', ref.short)) }, ...integrateItems(ctx, ref.short, ref.short)],
+          [{ label: `Delete ${ref.short} from ${remote}`, danger: true, run: push(path, remote, 'delete-branch', rest.join('/')) }],
+        )
       }
     case 'tag':
-      return [
-        ...integrateItems(ctx, ref.name, ref.short),
-        { label: `Push tag ${ref.short} to origin`, run: push(path, 'origin', 'tag', ref.short) },
-        {
-          label: `Delete tag ${ref.short}`,
-          danger: true,
-          run: () => session.run(() => branch(path, 'untag', ref.short)),
-        },
-        { label: `Delete tag ${ref.short} from origin`, danger: true, run: push(path, 'origin', 'delete-tag', ref.short) },
-      ]
+      return groups(
+        [...integrateItems(ctx, ref.name, ref.short), { label: `Push tag ${ref.short} to origin`, run: push(path, 'origin', 'tag', ref.short) }],
+        [
+          { label: `Delete tag ${ref.short}`, danger: true, run: () => session.run(() => branch(path, 'untag', ref.short)) },
+          { label: `Delete tag ${ref.short} from origin`, danger: true, run: push(path, 'origin', 'delete-tag', ref.short) },
+        ],
+      )
     case 'stash': {
       const act = (action: string) => () => session.run(() => StashAction(path, ref.commit, action))
-      return [
-        { label: 'Apply stash', run: act('apply') },
-        { label: 'Pop stash', run: act('pop') },
-        { label: 'Drop stash', danger: true, run: act('drop') },
-      ]
+      return groups(
+        [
+          { label: 'Apply stash', run: act('apply') },
+          { label: 'Pop stash', run: act('pop') },
+        ],
+        [{ label: 'Drop stash', danger: true, run: act('drop') }],
+      )
     }
   }
 }
@@ -178,6 +185,7 @@ export function commitItems(row: Row, refs: Ref[], ctx: MenuContext): MenuItem[]
     },
     {
       label: `Checkout ${short} (detached)`,
+      separator: true,
       run: () => session.run(() => branch(path, 'checkout', row.id)),
     },
     ...(ctx.current() && !refs.some((r) => r.head)
@@ -188,6 +196,7 @@ export function commitItems(row: Row, refs: Ref[], ctx: MenuContext): MenuItem[]
       : []),
     {
       label: `Reset ${ctx.current() || 'HEAD'} to ${short}…`,
+      separator: true,
       run: () =>
         openDialog({
           title: `Reset ${ctx.current() || 'HEAD'} to ${short}`,

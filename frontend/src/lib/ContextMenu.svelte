@@ -1,8 +1,12 @@
 <script lang="ts" module>
   export interface MenuItem {
     label: string
-    /** Destructive items ask for a second click before running. */
+    /** Destructive items ask for a second click or Enter before running. */
     danger?: boolean
+    /** Shown but not selectable; skipped by the arrow keys and type-ahead. */
+    disabled?: boolean
+    /** Draws a rule above this item, starting a new group. */
+    separator?: boolean
     /** Shown beside the label, in Mod+Shift+K form. */
     shortcut?: string
     run: () => void | Promise<void>
@@ -12,28 +16,47 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { formatShortcut } from './commands.svelte'
+  import { edge, step, typeahead } from './menuKeys'
+  import Icon from './ui/Icon.svelte'
 
   let { x, y, items, onClose }: { x: number; y: number; items: MenuItem[]; onClose: () => void } = $props()
 
   let menu: HTMLDivElement
+  /** The highlighted item, which also holds DOM focus; -1 for none. */
+  let active = $state(-1)
   let armed = $state(-1)
   // Keep the menu on screen near the window edges.
   let left = $state(0)
   let top = $state(0)
 
-  const buttons = () => [...menu.querySelectorAll<HTMLButtonElement>('button')]
+  let query = ''
+  let queryTimer: ReturnType<typeof setTimeout> | undefined
+
+  /** Highlights and focuses item i. Moving off an armed item disarms it. */
+  function activate(i: number) {
+    if (i < 0) return
+    active = i
+    if (armed !== i) armed = -1
+    menu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')[i]?.focus()
+  }
 
   onMount(() => {
     const before = document.activeElement as HTMLElement | null
     const r = menu.getBoundingClientRect()
     left = Math.max(4, Math.min(x, window.innerWidth - r.width - 4))
     top = Math.max(4, Math.min(y, window.innerHeight - r.height - 4))
-    buttons()[0]?.focus()
-    return () => before?.focus?.()
+    const first = edge(items, false)
+    if (first < 0) menu.focus()
+    else activate(first)
+    return () => {
+      clearTimeout(queryTimer)
+      before?.focus?.()
+    }
   })
 
   async function pick(i: number) {
     const item = items[i]
+    if (item.disabled) return
     if (item.danger && armed !== i) {
       armed = i
       return
@@ -42,21 +65,25 @@
     await item.run()
   }
 
-  /** Arrow keys, Home and End move between items; Tab closes, as in native menus. */
+  /** Arrows, Home, End and type-ahead move between items; Tab closes, as in native menus. */
   function onKey(e: KeyboardEvent) {
-    const all = buttons()
-    const i = all.indexOf(document.activeElement as HTMLButtonElement)
     const go = (j: number) => {
       e.preventDefault()
-      all[(j + all.length) % all.length]?.focus()
+      activate(j)
     }
-    if (e.key === 'ArrowDown') go(i + 1)
-    else if (e.key === 'ArrowUp') go(i < 0 ? all.length - 1 : i - 1)
-    else if (e.key === 'Home') go(0)
-    else if (e.key === 'End') go(all.length - 1)
+    if (e.key === 'ArrowDown') go(step(items, active, 1))
+    else if (e.key === 'ArrowUp') go(step(items, active < 0 ? items.length : active, -1))
+    else if (e.key === 'Home' || e.key === 'PageUp') go(edge(items, false))
+    else if (e.key === 'End' || e.key === 'PageDown') go(edge(items, true))
     else if (e.key === 'Tab') {
       e.preventDefault()
       onClose()
+    } else if (e.key.length === 1 && e.key !== ' ' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault()
+      clearTimeout(queryTimer)
+      query += e.key
+      queryTimer = setTimeout(() => (query = ''), 600)
+      activate(typeahead(items, active, query))
     }
   }
 </script>
@@ -71,9 +98,22 @@
 
 <div class="menu" bind:this={menu} role="menu" tabindex="-1" style:left="{left}px" style:top="{top}px" onkeydown={onKey}>
   {#each items as item, i (item.label)}
-    <button role="menuitem" class:danger={item.danger} class:armed={armed === i} onclick={() => pick(i)} onmouseenter={(e) => e.currentTarget.focus()}>
-      <span class="label">{armed === i ? `Click again to ${item.label.toLowerCase()}` : item.label}</span>
-      {#if item.shortcut && armed !== i}<kbd>{formatShortcut(item.shortcut)}</kbd>{/if}
+    {#if item.separator && i > 0}<div class="rule" role="separator"></div>{/if}
+    <button
+      role="menuitem"
+      tabindex="-1"
+      class="item"
+      class:active={active === i}
+      class:danger={item.danger}
+      class:armed={armed === i}
+      aria-disabled={item.disabled || undefined}
+      onclick={() => pick(i)}
+      onmousedown={(e) => item.disabled && e.preventDefault()}
+      onmousemove={() => !item.disabled && active !== i && activate(i)}
+    >
+      <span class="label">{armed === i ? `Press again to ${item.label.toLowerCase()}` : item.label}</span>
+      {#if armed === i}<Icon name="warning" size={14} />
+      {:else if item.shortcut}<kbd>{formatShortcut(item.shortcut)}</kbd>{/if}
     </button>
   {/each}
 </div>
@@ -82,9 +122,9 @@
   .menu {
     position: fixed;
     z-index: 100;
-    min-width: 200px;
-    max-width: 360px;
-    padding: 5px;
+    min-width: 220px;
+    max-width: 380px;
+    padding: 4px;
     background: var(--paper);
     border: 1px solid var(--paper-edge);
     border-radius: 8px;
@@ -93,35 +133,38 @@
     animation: open 0.16s var(--ease-ink);
   }
 
-  button {
+  .item {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 20px;
     width: 100%;
-    padding: 6px 12px;
+    min-height: 30px;
+    padding: 4px 12px;
     background: none;
     border: none;
     border-radius: 5px;
     font-size: 14px;
     text-align: left;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
-  /* Hover moves focus, so one highlight serves mouse and keyboard. */
-  button:hover:not(:disabled) {
+  /* The active item carries the highlight, so mouse hover and focus rings add nothing. */
+  .item:hover,
+  .item:focus-visible {
     background: none;
-  }
-
-  button:focus {
     outline: none;
-    background: var(--selected);
   }
 
-  button:focus-visible {
-    outline: 2px solid var(--link);
-    outline-offset: -2px;
+  /* A solid fill plus a bar at the leading edge, so the highlight doesn't rest on hue alone. */
+  .item.active {
+    background: var(--accent);
+    color: var(--on-accent);
+    box-shadow: inset 3px 0 0 var(--ink);
+  }
+
+  .item[aria-disabled='true'] {
+    color: var(--ink-faint);
+    cursor: default;
   }
 
   .label {
@@ -138,14 +181,30 @@
     color: var(--ink-mute);
   }
 
+  .active kbd {
+    color: inherit;
+  }
+
   .danger {
     color: var(--danger);
   }
 
-  .armed,
-  .armed:focus {
-    background: var(--danger-wash);
+  .item.danger.active {
+    background: var(--danger);
+  }
+
+  .armed .label {
     font-style: italic;
+  }
+
+  .item.armed:not(.active) {
+    background: var(--danger-wash);
+  }
+
+  .rule {
+    height: 1px;
+    margin: 4px 8px;
+    background: var(--paper-edge);
   }
 
   @keyframes open {
@@ -158,6 +217,15 @@
   @media (prefers-reduced-motion: reduce) {
     .menu {
       animation: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .item.active,
+    .item.danger.active {
+      background: Highlight;
+      color: HighlightText;
+      forced-color-adjust: none;
     }
   }
 </style>

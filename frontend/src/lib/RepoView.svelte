@@ -6,7 +6,7 @@
   import RebaseEditor from './RebaseEditor.svelte'
   import RemotesDialog from './RemotesDialog.svelte'
   import Toolbar from './Toolbar.svelte'
-  import { checkoutRef, commitItems, dropItems, newBranchDialog, refItems, type MenuContext } from './menus'
+  import { checkoutRef, commitItems, dropItems, groups, newBranchDialog, refItems, type MenuContext } from './menus'
   import CommitPanel from './CommitPanel.svelte'
   import BlameView from './diff/BlameView.svelte'
   import ConflictView from './diff/ConflictView.svelte'
@@ -145,7 +145,7 @@
          survive returning to it. -->
     <div class="graph" class:hidden={diff || rebaseBase}>
       <GraphView bind:this={graph} {path} {onSelect} onContext={(row, refs, x, y) =>
-          openMenu([...commitItems(row, refs, ctx), ...refs.flatMap((r) => refItems(r, ctx))], x, y)}
+          openMenu(groups(commitItems(row, refs, ctx), ...refs.map((r) => refItems(r, ctx))), x, y)}
         onDrop={(source, sourceRefs, target, targetRefs, x, y) => {
           const items = dropItems(source, sourceRefs, target, targetRefs, ctx)
           if (items.length) openMenu(items, x, y)
