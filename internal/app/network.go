@@ -176,7 +176,7 @@ func (a *App) Fetch(path, remote string) error {
 // Pull integrates the current branch's upstream. mode is "", "ff-only", "merge" or "rebase".
 func (a *App) Pull(path, mode string) error {
 	return a.runNetwork(path, "pull", func(ctx context.Context, r *session.Repo, o git.NetOptions) error {
-		return r.Git.Pull(ctx, git.PullMode(mode), o)
+		return a.record(r, "Pull", kindMove, "", func() error { return r.Git.Pull(ctx, git.PullMode(mode), o) })
 	})
 }
 

@@ -31,19 +31,21 @@ func (a *App) Integrate(path, action string, args []string) error {
 	}
 	switch action {
 	case "merge":
-		err = r.Git.Merge(ctx, arg(0), git.MergeMode(arg(1)))
+		err = a.record(r, "Merge "+shortRef(arg(0)), kindMove, "", func() error { return r.Git.Merge(ctx, arg(0), git.MergeMode(arg(1))) })
 	case "cherry-pick":
 		if len(args) == 0 {
 			return userError("Choose at least one commit to cherry-pick.")
 		}
-		err = r.Git.CherryPick(ctx, args...)
+		err = a.record(r, "Cherry-pick "+shortRef(args[0]), kindMove, "", func() error { return r.Git.CherryPick(ctx, args...) })
 	case "rebase":
-		err = r.Git.Rebase(ctx, arg(0))
+		err = a.record(r, "Rebase onto "+shortRef(arg(0)), kindMove, "", func() error { return r.Git.Rebase(ctx, arg(0)) })
 	case "reset":
-		err = r.Git.Reset(ctx, arg(0), git.ResetMode(arg(1)))
+		err = a.record(r, "Reset to "+shortRef(arg(0))+" ("+arg(1)+")", kindReset, git.ResetMode(arg(1)), func() error {
+			return r.Git.Reset(ctx, arg(0), git.ResetMode(arg(1)))
+		})
 	case "revert":
 		mainline, _ := strconv.Atoi(arg(1))
-		err = r.Git.Revert(ctx, arg(0), mainline)
+		err = a.record(r, "Revert "+shortRef(arg(0)), kindMove, "", func() error { return r.Git.Revert(ctx, arg(0), mainline) })
 	default:
 		return userError("Unknown action " + action + ".")
 	}

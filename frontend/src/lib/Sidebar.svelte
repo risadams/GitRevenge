@@ -10,6 +10,7 @@
     onPick,
     onActivate,
     onNewBranch,
+    onManageRemotes,
     onContext,
   }: {
     path: string
@@ -17,6 +18,7 @@
     /** Double-click: check the ref out. */
     onActivate?: (ref: Ref) => void
     onNewBranch?: () => void
+    onManageRemotes?: () => void
     onContext?: (ref: Ref, x: number, y: number) => void
   } = $props()
 
@@ -74,6 +76,8 @@
         </button>
         {#if g.kind === 'local' && onNewBranch}
           <button class="add" onclick={onNewBranch} title="New branch from HEAD" aria-label="New branch">+</button>
+        {:else if g.kind === 'remote' && onManageRemotes}
+          <button class="add" onclick={onManageRemotes} title="Add, edit or remove remotes" aria-label="Manage remotes">⚙</button>
         {/if}
         {#if open[g.kind] || filter}
           <ul>

@@ -89,7 +89,17 @@ func (a *App) CommitChanges(path, message string, amend bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	sha, err := r.Git.Commit(context.Background(), message, amend)
+	summary, _, _ := strings.Cut(strings.TrimSpace(message), "\n")
+	label := "Commit “" + summary + "”"
+	if amend {
+		label = "Amend “" + summary + "”"
+	}
+	var sha string
+	err = a.record(r, label, kindCommit, "", func() error {
+		var cerr error
+		sha, cerr = r.Git.Commit(context.Background(), message, amend)
+		return cerr
+	})
 	return sha, commitErr(err)
 }
 

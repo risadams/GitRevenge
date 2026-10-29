@@ -31,13 +31,24 @@ func (a *App) BranchAction(path, action string, args []string) error {
 	g := r.Git
 	switch action {
 	case "create":
-		err = g.CreateBranch(ctx, arg(0), arg(1), arg(2) == "true")
+		if arg(2) == "true" {
+			// Creating and switching moves HEAD: undo switches back and deletes the branch.
+			err = a.record(r, "Create and check out "+arg(0), kindCheckout, "", func() error {
+				return g.CreateBranch(ctx, arg(0), arg(1), true)
+			})
+		} else if err = g.CreateBranch(ctx, arg(0), arg(1), false); err == nil {
+			commit, _ := g.ReadString(ctx, "rev-parse", "refs/heads/"+arg(0))
+			a.recordBranch(r, "Create branch "+arg(0), kindBranchCreate, arg(0), commit)
+		}
 	case "rename":
 		err = g.RenameBranch(ctx, arg(0), arg(1))
 	case "delete":
-		err = g.DeleteBranch(ctx, arg(0), arg(1) == "true")
+		commit, _ := g.ReadString(ctx, "rev-parse", "refs/heads/"+arg(0))
+		if err = g.DeleteBranch(ctx, arg(0), arg(1) == "true"); err == nil && commit != "" {
+			a.recordBranch(r, "Delete branch "+arg(0), kindBranchDelete, arg(0), commit)
+		}
 	case "checkout":
-		err = g.Checkout(ctx, arg(0))
+		err = a.record(r, "Check out "+shortRef(arg(0)), kindCheckout, "", func() error { return g.Checkout(ctx, arg(0)) })
 	case "upstream":
 		err = g.SetUpstream(ctx, arg(0), arg(1))
 	case "tag":

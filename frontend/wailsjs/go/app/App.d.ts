@@ -44,6 +44,8 @@ export function PushRef(arg1:string,arg2:string,arg3:string,arg4:string):Promise
 
 export function RecentRepos():Promise<Array<app.RecentRepo>>;
 
+export function Redo(arg1:string):Promise<void>;
+
 export function Refs(arg1:string):Promise<Array<git.Ref>>;
 
 export function RemoteAction(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
@@ -73,6 +75,10 @@ export function StageFiles(arg1:string,arg2:Array<string>):Promise<void>;
 export function StashAction(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function StashSave(arg1:string,arg2:string,arg3:boolean):Promise<void>;
+
+export function Undo(arg1:string):Promise<void>;
+
+export function UndoState(arg1:string):Promise<app.UndoInfo>;
 
 export function UnstageFiles(arg1:string,arg2:Array<string>):Promise<void>;
 

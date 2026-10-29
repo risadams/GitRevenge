@@ -25,7 +25,8 @@ type App struct {
 	sess     *session.Manager
 	sessErr  error
 
-	net network
+	net  network
+	undo undoStacks
 	// promptHook answers credential prompts in tests instead of the UI.
 	promptHook func(text string, kind askpass.Kind) (string, bool)
 }
