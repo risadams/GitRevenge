@@ -24,9 +24,11 @@ type CommitDetail struct {
 	Parents   []string  `json:"parents"`
 	Author    Signature `json:"author"`
 	Committer Signature `json:"committer"`
-	// Subject is the first line of the message; Body is the rest, trimmed.
-	Subject string `json:"subject"`
-	Body    string `json:"body"`
+	// Subject is the first line of the message; Body is the rest, trimmed, without the
+	// trailers, which are in Trailers.
+	Subject  string    `json:"subject"`
+	Body     string    `json:"body"`
+	Trailers []Trailer `json:"trailers"`
 	Signed  bool   `json:"signed"`
 }
 
@@ -62,7 +64,10 @@ func parseCommit(data []byte) CommitDetail {
 	}
 	subject, body, _ := strings.Cut(string(msg), "\n")
 	c.Subject = strings.TrimSpace(subject)
-	c.Body = strings.TrimSpace(body)
+	c.Body, c.Trailers = SplitTrailers(strings.TrimSpace(body))
+	if c.Trailers == nil {
+		c.Trailers = []Trailer{} // JSON [] rather than null
+	}
 	return c
 }
 

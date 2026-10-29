@@ -386,6 +386,20 @@ export namespace git {
 	        this.origLine = source["origLine"];
 	    }
 	}
+	export class Trailer {
+	    key: string;
+	    value: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Trailer(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.key = source["key"];
+	        this.value = source["value"];
+	    }
+	}
 	export class Signature {
 	    name: string;
 	    email: string;
@@ -411,6 +425,7 @@ export namespace git {
 	    committer: Signature;
 	    subject: string;
 	    body: string;
+	    trailers: Trailer[];
 	    signed: boolean;
 	
 	    static createFrom(source: any = {}) {
@@ -425,6 +440,7 @@ export namespace git {
 	        this.committer = this.convertValues(source["committer"], Signature);
 	        this.subject = source["subject"];
 	        this.body = source["body"];
+	        this.trailers = this.convertValues(source["trailers"], Trailer);
 	        this.signed = source["signed"];
 	    }
 	

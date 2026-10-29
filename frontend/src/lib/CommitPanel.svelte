@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { CommitDetail } from '../../wailsjs/go/app/App.js'
+  import { CommitDetail, IssueURL } from '../../wailsjs/go/app/App.js'
   import type { app, git } from '../../wailsjs/go/models'
+  import { BrowserOpenURL } from '../../wailsjs/runtime/runtime.js'
   import { formatTime } from './graph/draw'
   import type { DiffTarget } from './diff/DiffView.svelte'
   import { session } from './session.svelte'
   import { reflow } from './text'
+  import { asPerson, valueParts } from './trailers'
 
   let {
     path,
@@ -20,6 +22,23 @@
   } = $props()
 
   let info = $state<app.CommitInfo | null>(null)
+  /** Where "#123" in a trailer links to, from the repository's remote; "" for nowhere. */
+  let issueURL = $state('')
+
+  $effect(() => {
+    const p = path
+    issueURL = ''
+    void IssueURL(p)
+      .then((u) => {
+        if (p === path) issueURL = u
+      })
+      .catch(() => {})
+  })
+
+  function openLink(e: MouseEvent, href: string) {
+    e.preventDefault()
+    BrowserOpenURL(href)
+  }
 
   const statusNames: Record<string, string> = {
     A: 'Added',
@@ -54,6 +73,25 @@
       <span class="hand">this commit</span>
       <h2>{c.subject}</h2>
       {#if c.body}<p class="body">{reflow(c.body)}</p>{/if}
+      {#if c.trailers.length}
+        <dl class="trailers" aria-label="Trailers">
+          {#each c.trailers as t, i (i)}
+            {@const who = asPerson(t.value)}
+            <dt class="meta">{t.key}</dt>
+            <dd>
+              {#if who}
+                {who.name}<span class="email" title={who.email}>{who.email}</span>
+              {:else}
+                {#each valueParts(t.value, issueURL) as part, k (k)}{#if part.href}<a
+                      href={part.href}
+                      title={part.href}
+                      onclick={(e) => openLink(e, part.href!)}>{part.text}</a
+                    >{:else}{part.text}{/if}{/each}
+              {/if}
+            </dd>
+          {/each}
+        </dl>
+      {/if}
       <dl>
         <dt class="meta">Author</dt>
         <dd>
@@ -171,6 +209,28 @@
     margin: 0;
     overflow-wrap: anywhere;
     font-size: 14px;
+  }
+
+  /* Trailers read as a short record under the message: key, then person or value. */
+  dl.trailers {
+    grid-template-columns: max-content minmax(0, 1fr);
+    margin: 0 0 12px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--hairline);
+  }
+
+  .trailers dt {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .trailers a {
+    color: var(--link);
+  }
+
+  .trailers a:hover {
+    color: var(--link-hover);
   }
 
   .email {

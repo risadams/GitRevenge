@@ -118,6 +118,10 @@ export function InteractiveRebase(arg1, arg2, arg3) {
   return window['go']['app']['App']['InteractiveRebase'](arg1, arg2, arg3);
 }
 
+export function IssueURL(arg1) {
+  return window['go']['app']['App']['IssueURL'](arg1);
+}
+
 export function LFS(arg1) {
   return window['go']['app']['App']['LFS'](arg1);
 }
