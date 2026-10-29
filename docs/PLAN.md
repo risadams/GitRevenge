@@ -113,7 +113,7 @@ It reports time to the first 100 rows, full load, heap in use, window reads, sea
 3. **0.3.0 Branching & remotes:** branches, tags, remotes, credential prompts, merge, cherry-pick, drag-and-drop.
 4. **0.4.0 History rewriting:** interactive rebase, reset, revert, undo/redo, conflict tool.
 5. **0.5.0 Multi-repo & extras:** project groups and dashboard, LFS, submodules, file history and blame, clone and init.
-6. **0.6.0 Polish:** visual design, themes, command palette, shortcuts, perf pass, update check, signed releases.
+6. **0.6.0 Polish:** visual design, themes, command palette, shortcuts, word wrap, perf pass, update check, signed releases.
 
 Each feature area has an epic issue. Its tasks are tracked as sub-issues, each sized for one PR.
 
