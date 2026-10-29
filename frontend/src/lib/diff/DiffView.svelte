@@ -15,6 +15,7 @@
   import { formatShortcut, provideCommands } from '../commands.svelte'
   import { session } from '../session.svelte'
   import Icon from '../ui/Icon.svelte'
+  import FileView from './FileView.svelte'
   import ImageDiff from './ImageDiff.svelte'
   import SplitDiff from './SplitDiff.svelte'
   import UnifiedDiff, { type Actions } from './UnifiedDiff.svelte'
@@ -35,16 +36,18 @@
 
   provideCommands(() => (contents?.kind === 'text' ? [wrapCommand()] : []))
 
+  type Layout = 'unified' | 'split' | 'file'
   const LAYOUT_KEY = 'gitrevenge.diffLayout'
-  function savedLayout(): 'unified' | 'split' {
+  function savedLayout(): Layout {
     try {
-      return localStorage.getItem(LAYOUT_KEY) === 'split' ? 'split' : 'unified'
+      const l = localStorage.getItem(LAYOUT_KEY)
+      return l === 'split' || l === 'file' ? l : 'unified'
     } catch {
       return 'unified'
     }
   }
-  let layout = $state<'unified' | 'split'>(savedLayout())
-  function setLayout(l: 'unified' | 'split') {
+  let layout = $state<Layout>(savedLayout())
+  function setLayout(l: Layout) {
     layout = l
     try {
       localStorage.setItem(LAYOUT_KEY, l)
@@ -127,6 +130,7 @@
       <span class="segmented" role="group" aria-label="Diff layout">
         <button aria-pressed={layout === 'unified'} onclick={() => setLayout('unified')}>Unified</button>
         <button aria-pressed={layout === 'split'} onclick={() => setLayout('split')}>Split</button>
+        <button aria-pressed={layout === 'file'} onclick={() => setLayout('file')} title="The whole file as of this version">File</button>
       </span>
     {/if}
   </header>
@@ -146,6 +150,11 @@
       <p class="muted">Binary file. Sizes: {contents.old.exists ? contents.old.size : '—'} → {contents.new.exists ? contents.new.size : '—'} bytes.</p>
     {:else if contents.kind === 'image'}
       <ImageDiff {contents} />
+    {:else if layout === 'file'}
+      {#if !contents.new.exists}
+        <p class="muted hint">Deleted here. Showing the file as it was before.</p>
+      {/if}
+      <FileView path={target.file} text={contents.new.exists ? contents.new.text : contents.old.text} />
     {:else if layout === 'split'}
       <SplitDiff path={target.file} oldText={contents.old.text} newText={contents.new.text} />
       {#if target.mode !== 'commit'}
