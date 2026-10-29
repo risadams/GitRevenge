@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../ui/Icon.svelte'
   import { FileHistory } from '../../../wailsjs/go/app/App.js'
   import type { git } from '../../../wailsjs/go/models'
   import { formatTime } from '../graph/draw'
@@ -28,12 +29,13 @@
 </script>
 
 <div class="history">
-  <header>
-    <button class="back" onclick={onClose} title="Back">←</button>
-    <span class="file">History of {file}</span>
-    {#if commits}<span class="muted">{commits.length} {commits.length === 1 ? 'commit' : 'commits'}</span>{/if}
+  <header class="view-head">
+    <button class="tool" onclick={onClose} title="Back"><Icon name="back" />Back</button>
+    <span class="view-badge">History</span>
+    <span class="view-file" title={file}>{file}</span>
+    {#if commits}<span class="meta">{commits.length} {commits.length === 1 ? 'commit' : 'commits'}</span>{/if}
     <span class="spacer"></span>
-    <button onclick={() => onOpen({ mode: 'blame', file })}>Blame</button>
+    <button class="tool" onclick={() => onOpen({ mode: 'blame', file })}>Blame</button>
   </header>
   <ul class="list">
     {#if !commits}
@@ -75,36 +77,8 @@
     min-height: 0;
   }
 
-  header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 8px;
-    border-bottom: 1px solid var(--paper-edge);
-  }
-
-  .file {
-    font-family: var(--font-mono);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   .spacer {
     flex: 1;
-  }
-
-  header button {
-    padding: 2px 8px;
-    background: none;
-    border: 1px solid var(--paper-edge);
-    color: var(--ink);
-    cursor: pointer;
-  }
-
-  .back {
-    border: none !important;
-    font-size: 16px;
   }
 
   .list {
@@ -116,21 +90,23 @@
     border-bottom: 1px solid var(--paper-edge);
   }
 
-  .list button {
-    display: flex;
-    gap: 10px;
-    align-items: baseline;
-    width: 100%;
-    padding: 4px 8px;
-    background: none;
-    border: none;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
+  .list li {
+    border-bottom: 1px dashed var(--hairline);
   }
 
-  .list button:hover {
+  .list button {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    width: 100%;
+    padding: 8px 14px;
+    background: none;
+    border: none;
+    border-radius: 0;
+    text-align: left;
+  }
+
+  .list button:hover:not(:disabled) {
     background: var(--wash-hover);
   }
 
@@ -140,6 +116,7 @@
 
   .sha {
     font-family: var(--font-mono);
+    font-size: 12px;
     color: var(--ink-mute);
   }
 
@@ -153,12 +130,16 @@
 
   .when {
     white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 11px;
   }
 
   .badge {
-    font-size: 10px;
-    padding: 0 4px;
-    border: 1px solid var(--paper-edge);
+    padding: 0 6px;
+    border-radius: 4px;
+    background: var(--selected);
+    font-family: var(--font-mono);
+    font-size: 11px;
     color: var(--accent-a);
   }
 
@@ -172,6 +153,7 @@
   }
 
   .pad {
-    padding: 8px;
+    padding: 10px 14px;
+    font-style: italic;
   }
 </style>

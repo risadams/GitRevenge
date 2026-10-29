@@ -13,8 +13,10 @@
 <div class="images">
   {#if contents.old.exists && contents.new.exists}
     <div class="modes">
-      <button class:on={mode === 'side'} onclick={() => (mode = 'side')}>Side by side</button>
-      <button class:on={mode === 'swipe'} onclick={() => (mode = 'swipe')}>Swipe</button>
+      <span class="segmented" role="group" aria-label="Compare images">
+        <button aria-pressed={mode === 'side'} onclick={() => (mode = 'side')}>Side by side</button>
+        <button aria-pressed={mode === 'swipe'} onclick={() => (mode = 'swipe')}>Swipe</button>
+      </span>
       {#if mode === 'swipe'}<input type="range" min="0" max="100" bind:value={swipe} aria-label="Swipe position" />{/if}
     </div>
   {/if}
@@ -29,7 +31,7 @@
       {#each [['Before', contents.old], ['After', contents.new]] as [label, s] (label)}
         {@const side = s as git.Side}
         <figure>
-          <figcaption>{label}{side.exists ? ` · ${size(side.size)}` : ''}</figcaption>
+          <figcaption class="meta">{label}{side.exists ? ` · ${size(side.size)}` : ''}</figcaption>
           {#if side.exists}<img src={src(side)} alt="{label} version" />{:else}<p class="muted">Not present</p>{/if}
         </figure>
       {/each}
@@ -39,7 +41,7 @@
 
 <style>
   .images {
-    padding: 12px;
+    padding: 16px;
   }
 
   .modes {
@@ -49,16 +51,8 @@
     margin-bottom: 12px;
   }
 
-  button {
-    background: none;
-    border: 1px solid var(--paper-edge);
-    color: var(--ink);
-    cursor: pointer;
-    padding: 2px 8px;
-  }
-
-  button.on {
-    background: var(--selected);
+  input[type='range'] {
+    accent-color: var(--accent);
   }
 
   .side {

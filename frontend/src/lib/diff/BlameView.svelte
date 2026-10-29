@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../ui/Icon.svelte'
   import { Blame } from '../../../wailsjs/go/app/App.js'
   import type { git } from '../../../wailsjs/go/models'
   import { formatTime, laneVar } from '../graph/draw'
@@ -51,13 +52,15 @@
 </script>
 
 <div class="blame">
-  <header>
-    <button class="back" onclick={onClose} title="Back">←</button>
-    <span class="file">Blame {file}{rev ? ` at ${rev.slice(0, 7)}` : ''}</span>
+  <header class="view-head">
+    <button class="tool" onclick={onClose} title="Back"><Icon name="back" />Back</button>
+    <span class="view-badge">Blame</span>
+    <span class="view-file" title={file}>{file}</span>
+    {#if rev}<span class="meta">at {rev.slice(0, 7)}</span>{/if}
     <span class="spacer"></span>
-    <button onclick={() => onOpen({ mode: 'history', file })}>History</button>
+    <button class="tool" onclick={() => onOpen({ mode: 'history', file })}>History</button>
   </header>
-  <div class="body">
+  <div class="body code-ground">
     {#if !lines}
       <p class="muted">Loading…</p>
     {:else}
@@ -73,7 +76,7 @@
                   {:else}
                     <button class="sha" onclick={() => onReveal(l.commit)} title="{l.summary}&#10;Show in graph">{l.commit.slice(0, 7)}</button>
                     <span class="who">{l.author}</span>
-                    <span class="muted">{formatTime(l.time)}</span>
+                    <span class="muted when">{formatTime(l.time)}</span>
                   {/if}
                 {/if}
               </td>
@@ -97,36 +100,8 @@
     min-height: 0;
   }
 
-  header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 8px;
-    border-bottom: 1px solid var(--paper-edge);
-  }
-
-  .file {
-    font-family: var(--font-mono);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   .spacer {
     flex: 1;
-  }
-
-  header button {
-    padding: 2px 8px;
-    background: none;
-    border: 1px solid var(--paper-edge);
-    color: var(--ink);
-    cursor: pointer;
-  }
-
-  .back {
-    border: none !important;
-    font-size: 16px;
   }
 
   .body {
@@ -137,11 +112,12 @@
 
   table {
     border-collapse: collapse;
-    font-size: 12px;
+    font-size: 12.5px;
+    line-height: 1.6;
   }
 
   tr.start td {
-    border-top: 1px solid var(--paper-edge);
+    border-top: 1px dashed var(--hairline);
   }
 
   td {
@@ -150,31 +126,43 @@
     white-space: pre;
   }
 
+  /* Each commit's lines carry its lane colour, as in the graph. */
   .gutter {
-    width: 280px;
-    max-width: 280px;
+    width: 300px;
+    max-width: 300px;
     border-left: 3px solid transparent;
+    background: var(--paper-warm);
     overflow: hidden;
     text-overflow: ellipsis;
-    font-family: var(--font-serif);
+    font-size: 13px;
   }
 
   .sha {
+    padding: 0;
     background: none;
     border: none;
-    color: var(--accent-a);
     font-family: var(--font-mono);
-    padding: 0;
-    cursor: pointer;
+    font-size: 12px;
+    color: var(--accent-a);
+  }
+
+  .sha:hover:not(:disabled) {
+    background: none;
+    color: var(--link);
   }
 
   .who {
     margin: 0 6px;
   }
 
+  .when {
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
   .num {
     text-align: right;
-    color: var(--ink-mute);
+    color: var(--ink-faint);
     user-select: none;
   }
 
@@ -188,6 +176,8 @@
   }
 
   p.muted {
-    padding: 8px;
+    margin: 0;
+    padding: 10px 14px;
+    font-style: italic;
   }
 </style>

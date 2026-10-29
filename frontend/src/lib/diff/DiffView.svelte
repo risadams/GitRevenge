@@ -13,6 +13,7 @@
   import { FileContents, SetStagedContent, SetWorkTreeContent } from '../../../wailsjs/go/app/App.js'
   import type { git } from '../../../wailsjs/go/models'
   import { session } from '../session.svelte'
+  import Icon from '../ui/Icon.svelte'
   import ImageDiff from './ImageDiff.svelte'
   import SplitDiff from './SplitDiff.svelte'
   import UnifiedDiff, { type Actions } from './UnifiedDiff.svelte'
@@ -99,29 +100,31 @@
 </script>
 
 <div class="diffview">
-  <header>
-    <button class="back" onclick={onClose} title="Back to the graph">←</button>
-    <span class="file" title={target.file}
+  <header class="view-head">
+    <button class="tool" onclick={onClose} title="Back to the graph"><Icon name="back" />Back</button>
+    <span class="view-file" title={target.file}
       >{target.oldPath && target.oldPath !== target.file ? `${target.oldPath} → ` : ''}{target.file}</span
     >
-    {#if modeLabel[target.mode]}<span class="badge">{modeLabel[target.mode]}</span>{/if}
+    {#if modeLabel[target.mode]}<span class="view-badge">{modeLabel[target.mode]}</span>{/if}
+    <span class="spacer"></span>
     {#if onOpen}
-      <button onclick={() => onOpen({ mode: 'history', file: target.file })}>History</button>
+      <button class="tool" onclick={() => onOpen({ mode: 'history', file: target.file })}>History</button>
       <button
+        class="tool"
         onclick={() =>
           onOpen({ mode: 'blame', file: target.file, commit: target.mode === 'commit' ? target.commit : undefined })}
         >Blame</button
       >
     {/if}
     {#if contents?.kind === 'text'}
-      <span class="layout">
-        <button class:on={layout === 'unified'} onclick={() => setLayout('unified')}>Unified</button>
-        <button class:on={layout === 'split'} onclick={() => setLayout('split')}>Split</button>
+      <span class="segmented" role="group" aria-label="Diff layout">
+        <button aria-pressed={layout === 'unified'} onclick={() => setLayout('unified')}>Unified</button>
+        <button aria-pressed={layout === 'split'} onclick={() => setLayout('split')}>Split</button>
       </span>
     {/if}
   </header>
 
-  <div class="body">
+  <div class="body code-ground">
     {#if !contents}
       <p class="muted">Loading…</p>
     {:else if contents.kind === 'large'}
@@ -155,49 +158,8 @@
     min-height: 0;
   }
 
-  header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 8px;
-    border-bottom: 1px solid var(--paper-edge);
-  }
-
-  .file {
-    font-family: var(--font-mono);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .badge {
-    font-size: 11px;
-    padding: 0 6px;
-    border: 1px solid var(--paper-edge);
-    color: var(--ink-mute);
-  }
-
-  .layout {
-    margin-left: auto;
-    display: flex;
-    gap: 4px;
-  }
-
-  button {
-    background: none;
-    border: 1px solid var(--paper-edge);
-    color: var(--ink);
-    cursor: pointer;
-    padding: 2px 8px;
-  }
-
-  button.on {
-    background: var(--selected);
-  }
-
-  .back {
-    border: none;
-    font-size: 16px;
+  .spacer {
+    flex: 1;
   }
 
   .body {
@@ -212,10 +174,12 @@
 
   .muted {
     color: var(--ink-mute);
-    padding: 8px 12px;
+    padding: 10px 14px;
+    margin: 0;
   }
 
   .hint {
-    font-size: 12px;
+    font-size: 13px;
+    font-style: italic;
   }
 </style>
