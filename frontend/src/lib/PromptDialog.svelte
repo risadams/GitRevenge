@@ -87,7 +87,7 @@
     z-index: 300;
     display: grid;
     place-items: center;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--scrim);
   }
 
   .dialog {
@@ -99,8 +99,8 @@
     flex-direction: column;
     gap: 10px;
     padding: 16px;
-    background: var(--bg-raised);
-    border: 1px solid var(--border);
+    background: var(--paper-warm);
+    border: 1px solid var(--paper-edge);
   }
 
   h3 {
@@ -111,7 +111,7 @@
   pre {
     margin: 0;
     padding: 8px;
-    background: var(--bg);
+    background: var(--paper);
     white-space: pre-wrap;
     font-family: var(--font-mono);
     font-size: 12px;
@@ -125,15 +125,15 @@
 
   input {
     padding: 4px 6px;
-    background: var(--bg);
-    color: var(--fg);
-    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--paper-edge);
     font: inherit;
   }
 
   .muted {
     margin: 0;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     font-size: 12px;
   }
 
@@ -146,13 +146,14 @@
   button {
     padding: 4px 12px;
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     cursor: pointer;
   }
 
   .primary {
-    background: var(--bg-selected);
-    border-color: var(--bg-selected);
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
   }
 </style>

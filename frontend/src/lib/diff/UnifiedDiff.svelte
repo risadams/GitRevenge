@@ -169,8 +169,8 @@
     gap: 8px;
     align-items: center;
     padding: 4px 8px;
-    background: var(--bg-raised);
-    color: var(--fg-muted);
+    background: var(--paper-warm);
+    color: var(--ink-mute);
     position: sticky;
     top: 0;
   }
@@ -181,10 +181,10 @@
 
   button {
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     font: inherit;
-    font-family: var(--font-ui);
+    font-family: var(--font-serif);
     cursor: pointer;
     padding: 1px 8px;
   }
@@ -194,8 +194,8 @@
   }
 
   .danger {
-    border-color: #a33;
-    color: #f48771;
+    border-color: var(--danger);
+    color: var(--danger);
   }
 
   table {
@@ -212,7 +212,7 @@
   .num {
     width: 1%;
     text-align: right;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     user-select: none;
   }
 
@@ -226,19 +226,19 @@
   }
 
   tr.add {
-    background: rgba(80, 160, 80, 0.18);
+    background: var(--success-wash);
     cursor: pointer;
   }
 
   tr.del {
-    background: rgba(200, 80, 80, 0.18);
+    background: var(--danger-wash);
     cursor: pointer;
   }
 
   tr.sel {
-    outline: 1px solid #75beff;
+    outline: 1px solid var(--link);
     outline-offset: -1px;
-    background-image: linear-gradient(rgba(117, 190, 255, 0.18), rgba(117, 190, 255, 0.18));
+    background-image: linear-gradient(var(--selection), var(--selection));
   }
 
   footer {
@@ -248,9 +248,9 @@
     gap: 8px;
     align-items: center;
     padding: 6px 8px;
-    background: var(--bg-raised);
-    border-top: 1px solid var(--border);
-    font-family: var(--font-ui);
+    background: var(--paper-warm);
+    border-top: 1px solid var(--paper-edge);
+    font-family: var(--font-serif);
   }
 
   footer span {
@@ -258,7 +258,7 @@
   }
 
   .muted {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     padding: 8px;
   }
 </style>

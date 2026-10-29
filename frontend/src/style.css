@@ -1,16 +1,139 @@
-/* Plain functional styling until the 0.6 polish milestone. */
+/* Ink and Agency tokens: Ink Paper (light) and Ink Parchment (dark). Values come from the
+   design system's tokens.json; every text token passes 4.5:1 on paper in its theme. */
+@import '@fontsource-variable/fraunces/full.css';
+@import '@fontsource-variable/fraunces/full-italic.css';
+@import '@fontsource-variable/caveat/index.css';
+@import '@fontsource-variable/jetbrains-mono/index.css';
+
 :root {
-  --bg: #1e1e1e;
-  --bg-raised: #252526;
-  --fg: #d4d4d4;
-  --fg-muted: #8a8a8a;
-  --border: #3c3c3c;
-  --bg-selected: #264f78;
-  --bg-hover: #2a2d2e;
-  --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace;
+  --font-serif: 'Fraunces Variable', 'Crimson Pro', Georgia, serif;
+  --font-hand: 'Caveat Variable', 'Segoe Script', cursive;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace;
+  --ease-ink: cubic-bezier(0.2, 0.6, 0.2, 1);
+
+  /* Raw inks, the same in both themes. Fills and marks; text uses the themed tokens. */
+  --ink-rose: #cb0162;
+  --ink-rose-soft: #e24a8a;
+  --ink-rose-deep: #8f0044;
+  --ink-teal: #1a5b6e;
+  --ink-teal-soft: #3d8a9f;
+  --ink-plum: #6b3a6e;
+  --ink-sepia: #8a5a3c;
+  --ink-ochre: #c48a1e;
+
+  /* Code grounds stay parchment-dark in both themes. */
+  --code-text: #f0e6d2;
+  --code-comment: #a49a8e;
+  --code-keyword: #e8659a;
+  --code-function: #b183b5;
+  --code-string: #5ba3b8;
+  --code-number: #c48a1e;
+  --code-type: #b8875f;
+  --code-punctuation: #c8b89a;
+}
+
+:root,
+:root[data-theme='light'] {
+  --paper: #faf6ef;
+  --paper-warm: #f4ecdd;
+  --paper-deep: #ede3cf;
+  --paper-edge: #d8c9ad;
+  --ink: #1a1614;
+  --ink-soft: #3a322c;
+  --ink-mute: #6b625a;
+  --ink-faint: #776e65;
+  --accent: #cb0162;
+  --on-accent: #faf6ef;
+  --link: #cb0162;
+  --link-hover: #8f0044;
+  --accent-a: #1a5b6e;
+  --accent-b: #6b3a6e;
+  --accent-c: #8a5a3c;
+  --hairline: rgba(26, 22, 20, 0.1);
+  --wash-hover: rgba(26, 22, 20, 0.05);
+  --selected: rgba(203, 1, 98, 0.12);
+  --selection: rgba(203, 1, 98, 0.22);
+  --highlight: rgba(196, 138, 30, 0.28);
+  --success: #4d7c43;
+  --warning: #8a5c00;
+  --danger: #8f0044;
+  --code-bg: #2a2220;
+  --scrim: rgba(26, 22, 20, 0.35);
+  --shadow: 0 10px 36px rgba(26, 22, 20, 0.18);
+
+  /* Graph lanes, cycled by colour index. Graphics only, so 3:1 on paper is the bar. */
+  --lane-0: #cb0162;
+  --lane-1: #1a5b6e;
+  --lane-2: #6b3a6e;
+  --lane-3: #8a5a3c;
+  --lane-4: #8a5c00;
+  --lane-5: #3d8a9f;
+
+  /* Syntax on paper, as in the Ink Paper editor theme. */
+  --syn-keyword: #cb0162;
+  --syn-string: #1a5b6e;
+  --syn-number: #8a5c00;
+  --syn-comment: #776e65;
+  --syn-type: #8a5a3c;
+  --syn-function: #6b3a6e;
+  --syn-tag: #8f0044;
+  --syn-invalid: #8f0044;
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --paper: #1a1614;
+  --paper-warm: #241c19;
+  --paper-deep: #2a211c;
+  --paper-edge: #3a2d26;
+  --ink: #f4ecdd;
+  --ink-soft: #ddd1bb;
+  --ink-mute: #a89e8f;
+  --ink-faint: #948b7d;
+  --accent: #e24a8a;
+  --on-accent: #1a1614;
+  --link: #e24a8a;
+  --link-hover: #ef7fac;
+  --accent-a: #5ba3b8;
+  --accent-b: #b183b5;
+  --accent-c: #b8875f;
+  --hairline: rgba(244, 236, 221, 0.12);
+  --wash-hover: rgba(244, 236, 221, 0.05);
+  --selected: rgba(226, 74, 138, 0.16);
+  --selection: rgba(226, 74, 138, 0.28);
+  --highlight: rgba(196, 138, 30, 0.32);
+  --success: #7fae6a;
+  --warning: #d9a13f;
+  --danger: #e8659a;
+  --code-bg: #1a1210;
+  --scrim: rgba(0, 0, 0, 0.5);
+  --shadow: 0 10px 36px rgba(0, 0, 0, 0.5);
+
+  --lane-0: #e24a8a;
+  --lane-1: #5ba3b8;
+  --lane-2: #b183b5;
+  --lane-3: #b8875f;
+  --lane-4: #d9a13f;
+  --lane-5: #ef7fac;
+
+  --syn-keyword: #e8659a;
+  --syn-string: #5ba3b8;
+  --syn-number: #d9a13f;
+  --syn-comment: #a49a8e;
+  --syn-type: #b8875f;
+  --syn-function: #b183b5;
+  --syn-tag: #ef7fac;
+  --syn-invalid: #e8659a;
 
   color-scheme: dark;
+}
+
+/* Washes derived from the status tokens, for diff lines and banners. */
+:root {
+  --success-wash: color-mix(in srgb, var(--success) 16%, transparent);
+  --danger-wash: color-mix(in srgb, var(--danger) 16%, transparent);
+  --warning-wash: color-mix(in srgb, var(--warning) 18%, transparent);
 }
 
 * {
@@ -25,54 +148,103 @@ body,
 }
 
 body {
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--font-ui);
-  font-size: 13px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-optical-sizing: auto;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: var(--ink);
+}
+
+/* Baselines so nothing falls back to the OS palette; components refine them. */
+button {
+  padding: 2px 10px;
+  background: var(--paper-warm);
+  border: 1px solid var(--paper-edge);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: var(--paper-deep);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+input,
+select,
+textarea {
+  background: var(--paper);
+  border: 1px solid var(--paper-edge);
+  border-radius: 3px;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+* {
+  scrollbar-color: var(--paper-edge) transparent;
 }
 
 /* Syntax colors for @lezer/highlight's classHighlighter, used by both diff views. */
 .tok-keyword,
 .tok-operatorKeyword,
 .tok-modifier {
-  color: #c792ea;
+  color: var(--syn-keyword);
 }
 .tok-string,
 .tok-string2,
 .tok-regexp {
-  color: #c3e88d;
+  color: var(--syn-string);
 }
 .tok-number,
 .tok-bool,
 .tok-atom,
 .tok-literal {
-  color: #f78c6c;
+  color: var(--syn-number);
 }
 .tok-comment {
-  color: #6a7a8a;
+  color: var(--syn-comment);
   font-style: italic;
 }
 .tok-typeName,
 .tok-className,
 .tok-namespace {
-  color: #ffcb6b;
+  color: var(--syn-type);
 }
 .tok-definition,
 .tok-function,
 .tok-propertyName {
-  color: #82aaff;
+  color: var(--syn-function);
 }
 .tok-variableName.tok-definition {
-  color: #eeffff;
+  color: var(--ink);
 }
 .tok-tagName,
 .tok-heading {
-  color: #f07178;
+  color: var(--syn-tag);
 }
 .tok-attributeName,
 .tok-meta {
-  color: #ffcb6b;
+  color: var(--syn-type);
 }
 .tok-invalid {
-  color: #ff5370;
+  color: var(--syn-invalid);
 }

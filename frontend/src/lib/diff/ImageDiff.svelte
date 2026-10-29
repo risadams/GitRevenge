@@ -51,14 +51,14 @@
 
   button {
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     cursor: pointer;
     padding: 2px 8px;
   }
 
   button.on {
-    background: var(--bg-selected);
+    background: var(--selected);
   }
 
   .side {
@@ -73,14 +73,14 @@
   }
 
   figcaption {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     margin-bottom: 6px;
   }
 
   img {
     max-width: 100%;
     /* A checkerboard shows transparency. */
-    background: repeating-conic-gradient(#3a3a3a 0% 25%, #2a2a2a 0% 50%) 50% / 16px 16px;
+    background: repeating-conic-gradient(var(--paper-deep) 0% 25%, var(--paper-warm) 0% 50%) 50% / 16px 16px;
   }
 
   .swipe {
@@ -94,6 +94,6 @@
   }
 
   .muted {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 </style>

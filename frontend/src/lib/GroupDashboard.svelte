@@ -123,8 +123,8 @@
   button {
     padding: 3px 10px;
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     cursor: pointer;
   }
 
@@ -146,16 +146,16 @@
 
   th {
     text-align: left;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     font-weight: normal;
     font-size: 12px;
     padding: 4px 8px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   td {
     padding: 6px 8px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
     white-space: nowrap;
   }
 
@@ -168,14 +168,14 @@
   }
 
   .ok {
-    color: #89d185;
+    color: var(--success);
   }
 
   .bad {
-    color: #f48771;
+    color: var(--danger);
   }
 
   .muted {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 </style>

@@ -60,12 +60,12 @@
     gap: 12px;
     align-items: center;
     padding: 6px 12px;
-    background: #4a3b12;
-    border-bottom: 1px solid var(--border);
+    background: var(--warning-wash);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   .conflicts {
-    color: #f0a0a0;
+    color: var(--danger);
   }
 
   .actions {

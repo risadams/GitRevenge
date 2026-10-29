@@ -27,8 +27,8 @@
   .tabs {
     display: flex;
     overflow-x: auto;
-    background: var(--bg-raised);
-    border-bottom: 1px solid var(--border);
+    background: var(--paper-warm);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   button {
@@ -43,19 +43,19 @@
   .tab {
     display: flex;
     align-items: center;
-    border-right: 1px solid var(--border);
-    color: var(--fg-muted);
+    border-right: 1px solid var(--paper-edge);
+    color: var(--ink-mute);
     white-space: nowrap;
   }
 
   .tab.active {
-    background: var(--bg);
-    color: var(--fg);
+    background: var(--paper);
+    color: var(--ink);
   }
 
   .head {
     margin-left: 6px;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     font-size: 11px;
   }
 

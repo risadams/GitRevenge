@@ -53,14 +53,14 @@
   }
 
   .split :global(.cm-editor) {
-    background: var(--bg);
-    color: var(--fg);
+    background: var(--paper);
+    color: var(--ink);
   }
 
   .split :global(.cm-gutters) {
-    background: var(--bg-raised);
-    color: var(--fg-muted);
-    border-right: 1px solid var(--border);
+    background: var(--paper-warm);
+    color: var(--ink-mute);
+    border-right: 1px solid var(--paper-edge);
   }
 
   .split :global(.cm-content) {

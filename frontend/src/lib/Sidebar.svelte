@@ -127,16 +127,16 @@
     flex-direction: column;
     width: 240px;
     min-width: 180px;
-    border-right: 1px solid var(--border);
-    background: var(--bg-raised);
+    border-right: 1px solid var(--paper-edge);
+    background: var(--paper-warm);
   }
 
   .filter {
     margin: 8px;
     padding: 4px 6px;
-    background: var(--bg);
-    color: var(--fg);
-    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--paper-edge);
   }
 
   .groups {
@@ -159,7 +159,7 @@
   }
 
   button:hover {
-    background: var(--bg-hover);
+    background: var(--wash-hover);
   }
 
   section {
@@ -177,18 +177,18 @@
     top: 3px;
     width: auto;
     padding: 2px 6px;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   .caret {
     width: 10px;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   .count,
   .track {
     margin-left: auto;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     font-weight: normal;
     font-size: 11px;
   }
@@ -215,7 +215,7 @@
 
   .more {
     padding: 3px 26px;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     font-size: 12px;
   }
 </style>

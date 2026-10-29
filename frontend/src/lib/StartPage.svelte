@@ -224,7 +224,7 @@
   }
 
   .group {
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
     padding: 4px 0;
   }
 
@@ -253,8 +253,8 @@
   .small {
     padding: 1px 8px;
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     cursor: pointer;
     font-size: 12px;
   }
@@ -276,7 +276,7 @@
   li {
     display: flex;
     align-items: center;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   .group li:last-child {
@@ -314,11 +314,11 @@
   .forget {
     background: none;
     border: none;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     cursor: pointer;
   }
 
   .muted {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 </style>

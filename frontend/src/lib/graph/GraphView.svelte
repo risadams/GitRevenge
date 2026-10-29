@@ -3,7 +3,8 @@
   import { CommitRow, GraphRows, SearchGraph } from '../../../wailsjs/go/app/App.js'
   import { session } from '../session.svelte'
   import { EventsOn } from '../../../wailsjs/runtime/runtime.js'
-  import { drawRow, graphWidth, layoutColumns, ROW_HEIGHT, type Theme } from './draw'
+  import { theme as colorTheme } from '../theme.svelte'
+  import { drawRow, graphWidth, LANE_COUNT, layoutColumns, ROW_HEIGHT, setLaneColors, type Theme } from './draw'
   import { RowCache, type Page, type Ref, type Row } from './rowCache'
 
   let {
@@ -59,12 +60,14 @@
 
   function theme(): Theme {
     const css = getComputedStyle(document.documentElement)
+    const token = (name: string) => css.getPropertyValue(name).trim()
+    setLaneColors(Array.from({ length: LANE_COUNT }, (_, i) => token(`--lane-${i}`)))
     return {
-      bg: css.getPropertyValue('--bg').trim(),
-      fg: css.getPropertyValue('--fg').trim(),
-      muted: css.getPropertyValue('--fg-muted').trim(),
-      selected: css.getPropertyValue('--bg-selected').trim() || '#264f78',
-      hover: css.getPropertyValue('--bg-hover').trim() || '#2a2d2e',
+      bg: token('--paper'),
+      fg: token('--ink'),
+      muted: token('--ink-mute'),
+      selected: token('--selected'),
+      hover: token('--wash-hover'),
     }
   }
 
@@ -244,6 +247,12 @@
     }
   }
 
+  // The canvas holds painted colours, so a theme change needs a repaint.
+  $effect(() => {
+    void colorTheme.resolved
+    schedule()
+  })
+
   onMount(() => {
     const ro = new ResizeObserver(schedule)
     ro.observe(scroller)
@@ -380,8 +389,8 @@
     align-items: center;
     gap: 12px;
     padding: 4px 12px;
-    color: var(--fg-muted);
-    border-bottom: 1px solid var(--border);
+    color: var(--ink-mute);
+    border-bottom: 1px solid var(--paper-edge);
     font-size: 12px;
   }
 
@@ -395,15 +404,15 @@
   .search input {
     width: 260px;
     padding: 2px 6px;
-    background: var(--bg);
-    color: var(--fg);
-    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--paper-edge);
   }
 
   .search button {
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     cursor: pointer;
   }
 
@@ -412,7 +421,7 @@
   }
 
   .error {
-    color: #f0a0a0;
+    color: var(--danger);
   }
 
   /* The canvas paints the visible rows; the transparent scroller above it provides the

@@ -287,8 +287,8 @@
     flex-direction: column;
     width: 420px;
     min-width: 300px;
-    border-left: 1px solid var(--border);
-    background: var(--bg-raised);
+    border-left: 1px solid var(--paper-edge);
+    background: var(--paper-warm);
   }
 
   .stashbar {
@@ -307,7 +307,7 @@
   }
 
   .conflicts header {
-    color: #f48771;
+    color: var(--danger);
   }
 
   .lists {
@@ -340,16 +340,16 @@
   }
 
   li:hover {
-    background: var(--bg-hover);
+    background: var(--wash-hover);
   }
 
   li.active {
-    background: var(--bg-selected);
+    background: var(--selected);
   }
 
   button {
     background: none;
-    border: 1px solid var(--border);
+    border: 1px solid var(--paper-edge);
     color: inherit;
     font: inherit;
     cursor: pointer;
@@ -389,25 +389,25 @@
   }
 
   .c-A {
-    color: #89d185;
+    color: var(--success);
   }
 
   .c-D {
-    color: #f48771;
+    color: var(--danger);
   }
 
   .c-M,
   .c-T {
-    color: #e2c08d;
+    color: var(--accent-c);
   }
 
   .c-R,
   .c-C {
-    color: #75beff;
+    color: var(--accent-a);
   }
 
   .c-\! {
-    color: #ff5370;
+    color: var(--danger);
   }
 
   .confirm {
@@ -419,8 +419,8 @@
   }
 
   .danger {
-    border-color: #a33;
-    color: #f48771;
+    border-color: var(--danger);
+    color: var(--danger);
   }
 
   .composer {
@@ -428,7 +428,7 @@
     flex-direction: column;
     gap: 6px;
     padding: 10px 12px;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--paper-edge);
   }
 
   .summary {
@@ -441,22 +441,22 @@
   textarea {
     flex: 1;
     padding: 4px 6px;
-    background: var(--bg);
-    color: var(--fg);
-    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--paper-edge);
     font: inherit;
     resize: vertical;
   }
 
   .count {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     font-size: 11px;
     min-width: 20px;
     text-align: right;
   }
 
   .count.long {
-    color: #e2c08d;
+    color: var(--warning);
   }
 
   .row {
@@ -467,12 +467,13 @@
   }
 
   .signed {
-    color: #89d185;
+    color: var(--success);
   }
 
   .primary {
     padding: 6px;
-    background: var(--bg-selected);
-    border-color: var(--bg-selected);
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
   }
 </style>

@@ -191,7 +191,7 @@
     align-items: center;
     gap: 8px;
     padding: 4px 8px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   .file {
@@ -204,8 +204,8 @@
   .badge {
     font-size: 11px;
     padding: 0 6px;
-    border: 1px solid #a33;
-    color: #f48771;
+    border: 1px solid var(--danger);
+    color: var(--danger);
   }
 
   .spacer {
@@ -215,8 +215,8 @@
   button {
     padding: 2px 8px;
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     cursor: pointer;
   }
 
@@ -226,8 +226,9 @@
   }
 
   .primary {
-    background: var(--bg-selected);
-    border-color: var(--bg-selected);
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
   }
 
   .back {
@@ -237,7 +238,7 @@
 
   .link {
     border: none;
-    color: #75beff;
+    color: var(--accent-a);
     padding: 0 4px;
   }
 
@@ -245,7 +246,7 @@
     display: flex;
     flex: 1;
     min-height: 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   .sides section {
@@ -256,14 +257,14 @@
   }
 
   .sides section + section {
-    border-left: 1px solid var(--border);
+    border-left: 1px solid var(--paper-edge);
   }
 
   h4 {
     margin: 0;
     padding: 4px 8px;
     font-size: 12px;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   .editor {
@@ -276,19 +277,19 @@
 
   .editor :global(.cm-editor) {
     height: 100%;
-    background: var(--bg);
-    color: var(--fg);
+    background: var(--paper);
+    color: var(--ink);
   }
 
   .editor :global(.cm-gutters) {
-    background: var(--bg-raised);
-    color: var(--fg-muted);
-    border-right: 1px solid var(--border);
+    background: var(--paper-warm);
+    color: var(--ink-mute);
+    border-right: 1px solid var(--paper-edge);
   }
 
   .editor :global(.cm-content) {
     font-family: var(--font-mono);
-    caret-color: var(--fg);
+    caret-color: var(--ink);
   }
 
   .strip {
@@ -297,7 +298,7 @@
     gap: 10px;
     align-items: center;
     padding: 6px 8px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
     font-size: 12px;
   }
 
@@ -308,7 +309,7 @@
   }
 
   .done {
-    color: #89d185;
+    color: var(--success);
   }
 
   .result {
@@ -319,7 +320,7 @@
   }
 
   .muted {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     padding: 8px 12px;
   }
 </style>

@@ -154,7 +154,7 @@
 
 <style>
   section {
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--paper-edge);
   }
 
   .head {
@@ -184,20 +184,20 @@
   }
 
   .caret {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   .count {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     font-weight: normal;
     font-size: 11px;
   }
 
   .tool {
     padding: 0 6px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--paper-edge);
     font-size: 11px;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   ul {
@@ -217,7 +217,7 @@
   }
 
   .item:hover {
-    background: var(--bg-hover);
+    background: var(--wash-hover);
   }
 
   .name {
@@ -235,30 +235,30 @@
   .badge {
     font-size: 10px;
     padding: 0 4px;
-    border: 1px solid var(--border);
-    color: var(--fg-muted);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink-mute);
     white-space: nowrap;
   }
 
   .badge.mine {
-    color: #89d185;
+    color: var(--success);
   }
 
   .s-uninitialized,
   .s-modified {
-    color: #e2c08d;
+    color: var(--accent-c);
   }
 
   .s-conflict {
-    color: #f48771;
+    color: var(--danger);
   }
 
   .x {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   .muted {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   .pad {

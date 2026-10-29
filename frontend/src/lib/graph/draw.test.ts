@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clip, graphWidth, LANE_WIDTH, laneColor, laneX, PALETTE, sortRefs } from './draw'
+import { clip, graphWidth, LANE_COUNT, LANE_WIDTH, laneColor, laneVar, laneX, setLaneColors, sortRefs } from './draw'
 
 describe('graph geometry', () => {
   it('spaces lanes evenly', () => {
@@ -12,8 +12,11 @@ describe('graph geometry', () => {
   })
 
   it('cycles colors, including for negative indexes', () => {
-    expect(laneColor(PALETTE.length)).toBe(PALETTE[0])
-    expect(laneColor(-1)).toBe(PALETTE[PALETTE.length - 1])
+    const colors = Array.from({ length: LANE_COUNT }, (_, i) => `#00000${i}`)
+    setLaneColors(colors)
+    expect(laneColor(LANE_COUNT)).toBe(colors[0])
+    expect(laneColor(-1)).toBe(colors[LANE_COUNT - 1])
+    expect(laneVar(LANE_COUNT + 2)).toBe('var(--lane-2)')
   })
 })
 

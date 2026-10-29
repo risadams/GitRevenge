@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Blame } from '../../../wailsjs/go/app/App.js'
   import type { git } from '../../../wailsjs/go/models'
-  import { formatTime, laneColor } from '../graph/draw'
+  import { formatTime, laneVar } from '../graph/draw'
   import { session } from '../session.svelte'
   import type { DiffTarget } from './DiffView.svelte'
   import { highlightLines, languageFor, type Token } from './highlight'
@@ -66,7 +66,7 @@
           {#each lines as l, i (i)}
             {@const start = i === 0 || lines[i - 1].commit !== l.commit}
             <tr class:start>
-              <td class="gutter" style:border-left-color={uncommitted(l.commit) ? 'transparent' : laneColor(colorOf[l.commit] ?? 0)}>
+              <td class="gutter" style:border-left-color={uncommitted(l.commit) ? 'transparent' : laneVar(colorOf[l.commit] ?? 0)}>
                 {#if start}
                   {#if uncommitted(l.commit)}
                     <span class="muted">Not committed yet</span>
@@ -102,7 +102,7 @@
     align-items: center;
     gap: 8px;
     padding: 4px 8px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   .file {
@@ -119,8 +119,8 @@
   header button {
     padding: 2px 8px;
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     cursor: pointer;
   }
 
@@ -141,7 +141,7 @@
   }
 
   tr.start td {
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--paper-edge);
   }
 
   td {
@@ -156,13 +156,13 @@
     border-left: 3px solid transparent;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-family: var(--font-ui);
+    font-family: var(--font-serif);
   }
 
   .sha {
     background: none;
     border: none;
-    color: #75beff;
+    color: var(--accent-a);
     font-family: var(--font-mono);
     padding: 0;
     cursor: pointer;
@@ -174,7 +174,7 @@
 
   .num {
     text-align: right;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     user-select: none;
   }
 
@@ -184,7 +184,7 @@
   }
 
   .muted {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   p.muted {
