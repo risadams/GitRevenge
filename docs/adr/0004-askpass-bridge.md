@@ -11,7 +11,7 @@ A GUI has no terminal. If git or ssh needs a password, a passphrase or a host-ke
 
 1. **Existing credential helpers come first.** These are GCM, `osxkeychain` and `ssh-agent`. In the common case, no prompt ever reaches the app.
 2. **Git never prompts on a terminal.** Every git invocation sets `GIT_TERMINAL_PROMPT=0`.
-3. **Remaining prompts go through an askpass bridge.** `GIT_ASKPASS` and `SSH_ASKPASS` (with `SSH_ASKPASS_REQUIRE=force`) point at the `gitrevenge` binary in a helper mode. The helper relays each prompt to the running app over a local socket, which only the current user can access. The app shows a dialog and passes the answer back to git.
+3. **Remaining prompts go through an askpass bridge.** `GIT_ASKPASS` and `SSH_ASKPASS` (with `SSH_ASKPASS_REQUIRE=force`) point at the `gitrevenge` binary in a helper mode. The helper relays each prompt to the running app over a loopback TCP connection (`127.0.0.1`, random port). The app answers only requests that carry a random 256-bit token, which is passed solely in the git child process's environment. The app shows a dialog and passes the answer back to git, and the prompt times out after 5 minutes. *Amended 2026-10-28 (#46): a loopback port plus token replaces the per-user local socket, because it behaves the same on Windows and macOS.*
 4. **Unknown SSH host keys get their own confirmation dialog**, which shows the key's fingerprint. They are never accepted silently.
 5. **Git Revenge never stores credentials itself.**
 
@@ -20,4 +20,4 @@ The same helper-mode mechanism will later serve as `GIT_SEQUENCE_EDITOR` and `GI
 ## Consequences
 
 - Behavior matches the user's command-line setup.
-- The helper mode and the local socket protocol need tests on Windows and macOS.
+- The helper mode and the relay protocol are tested end to end: git fetches over HTTP Basic auth with its prompts answered through the bridge. The real Windows GUI-subsystem executable has been verified to work as the helper.

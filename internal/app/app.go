@@ -6,6 +6,7 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/risadams/gitrevenge/internal/askpass"
 	"github.com/risadams/gitrevenge/internal/git"
 	"github.com/risadams/gitrevenge/internal/session"
 	"github.com/risadams/gitrevenge/internal/version"
@@ -23,6 +24,10 @@ type App struct {
 	sessOnce sync.Once
 	sess     *session.Manager
 	sessErr  error
+
+	net network
+	// promptHook answers credential prompts in tests instead of the UI.
+	promptHook func(text string, kind askpass.Kind) (string, bool)
 }
 
 // Environment reports the git installation the app will use.
@@ -49,6 +54,9 @@ func (a *App) Startup(ctx context.Context) {
 func (a *App) Shutdown(context.Context) {
 	if a.sess != nil {
 		a.sess.CloseAll()
+	}
+	if a.net.server != nil {
+		_ = a.net.server.Close()
 	}
 }
 

@@ -2,6 +2,8 @@
   import { CommitRow, WorkingTree } from '../../wailsjs/go/app/App.js'
   import ContextMenu, { type MenuItem } from './ContextMenu.svelte'
   import Dialog, { type DialogSpec } from './Dialog.svelte'
+  import RemotesDialog from './RemotesDialog.svelte'
+  import Toolbar from './Toolbar.svelte'
   import { checkoutRef, commitItems, newBranchDialog, refItems, type MenuContext } from './menus'
   import CommitPanel from './CommitPanel.svelte'
   import DiffView, { type DiffTarget } from './diff/DiffView.svelte'
@@ -21,6 +23,7 @@
   let menu = $state<{ x: number; y: number; items: MenuItem[] } | null>(null)
 
   let dialog = $state<DialogSpec | null>(null)
+  let remotesOpen = $state(false)
   const ctx: MenuContext = {
     get path() {
       return path
@@ -79,6 +82,7 @@
     onContext={(ref, x, y) => openMenu(refItems(ref, ctx), x, y)}
   />
   <div class="main">
+    <Toolbar {path} onManageRemotes={() => (remotesOpen = true)} />
     <button
       class="wip"
       class:active={view === 'wip'}
@@ -118,6 +122,9 @@
 {/if}
 {#if dialog}
   <Dialog spec={dialog} onClose={() => (dialog = null)} />
+{/if}
+{#if remotesOpen}
+  <RemotesDialog {path} onClose={() => (remotesOpen = false)} />
 {/if}
 
 <style>

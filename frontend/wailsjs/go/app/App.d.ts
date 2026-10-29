@@ -4,7 +4,11 @@ import {app} from '../models';
 import {git} from '../models';
 import {graph} from '../models';
 
+export function AnswerPrompt(arg1:string,arg2:string,arg3:boolean):Promise<void>;
+
 export function BranchAction(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
+
+export function CancelNetwork(arg1:string):Promise<void>;
 
 export function ChooseAndOpenRepo():Promise<app.RepoTab>;
 
@@ -20,6 +24,8 @@ export function DiscardFiles(arg1:string,arg2:Array<string>):Promise<void>;
 
 export function Environment():Promise<app.Environment>;
 
+export function Fetch(arg1:string,arg2:string):Promise<void>;
+
 export function FileContents(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:boolean):Promise<git.FileContents>;
 
 export function GraphRows(arg1:string,arg2:number,arg3:number):Promise<app.GraphPage>;
@@ -28,9 +34,19 @@ export function LastCommitMessage(arg1:string):Promise<string>;
 
 export function OpenRepo(arg1:string):Promise<app.RepoTab>;
 
+export function Pull(arg1:string,arg2:string):Promise<void>;
+
+export function PushCurrent(arg1:string,arg2:boolean):Promise<void>;
+
+export function PushRef(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
+
 export function RecentRepos():Promise<Array<app.RecentRepo>>;
 
 export function Refs(arg1:string):Promise<Array<git.Ref>>;
+
+export function RemoteAction(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
+
+export function Remotes(arg1:string):Promise<Array<git.Remote>>;
 
 export function RemoveRecentRepo(arg1:string):Promise<void>;
 

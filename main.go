@@ -4,18 +4,25 @@ package main
 import (
 	"embed"
 	"log"
+	"os"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 
 	"github.com/risadams/gitrevenge/internal/app"
+	"github.com/risadams/gitrevenge/internal/askpass"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
 func main() {
+	// Started by git or ssh to ask for a credential: relay it to the running app and exit.
+	if askpass.IsHelper() {
+		os.Exit(askpass.RunHelper(os.Stdout, os.Stderr))
+	}
+
 	a := app.New()
 
 	err := wails.Run(&options.App{

@@ -4,6 +4,7 @@
   import type { app } from '../wailsjs/go/models'
   import { BrowserOpenURL } from '../wailsjs/runtime/runtime.js'
   import OperationBanner from './lib/OperationBanner.svelte'
+  import PromptDialog from './lib/PromptDialog.svelte'
   import RepoView from './lib/RepoView.svelte'
   import { session } from './lib/session.svelte'
   import StartPage from './lib/StartPage.svelte'
@@ -17,6 +18,8 @@
     if (!env.problem) await session.restore()
   })
 </script>
+
+<PromptDialog />
 
 <div class="shell">
   <header>
