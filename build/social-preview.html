@@ -1,0 +1,222 @@
+<!doctype html>
+<!-- Source for build/social-preview.png, the GitHub social preview (1280×640).
+     Render: chrome --headless=new --hide-scrollbars --window-size=1280,640 \
+       --screenshot=build/social-preview.png build/social-preview.html
+     Fonts come from frontend/node_modules (run npm ci in frontend first). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Git Revenge social preview</title>
+<style>
+  @font-face {
+    font-family: 'Fraunces';
+    font-style: normal;
+    font-weight: 100 900;
+    src: url('../frontend/node_modules/@fontsource-variable/fraunces/files/fraunces-latin-full-normal.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Fraunces';
+    font-style: italic;
+    font-weight: 100 900;
+    src: url('../frontend/node_modules/@fontsource-variable/fraunces/files/fraunces-latin-full-italic.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Caveat';
+    font-weight: 400 700;
+    src: url('../frontend/node_modules/@fontsource-variable/caveat/files/caveat-latin-wght-normal.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'JetBrains Mono';
+    font-weight: 100 800;
+    src: url('../frontend/node_modules/@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2') format('woff2');
+  }
+
+  :root {
+    --paper: #faf6ef;
+    --paper-warm: #f4ecdd;
+    --paper-edge: #d8c9ad;
+    --ink: #1a1614;
+    --ink-soft: #3a322c;
+    --ink-mute: #6b625a;
+    --rose: #cb0162;
+    --teal: #1a5b6e;
+    --plum: #6b3a6e;
+    --sepia: #8a5a3c;
+  }
+
+  html, body {
+    margin: 0;
+    width: 1280px;
+    height: 640px;
+    overflow: hidden;
+    background: var(--paper);
+  }
+
+  .card {
+    position: relative;
+    width: 1280px;
+    height: 640px;
+    overflow: hidden;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Fraunces', Georgia, serif;
+  }
+
+  /* Watercolor blobs behind everything. */
+  .blob {
+    position: absolute;
+    filter: blur(60px);
+    opacity: 0.5;
+    mix-blend-mode: multiply;
+  }
+  .blob.rose { width: 520px; height: 420px; right: -60px; top: -90px; background: #e24a8a; border-radius: 45% 55% 50% 50% / 55% 45% 55% 45%; opacity: 0.26; }
+  .blob.teal { width: 460px; height: 360px; left: -140px; bottom: -170px; background: #3d8a9f; border-radius: 55% 45% 40% 60% / 45% 55% 45% 55%; opacity: 0.3; }
+  .blob.plum { width: 300px; height: 260px; right: 220px; bottom: -150px; background: #9a5e9e; border-radius: 50% 50% 45% 55%; opacity: 0.22; }
+
+  .grain {
+    position: absolute;
+    inset: 0;
+    opacity: 0.07;
+    mix-blend-mode: multiply;
+  }
+
+  .copy {
+    position: absolute;
+    left: 96px;
+    top: 92px;
+    width: 640px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .icon {
+    width: 104px;
+    height: 104px;
+    margin-bottom: 26px;
+  }
+
+  .kicker {
+    font-family: 'Caveat', cursive;
+    font-size: 40px;
+    color: var(--teal);
+    transform: rotate(-2.5deg);
+    transform-origin: left center;
+    margin: 0 0 2px 4px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 118px;
+    line-height: 0.98;
+    font-weight: 420;
+    letter-spacing: -0.035em;
+    font-variation-settings: 'SOFT' 50, 'WONK' 1, 'opsz' 144;
+  }
+
+  h1 em {
+    font-style: italic;
+    font-weight: 500;
+    color: var(--rose);
+  }
+
+  .lede {
+    margin: 26px 0 0;
+    max-width: 30ch;
+    font-size: 31px;
+    line-height: 1.35;
+    color: var(--ink-soft);
+    font-variation-settings: 'opsz' 36;
+  }
+
+  .meta {
+    margin-top: 34px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 17px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+
+  .graph {
+    position: absolute;
+    right: 70px;
+    top: 0;
+    width: 440px;
+    height: 640px;
+  }
+
+  .pill {
+    position: absolute;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    padding: 5px 11px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .pill.head { background: var(--rose); color: var(--paper); }
+  .pill.tag { background: var(--paper); color: #6e4528; box-shadow: inset 0 0 0 2px #b8875f; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="blob rose"></div>
+  <div class="blob teal"></div>
+  <div class="blob plum"></div>
+
+  <!-- A commit graph: lanes fork and merge down the right side. -->
+  <svg class="graph" viewBox="0 0 440 640" aria-hidden="true">
+    <g fill="none" stroke-width="7" stroke-linecap="round">
+      <!-- rose: main, top to bottom -->
+      <path d="M150 -20 V660" stroke="#cb0162"/>
+      <!-- teal: a feature branch that forks and merges back -->
+      <path d="M150 470 C150 420 250 430 250 380 V200 C250 160 150 165 150 130" stroke="#1a5b6e"/>
+      <!-- plum: a branch off the teal one -->
+      <path d="M250 330 C250 300 340 300 340 270 V230" stroke="#6b3a6e"/>
+      <!-- sepia: an older branch merging in near the bottom -->
+      <path d="M150 600 C150 570 60 575 60 540 V430" stroke="#8a5a3c"/>
+      <!-- teal-soft: a long-lived release line running off the top -->
+      <path d="M340 -20 V140 C340 175 250 170 250 200" stroke="#3d8a9f" opacity="0.85"/>
+    </g>
+    <g stroke-width="6" fill="#faf6ef">
+      <circle cx="150" cy="70" r="17" stroke="#cb0162" fill="#cb0162"/>
+      <circle cx="150" cy="130" r="14" stroke="#cb0162"/>
+      <circle cx="250" cy="250" r="14" stroke="#1a5b6e"/>
+      <circle cx="340" cy="230" r="14" stroke="#6b3a6e"/>
+      <circle cx="250" cy="330" r="14" stroke="#1a5b6e"/>
+      <circle cx="150" cy="300" r="14" stroke="#cb0162"/>
+      <circle cx="60" cy="430" r="14" stroke="#8a5a3c"/>
+      <circle cx="150" cy="470" r="14" stroke="#cb0162"/>
+      <circle cx="150" cy="600" r="14" stroke="#cb0162"/>
+      <circle cx="340" cy="40" r="14" stroke="#3d8a9f"/>
+    </g>
+  </svg>
+  <!-- Labels sit right of their nodes: the graph starts at x 770, so node x + 800. -->
+  <span class="pill head" style="left: 950px; top: 57px;">main</span>
+  <span class="pill tag" style="left: 950px; top: 117px;">v0.6.0</span>
+
+  <svg class="grain" width="1280" height="640" aria-hidden="true">
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+    <rect width="1280" height="640" filter="url(#grain)"/>
+  </svg>
+
+  <div class="copy">
+    <svg class="icon" viewBox="100 100 824 824" aria-hidden="true">
+      <rect x="100" y="100" width="824" height="824" rx="185" fill="#f4ecdd"/>
+      <rect x="100.5" y="100.5" width="823" height="823" rx="184.5" fill="none" stroke="#d8c9ad" stroke-width="2"/>
+      <g transform="translate(206 206) scale(9.5625)">
+        <path d="M13 9 H18 V58 H13 Z" fill="#1a5b6e"/>
+        <circle cx="15.5" cy="7.5" r="4" fill="#1a5b6e"/>
+        <path d="M18 12 C28 7 38 17 54 11 V37 C38 43 28 33 18 38 Z" fill="#cb0162"/>
+        <path d="M24 19 C32 19 34 25 44 25 M24 31 C32 31 34 25 44 25" fill="none" stroke="#f4ecdd" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="45" cy="25" r="4.5" fill="#f4ecdd"/>
+      </g>
+    </svg>
+    <span class="kicker">no cloud, no AI, just git</span>
+    <h1>Git <em>Revenge</em></h1>
+    <p class="lede">A fast, local-only desktop git client, built for very large repositories.</p>
+    <span class="meta">Windows · macOS · Apache-2.0</span>
+  </div>
+</div>
+</body>
+</html>
