@@ -308,3 +308,16 @@ func (m *Manager) watchLocked(r *Repo) *watch.Watcher {
 	}
 	return w
 }
+
+// GitFor returns a git handle for the repository containing path: the open tab's (sharing
+// its write queue) if there is one, otherwise a fresh handle with no watcher or graph.
+func (m *Manager) GitFor(ctx context.Context, path string) (*git.Repo, string, error) {
+	root, err := m.Resolve(ctx, path)
+	if err != nil {
+		return nil, "", err
+	}
+	if r := m.Get(root); r != nil {
+		return r.Git, root, nil
+	}
+	return git.OpenRepo(m.runner, root), root, nil
+}
