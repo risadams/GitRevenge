@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -80,7 +81,7 @@ func TestCloneValidatesInput(t *testing.T) {
 	} {
 		if _, err := a.Clone(c.url, c.parent, c.name); err == nil {
 			t.Errorf("Clone(%q, %q, %q) succeeded", c.url, c.parent, c.name)
-		} else if _, ok := err.(userError); !ok {
+		} else if ue := userError(""); !errors.As(err, &ue) {
 			t.Errorf("Clone(%q, %q, %q) = %v, want a user error", c.url, c.parent, c.name, err)
 		}
 	}
@@ -105,7 +106,7 @@ func TestCancelCloneCleansUp(t *testing.T) {
 	a := newTestApp(t)
 	reached := make(chan struct{}, 1)
 	release := make(chan struct{})
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		select {
 		case reached <- struct{}{}:
 		default:
