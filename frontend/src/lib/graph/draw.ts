@@ -45,6 +45,23 @@ export function laneX(col: number, m: Metrics): number {
   return m.pad + col * m.laneW + m.laneW / 2
 }
 
+/**
+ * The first lane to show when the graph is wider than its column: 0 when every node in view
+ * fits; otherwise far enough right that they do, or, when they can't all fit, that the
+ * selected node does (else the leftmost node in view).
+ */
+export function laneWindow(minCol: number, maxCol: number, selectedCol: number | null, capacity: number): number {
+  if (capacity <= 0 || maxCol < capacity) return 0
+  if (maxCol - minCol < capacity) return Math.max(0, maxCol - capacity + 1)
+  const anchor = selectedCol ?? minCol
+  return Math.max(0, anchor - Math.floor(capacity / 2))
+}
+
+/** How many lanes fit in a graph column graphW pixels wide. */
+export function laneCapacity(graphW: number, m: Metrics): number {
+  return Math.max(1, Math.floor((graphW - m.pad * 2) / m.laneW))
+}
+
 /** Width in pixels of the graph column for rows using up to `lanes` columns. */
 export function graphWidth(lanes: number, max: number, m: Metrics): number {
   return Math.min(max, m.pad * 2 + Math.max(1, lanes) * m.laneW)
@@ -93,6 +110,8 @@ export interface Theme {
 export interface Layout {
   width: number
   graphW: number
+  /** Lanes scrolled out of view on the left (see laneWindow). */
+  firstLane: number
   density: Density
   m: Metrics
   /** Compact's right-hand columns: author, date, sha. */
@@ -101,11 +120,12 @@ export interface Layout {
   shaW: number
 }
 
-export function layoutColumns(width: number, graphW: number, density: Density): Layout {
+export function layoutColumns(width: number, graphW: number, density: Density, firstLane = 0): Layout {
   const compact = density === 'compact'
   return {
     width,
     graphW,
+    firstLane,
     density,
     m: METRICS[density],
     shaW: 76,
@@ -155,10 +175,11 @@ export function drawRow(
   ctx.lineWidth = 2
   ctx.lineCap = 'round'
   const mid = y + h / 2
-  for (const s of row.up) segment(ctx, laneX(s.from, m), y, laneX(s.to, m), mid, laneColor(s.color))
-  for (const s of row.down) segment(ctx, laneX(s.from, m), mid, laneX(s.to, m), y + h, laneColor(s.color))
+  const lx = (col: number) => laneX(col - lay.firstLane, m)
+  for (const s of row.up) segment(ctx, lx(s.from), y, lx(s.to), mid, laneColor(s.color))
+  for (const s of row.down) segment(ctx, lx(s.from), mid, lx(s.to), y + h, laneColor(s.color))
 
-  const x = laneX(row.col, m)
+  const x = lx(row.col)
   const color = laneColor(row.color)
   const isHead = refs.some((r) => r.head)
   const isStash = refs.some((r) => r.kind === 'stash')
