@@ -11,6 +11,8 @@ export interface MenuContext {
   /** The checked-out branch, or "" when HEAD is detached. */
   current: () => string
   openDialog: (spec: DialogSpec) => void
+  /** Opens the interactive rebase editor for the commits after base. */
+  openRebase: (base: string) => void
 }
 
 const integrate = (path: string, action: string, ...args: string[]) => () =>
@@ -180,6 +182,9 @@ export function commitItems(row: Row, refs: Ref[], ctx: MenuContext): MenuItem[]
     },
     ...(ctx.current() && !refs.some((r) => r.head)
       ? [{ label: `Cherry-pick ${short} onto ${ctx.current()}`, run: integrate(path, 'cherry-pick', row.id) }]
+      : []),
+    ...(ctx.current() && !refs.some((r) => r.head)
+      ? [{ label: `Interactive rebase ${ctx.current()} from here…`, run: () => ctx.openRebase(row.id) }]
       : []),
     {
       label: `Reset ${ctx.current() || 'HEAD'} to ${short}…`,

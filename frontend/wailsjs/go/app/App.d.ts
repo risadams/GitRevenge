@@ -34,6 +34,8 @@ export function GraphRows(arg1:string,arg2:number,arg3:number):Promise<app.Graph
 
 export function Integrate(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
 
+export function InteractiveRebase(arg1:string,arg2:string,arg3:Array<git.RebaseItem>):Promise<void>;
+
 export function LastCommitMessage(arg1:string):Promise<string>;
 
 export function OpenRepo(arg1:string):Promise<app.RepoTab>;
@@ -43,6 +45,8 @@ export function Pull(arg1:string,arg2:string):Promise<void>;
 export function PushCurrent(arg1:string,arg2:boolean):Promise<void>;
 
 export function PushRef(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
+
+export function RebasePlan(arg1:string,arg2:string):Promise<Array<git.RebaseItem>>;
 
 export function RecentRepos():Promise<Array<app.RecentRepo>>;
 

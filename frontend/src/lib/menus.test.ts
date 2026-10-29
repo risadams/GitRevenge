@@ -14,7 +14,7 @@ const ref = (short: string, kind: Ref['kind'], head = false): Ref => ({
   behind: 0,
   gone: false,
 })
-const ctx = (current: string): MenuContext => ({ path: '/r', current: () => current, openDialog: () => {} })
+const ctx = (current: string): MenuContext => ({ path: '/r', current: () => current, openDialog: () => {}, openRebase: () => {} })
 const labels = (items: { label: string }[]) => items.map((i) => i.label)
 
 describe('dropItems', () => {
