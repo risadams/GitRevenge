@@ -6,6 +6,7 @@
   import RebaseEditor from './RebaseEditor.svelte'
   import RemotesDialog from './RemotesDialog.svelte'
   import Toolbar from './Toolbar.svelte'
+  import Icon from './ui/Icon.svelte'
   import { checkoutRef, commitItems, dropItems, groups, newBranchDialog, refItems, type MenuContext } from './menus'
   import CommitPanel from './CommitPanel.svelte'
   import BlameView from './diff/BlameView.svelte'
@@ -137,7 +138,7 @@
         if (diff?.mode === 'commit') diff = null
       }}
     >
-      <span class="dot" class:dirty={changes > 0} aria-hidden="true"></span>
+      <span class="dot" class:dirty={changes > 0}><Icon name={changes > 0 ? 'st-modified' : 'check'} /></span>
       <span class="wip-title">{changes > 0 ? 'Uncommitted changes' : 'Working tree'}</span>
       <span class="meta">{changes > 0 ? `${changes} ${changes === 1 ? 'file' : 'files'}` : 'clean'}</span>
     </button>
@@ -253,13 +254,11 @@
   }
 
   .dot {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    border: 2px dashed var(--ink-faint);
+    display: inline-flex;
+    color: var(--ink-faint);
   }
 
   .dot.dirty {
-    border-color: var(--accent-a);
+    color: var(--warning);
   }
 </style>

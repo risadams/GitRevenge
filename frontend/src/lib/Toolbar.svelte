@@ -114,9 +114,9 @@
       aria-label="Pull options"
       onclick={(e) =>
         dropdown(e, [
-          { label: 'Pull (fast-forward only)', run: () => pull('ff-only') },
-          { label: 'Pull (merge)', run: () => pull('merge') },
-          { label: 'Pull (rebase)', run: () => pull('rebase') },
+          { label: 'Pull (fast-forward only)', icon: 'pull', run: () => pull('ff-only') },
+          { label: 'Pull (merge)', icon: 'merge', run: () => pull('merge') },
+          { label: 'Pull (rebase)', icon: 'rebase', run: () => pull('rebase') },
         ])}><Icon name="chevron" size={13} /></button
     >
   </span>
@@ -126,7 +126,7 @@
       class="tool caret"
       disabled={!!running}
       aria-label="Push options"
-      onclick={(e) => dropdown(e, [{ label: 'Force push (with lease)', danger: true, run: () => push(true) }])}><Icon name="chevron" size={13} /></button
+      onclick={(e) => dropdown(e, [{ label: 'Force push (with lease)', icon: 'push', danger: true, run: () => push(true) }])}><Icon name="chevron" size={13} /></button
     >
   </span>
 

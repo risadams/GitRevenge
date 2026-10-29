@@ -1,6 +1,10 @@
 <script lang="ts" module>
+  import type { IconName } from './ui/Icon.svelte'
+
   export interface MenuItem {
     label: string
+    /** Shown before the label at 16px. */
+    icon?: IconName
     /** Destructive items ask for a second click or Enter before running. */
     danger?: boolean
     /** Shown but not selectable; skipped by the arrow keys and type-ahead. */
@@ -28,6 +32,9 @@
   // Keep the menu on screen near the window edges.
   let left = $state(0)
   let top = $state(0)
+
+  // Reserve the icon column when any item has one, so labels line up.
+  let hasIcons = $derived(items.some((i) => i.icon))
 
   let query = ''
   let queryTimer: ReturnType<typeof setTimeout> | undefined
@@ -111,6 +118,7 @@
       onmousedown={(e) => item.disabled && e.preventDefault()}
       onmousemove={() => !item.disabled && active !== i && activate(i)}
     >
+      {#if hasIcons}<span class="icon">{#if item.icon}<Icon name={item.icon} />{/if}</span>{/if}
       <span class="label">{armed === i ? `Press again to ${item.label.toLowerCase()}` : item.label}</span>
       {#if armed === i}<Icon name="warning" size={14} />
       {:else if item.shortcut}<kbd>{formatShortcut(item.shortcut)}</kbd>{/if}
@@ -165,6 +173,13 @@
   .item[aria-disabled='true'] {
     color: var(--ink-faint);
     cursor: default;
+  }
+
+  .icon {
+    display: inline-flex;
+    flex: none;
+    width: 16px;
+    margin-right: -10px;
   }
 
   .label {

@@ -125,9 +125,9 @@
       x: r.left,
       y: r.bottom + 2,
       items: [
-        { label: 'Browse for a repository…', run: () => browseInto(g) },
-        { label: 'Rename…', run: () => renameGroup(g) },
-        { label: 'Delete group', danger: true, run: () => deleteGroup(g) },
+        { label: 'Browse for a repository…', icon: 'folder-open', run: () => browseInto(g) },
+        { label: 'Rename…', icon: 'edit', run: () => renameGroup(g) },
+        { label: 'Delete group', icon: 'trash', danger: true, run: () => deleteGroup(g) },
       ],
     }
   }
