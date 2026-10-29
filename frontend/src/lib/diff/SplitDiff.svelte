@@ -44,7 +44,7 @@
 
 <style>
   .split {
-    font-size: 12px;
+    font-size: 12.5px;
     tab-size: 4;
   }
 
@@ -65,5 +65,37 @@
 
   .split :global(.cm-content) {
     font-family: var(--font-mono);
+  }
+
+  .split :global(.cm-gutters) {
+    color: var(--ink-faint);
+  }
+
+  .split :global(.cm-merge-a .cm-changedLine),
+  .split :global(.cm-deletedChunk) {
+    background: var(--danger-wash);
+  }
+
+  .split :global(.cm-merge-b .cm-changedLine) {
+    background: var(--success-wash);
+  }
+
+  .split :global(.cm-merge-a .cm-changedText) {
+    background: color-mix(in srgb, var(--danger) 35%, transparent);
+  }
+
+  .split :global(.cm-merge-b .cm-changedText) {
+    background: color-mix(in srgb, var(--success) 35%, transparent);
+  }
+
+  .split :global(.cm-collapsedLines) {
+    background: var(--paper-warm);
+    color: var(--ink-mute);
+    font-family: var(--font-serif);
+    font-style: italic;
+  }
+
+  .split :global(.cm-selectionBackground) {
+    background: var(--selection) !important;
   }
 </style>

@@ -156,41 +156,51 @@
 <style>
   .unified {
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 12.5px;
+    line-height: 1.6;
     tab-size: 4;
   }
 
   .hunk {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
 
   header {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    padding: 4px 8px;
-    background: var(--paper-warm);
-    color: var(--ink-mute);
     position: sticky;
     top: 0;
+    z-index: 1;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    min-height: 32px;
+    padding: 3px 8px 3px 14px;
+    background: var(--paper-warm);
+    border-bottom: 1px solid var(--paper-edge);
+    color: var(--accent-b);
   }
 
   header .mono {
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   button {
+    height: 24px;
+    padding: 0 10px;
     background: none;
     border: 1px solid var(--paper-edge);
-    color: var(--ink);
-    font: inherit;
+    border-radius: 4px;
     font-family: var(--font-serif);
-    cursor: pointer;
-    padding: 1px 8px;
+    font-size: 13px;
+    color: var(--ink);
+    white-space: nowrap;
   }
 
-  button:disabled {
-    opacity: 0.5;
+  button:hover:not(:disabled) {
+    background: var(--wash-hover);
   }
 
   .danger {
@@ -204,7 +214,7 @@
   }
 
   td {
-    padding: 0 6px;
+    padding: 0 8px;
     white-space: pre;
     vertical-align: top;
   }
@@ -212,12 +222,13 @@
   .num {
     width: 1%;
     text-align: right;
-    color: var(--ink-mute);
+    color: var(--ink-faint);
     user-select: none;
   }
 
   .sign {
     width: 1%;
+    padding: 0 4px;
     user-select: none;
   }
 
@@ -225,14 +236,25 @@
     width: 100%;
   }
 
+  tr.add,
+  tr.del {
+    cursor: pointer;
+  }
+
   tr.add {
     background: var(--success-wash);
-    cursor: pointer;
   }
 
   tr.del {
     background: var(--danger-wash);
-    cursor: pointer;
+  }
+
+  tr.add .sign {
+    color: var(--success);
+  }
+
+  tr.del .sign {
+    color: var(--danger);
   }
 
   tr.sel {
@@ -247,10 +269,11 @@
     display: flex;
     gap: 8px;
     align-items: center;
-    padding: 6px 8px;
+    padding: 8px 12px;
     background: var(--paper-warm);
     border-top: 1px solid var(--paper-edge);
     font-family: var(--font-serif);
+    font-size: 14px;
   }
 
   footer span {
@@ -258,7 +281,10 @@
   }
 
   .muted {
+    margin: 0;
+    padding: 10px 14px;
     color: var(--ink-mute);
-    padding: 8px;
+    font-family: var(--font-serif);
+    font-style: italic;
   }
 </style>

@@ -19,6 +19,8 @@
   import type { app, git } from '../../wailsjs/go/models'
   import type { DiffTarget } from './diff/DiffView.svelte'
   import { session } from './session.svelte'
+  import Icon from './ui/Icon.svelte'
+  import InkButton from './ui/InkButton.svelte'
 
   let {
     path,
@@ -163,43 +165,56 @@
     {#if confirmDiscard?.length === 1 && confirmDiscard[0] === f.path}
       <span class="confirm">
         Discard?
-        <button class="danger" onclick={() => discard([f.path])}>Yes</button>
-        <button onclick={() => (confirmDiscard = null)}>No</button>
+        <button class="mini danger" onclick={() => discard([f.path])}>Yes</button>
+        <button class="mini" onclick={() => (confirmDiscard = null)}>No</button>
       </span>
     {:else if inStaged}
-      <button class="icon" disabled={busy} onclick={() => unstage([f.path])} title="Unstage">−</button>
+      <button class="icon" disabled={busy} onclick={() => unstage([f.path])} title="Unstage" aria-label="Unstage {f.path}"><Icon name="minus" size={14} /></button>
     {:else}
       {#if !f.conflicted}
-        <button class="icon" disabled={busy} onclick={() => (confirmDiscard = [f.path])} title="Discard changes">↺</button>
+        <button class="icon" disabled={busy} onclick={() => (confirmDiscard = [f.path])} title="Discard changes" aria-label="Discard changes to {f.path}"
+          ><Icon name="undo" size={14} /></button
+        >
       {/if}
-      <button class="icon" disabled={busy} onclick={() => stage([f.path])} title="Stage">+</button>
+      <button class="icon" disabled={busy} onclick={() => stage([f.path])} title="Stage" aria-label="Stage {f.path}"><Icon name="plus" size={14} /></button>
     {/if}
   </li>
 {/snippet}
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <aside class="panel" onkeydown={onKey} role="region" aria-label="Uncommitted changes">
-  <div class="stashbar">
-    {#if stashing}
-      <form
-        onsubmit={(e) => {
-          e.preventDefault()
-          void saveStash()
-        }}
+  <div class="top">
+    <div class="title">
+      <span class="hand">still on your desk</span>
+      <h2>Uncommitted changes</h2>
+    </div>
+    {#if !stashing}
+      <button class="tool" disabled={busy || files.length === 0} onclick={() => (stashing = true)} title="Set these changes aside in a stash"
+        ><Icon name="stash" />Stash…</button
       >
-        <input bind:value={stashMessage} placeholder="Stash message (optional)" aria-label="Stash message" />
-        <label><input type="checkbox" bind:checked={stashUntracked} /> Include untracked</label>
-        <button type="submit" disabled={busy}>Stash</button>
-        <button type="button" onclick={() => (stashing = false)}>Cancel</button>
-      </form>
-    {:else}
-      <button disabled={busy || files.length === 0} onclick={() => (stashing = true)}>Stash changes…</button>
     {/if}
   </div>
+  {#if stashing}
+    <form
+      class="stashbar"
+      onsubmit={(e) => {
+        e.preventDefault()
+        void saveStash()
+      }}
+    >
+      <label class="form-field"><span>Stash message</span><input bind:value={stashMessage} placeholder="Optional" /></label>
+      <div class="stash-row">
+        <label class="form-check"><input type="checkbox" bind:checked={stashUntracked} /> Include untracked</label>
+        <span class="spacer"></span>
+        <button type="button" class="tool" onclick={() => (stashing = false)}>Cancel</button>
+        <button type="submit" class="tool strong" disabled={busy}>Stash</button>
+      </div>
+    </form>
+  {/if}
   <div class="lists">
     {#if conflicted.length}
       <section class="conflicts">
-        <header><span>Conflicts ({conflicted.length})</span></header>
+        <header><span class="meta">Conflicts · {conflicted.length}</span></header>
         <ul>
           {#each conflicted as f (f.path)}
             <li class:active={current?.mode === 'conflict' && current.file === f.path}>
@@ -207,11 +222,11 @@
                 <span class="code c-!">!</span>
                 <span class="path">{f.path}</span>
               </button>
-              <button class="icon" disabled={busy} title="Use ours" onclick={() => act(() => TakeConflictSide(path, f.path, 'ours'))}
-                >O</button
+              <button class="mini" disabled={busy} title="Resolve with ours" onclick={() => act(() => TakeConflictSide(path, f.path, 'ours'))}
+                >Ours</button
               >
-              <button class="icon" disabled={busy} title="Use theirs" onclick={() => act(() => TakeConflictSide(path, f.path, 'theirs'))}
-                >T</button
+              <button class="mini" disabled={busy} title="Resolve with theirs" onclick={() => act(() => TakeConflictSide(path, f.path, 'theirs'))}
+                >Theirs</button
               >
             </li>
           {/each}
@@ -220,21 +235,22 @@
     {/if}
     <section>
       <header>
-        <span>Unstaged ({unstaged.length})</span>
+        <span class="meta">Unstaged · {unstaged.length}</span>
         {#if unstaged.length}
           {#if confirmDiscard && confirmDiscard.length > 1}
             <span class="confirm">
               Discard all unstaged changes?
-              <button class="danger" onclick={() => discard(confirmDiscard ?? [])}>Yes</button>
-              <button onclick={() => (confirmDiscard = null)}>No</button>
+              <button class="mini danger" onclick={() => discard(confirmDiscard ?? [])}>Yes</button>
+              <button class="mini" onclick={() => (confirmDiscard = null)}>No</button>
             </span>
           {:else}
             <button
+              class="mini"
               disabled={busy}
               onclick={() => (confirmDiscard = unstaged.filter((f) => !f.conflicted).map((f) => f.path))}
               title="Discard all unstaged changes">Discard all</button
             >
-            <button disabled={busy} onclick={() => stage([])}>Stage all</button>
+            <button class="mini" disabled={busy} onclick={() => stage([])}>Stage all</button>
           {/if}
         {/if}
       </header>
@@ -244,8 +260,8 @@
     </section>
     <section>
       <header>
-        <span>Staged ({staged.length})</span>
-        {#if staged.length}<button disabled={busy} onclick={() => unstage([])}>Unstage all</button>{/if}
+        <span class="meta">Staged · {staged.length}</span>
+        {#if staged.length}<button class="mini" disabled={busy} onclick={() => unstage([])}>Unstage all</button>{/if}
       </header>
       <ul>
         {#each staged as f (f.path)}{@render fileRow(f, true)}{/each}
@@ -260,6 +276,7 @@
       void commit()
     }}
   >
+    <span class="meta label">Commit message</span>
     <div class="summary">
       <input bind:value={summary} placeholder="Summary (required)" aria-label="Commit summary" />
       <span class="count" class:long={summary.length > 72} title="Keep summaries under about 72 characters"
@@ -268,16 +285,17 @@
     </div>
     <textarea bind:value={body} placeholder="Description" rows="4" aria-label="Commit description"></textarea>
     <div class="row">
-      <label><input type="checkbox" bind:checked={amend} onchange={toggleAmend} /> Amend last commit</label>
+      <label class="form-check"><input type="checkbox" bind:checked={amend} onchange={toggleAmend} /> Amend last commit</label>
       {#if wt?.signing.enabled}
-        <span class="signed" title="commit.gpgsign is set; key: {wt.signing.key || 'default'}"
-          >Signed ({wt.signing.format})</span
-        >
+        <span class="signed meta" title="commit.gpgsign is set; key: {wt.signing.key || 'default'}">Signed · {wt.signing.format}</span>
       {/if}
     </div>
-    <button type="submit" class="primary" disabled={!canCommit}>
-      {amend ? 'Amend commit' : `Commit ${staged.length} ${staged.length === 1 ? 'file' : 'files'}`}
-    </button>
+    <div class="commit-row">
+      <span class="hint meta">Ctrl+Enter</span>
+      <InkButton type="submit" arrow disabled={!canCommit}>
+        {amend ? 'Amend commit' : `Commit ${staged.length} ${staged.length === 1 ? 'file' : 'files'}`}
+      </InkButton>
+    </div>
   </form>
 </aside>
 
@@ -288,26 +306,53 @@
     width: 420px;
     min-width: 300px;
     border-left: 1px solid var(--paper-edge);
-    background: var(--paper-warm);
+    background: var(--paper);
+  }
+
+  .top {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 16px 16px 6px 20px;
+  }
+
+  .title {
+    flex: 1;
+    min-width: 0;
+  }
+
+  h2 {
+    margin: 2px 0 0;
+    font-size: 21px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    font-variation-settings:
+      'SOFT' 50,
+      'WONK' 1;
   }
 
   .stashbar {
-    padding: 8px 12px 0;
-  }
-
-  .stashbar form {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    flex-direction: column;
+    gap: 8px;
+    margin: 4px 16px 4px 20px;
+    padding: 12px;
+    border-radius: 6px;
+    background: var(--paper-warm);
+  }
+
+  .stash-row {
+    display: flex;
     align-items: center;
+    gap: 4px;
   }
 
-  .stashbar label {
-    font-size: 12px;
+  .spacer {
+    flex: 1;
   }
 
-  .conflicts header {
-    color: var(--danger);
+  .strong {
+    color: var(--link);
   }
 
   .lists {
@@ -318,25 +363,33 @@
   header {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 12px 4px;
-    font-weight: 600;
+    gap: 4px;
+    margin: 12px 16px 2px 20px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   header > span:first-child {
     flex: 1;
+    color: var(--ink-soft);
+  }
+
+  .conflicts header > span:first-child {
+    color: var(--danger);
   }
 
   ul {
     list-style: none;
-    margin: 0;
+    margin: 0 8px;
     padding: 0;
   }
 
   li {
     display: flex;
     align-items: center;
-    padding-right: 8px;
+    padding-right: 6px;
+    border-radius: 4px;
+    transition: background-color 0.15s;
   }
 
   li:hover {
@@ -349,42 +402,74 @@
 
   button {
     background: none;
-    border: 1px solid var(--paper-edge);
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
-    padding: 1px 6px;
+    border: none;
   }
 
-  button:disabled {
-    opacity: 0.5;
-    cursor: default;
+  button:hover:not(:disabled) {
+    background: none;
   }
 
   .name {
     flex: 1;
     display: flex;
-    gap: 8px;
+    align-items: baseline;
+    gap: 10px;
     min-width: 0;
-    border: none;
+    padding: 6px 12px;
+    border-radius: 0;
     text-align: left;
-    padding: 3px 12px;
   }
 
   .path {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
   }
 
+  /* Row actions appear on hover or focus, so the list reads calmly. */
   .icon {
-    border: none;
-    width: 22px;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 4px;
+    color: var(--ink-mute);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  li:hover .icon,
+  li.active .icon,
+  .icon:focus-visible {
+    opacity: 1;
+  }
+
+  .icon:hover:not(:disabled) {
+    background: var(--wash-hover);
+    color: var(--ink);
+  }
+
+  .mini {
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  .mini:hover:not(:disabled) {
+    background: var(--wash-hover);
+    color: var(--ink);
   }
 
   .code {
     width: 12px;
     font-family: var(--font-mono);
+    font-size: 12px;
     font-weight: 600;
   }
 
@@ -412,47 +497,63 @@
 
   .confirm {
     display: flex;
-    gap: 4px;
+    gap: 2px;
     align-items: center;
-    font-weight: normal;
-    font-size: 12px;
+    font-size: 12.5px;
+    font-style: italic;
+    color: var(--danger);
   }
 
   .danger {
-    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  .danger:hover:not(:disabled) {
+    background: var(--danger-wash);
     color: var(--danger);
   }
 
   .composer {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 10px 12px;
+    gap: 8px;
+    padding: 14px 16px 16px 20px;
     border-top: 1px solid var(--paper-edge);
+    background: var(--paper-warm);
+  }
+
+  .label {
+    color: var(--ink-soft);
   }
 
   .summary {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
   }
 
   input:not([type='checkbox']),
   textarea {
     flex: 1;
-    padding: 4px 6px;
-    background: var(--paper);
-    color: var(--ink);
-    border: 1px solid var(--paper-edge);
-    font: inherit;
+    padding: 7px 10px;
+    border-radius: 5px;
+    font-size: 14px;
     resize: vertical;
   }
 
+  input:not([type='checkbox']):focus,
+  textarea:focus {
+    border-color: var(--link);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--selection);
+  }
+
   .count {
-    color: var(--ink-mute);
-    font-size: 11px;
-    min-width: 20px;
+    min-width: 22px;
     text-align: right;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-mute);
   }
 
   .count.long {
@@ -463,17 +564,28 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12px;
   }
 
   .signed {
     color: var(--success);
   }
 
-  .primary {
-    padding: 6px;
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
+  .commit-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 2px;
+  }
+
+  .hint {
+    color: var(--ink-faint);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    li,
+    .icon {
+      transition: none;
+    }
   }
 </style>

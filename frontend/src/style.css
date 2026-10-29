@@ -82,7 +82,8 @@
   color-scheme: light;
 }
 
-:root[data-theme='dark'] {
+:root[data-theme='dark'],
+.code-ground {
   --paper: #1a1614;
   --paper-warm: #241c19;
   --paper-deep: #2a211c;
@@ -129,8 +130,30 @@
   color-scheme: dark;
 }
 
-/* Washes derived from the status tokens, for diff lines and banners. */
-:root {
+/* Code is parchment-dark in both themes, the brand's signature move: .code-ground takes
+   the dark tokens above (so syntax, diff washes, gutters and selection follow) on the
+   code background. */
+.code-ground {
+  --paper: #2a2220;
+  --paper-warm: #322825;
+  --paper-deep: #3a2e2a;
+  --paper-edge: #45362f;
+  background: var(--paper);
+  color: var(--ink);
+  color-scheme: dark;
+}
+
+:root[data-theme='dark'] .code-ground {
+  --paper: #1a1210;
+  --paper-warm: #231a17;
+  --paper-deep: #2b201c;
+  --paper-edge: #3a2d26;
+}
+
+/* Washes derived from the status tokens, for diff lines and banners. Redeclared on
+   .code-ground so they mix its own colours. */
+:root,
+.code-ground {
   --success-wash: color-mix(in srgb, var(--success) 16%, transparent);
   --danger-wash: color-mix(in srgb, var(--danger) 16%, transparent);
   --warning-wash: color-mix(in srgb, var(--warning) 18%, transparent);
@@ -256,6 +279,72 @@ textarea {
   .tool:hover:not(:disabled) {
     transform: none;
   }
+}
+
+/* The header strip over a file view: back, mono path, badges, actions. */
+.view-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  min-height: 44px;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--paper-edge);
+}
+
+.view-file {
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.view-badge {
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: var(--wash-hover);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  white-space: nowrap;
+}
+
+.view-badge.danger {
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+
+/* Two or three options in a row, one pressed. */
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--wash-hover);
+}
+
+.segmented button {
+  height: 26px;
+  padding: 0 10px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--ink-mute);
+}
+
+.segmented button:hover:not(:disabled) {
+  background: none;
+  color: var(--ink);
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 /* Dialog and panel forms. */

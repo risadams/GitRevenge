@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Icon from '../ui/Icon.svelte'
+  import InkButton from '../ui/InkButton.svelte'
   import { syntaxHighlighting } from '@codemirror/language'
   import { EditorState } from '@codemirror/state'
   import { EditorView, lineNumbers } from '@codemirror/view'
@@ -122,20 +124,18 @@
 </script>
 
 <div class="conflict">
-  <header>
-    <button class="back" onclick={onClose} title="Back">←</button>
-    <span class="file">{file}</span>
-    <span class="badge">Conflict</span>
+  <header class="view-head">
+    <button class="tool" onclick={onClose} title="Back"><Icon name="back" />Back</button>
+    <span class="view-badge danger">Conflict</span>
+    <span class="view-file" title={file}>{file}</span>
     <span class="spacer"></span>
-    <button disabled={busy} onclick={() => take('ours')} title="Resolve with the whole ours version">Use ours</button>
-    <button disabled={busy} onclick={() => take('theirs')} title="Resolve with the whole theirs version">Use theirs</button>
+    <button class="tool" disabled={busy} onclick={() => take('ours')} title="Resolve with the whole ours version">Use ours</button>
+    <button class="tool" disabled={busy} onclick={() => take('theirs')} title="Resolve with the whole theirs version">Use theirs</button>
     {#if cf && !cf.binary}
-      <button
-        class="primary"
+      <InkButton
         disabled={busy || hasMarkers(result)}
         onclick={markResolved}
-        title={hasMarkers(result) ? 'Resolve every conflict first' : 'Save the result and mark the file resolved'}
-        >Mark resolved</button
+        title={hasMarkers(result) ? 'Resolve every conflict first' : 'Save the result and mark the file resolved'}>Mark resolved</InkButton
       >
     {/if}
   </header>
@@ -147,12 +147,12 @@
   {:else}
     <div class="sides">
       <section>
-        <h4>{oursLabel}{cf.ours.exists ? '' : ' (deleted)'}</h4>
-        <div class="editor" bind:this={oursHost}></div>
+        <h4 class="meta">{oursLabel}{cf.ours.exists ? '' : ' (deleted)'}</h4>
+        <div class="editor code-ground" bind:this={oursHost}></div>
       </section>
       <section>
-        <h4>{theirsLabel}{cf.theirs.exists ? '' : ' (deleted)'}</h4>
-        <div class="editor" bind:this={theirsHost}></div>
+        <h4 class="meta">{theirsLabel}{cf.theirs.exists ? '' : ' (deleted)'}</h4>
+        <div class="editor code-ground" bind:this={theirsHost}></div>
       </section>
     </div>
     <div class="strip">
@@ -162,7 +162,7 @@
         <span>{regions.length} {regions.length === 1 ? 'conflict' : 'conflicts'}:</span>
         {#each regions as r, i (r.from)}
           <span class="region">
-            <button class="link" onclick={() => jump(r)}>#{i + 1}</button>
+            <button class="link" onclick={() => jump(r)} title="Go to conflict {i + 1}">#{i + 1}</button>
             <button onclick={() => choose(r, 'ours')}>Ours</button>
             <button onclick={() => choose(r, 'theirs')}>Theirs</button>
             <button onclick={() => choose(r, 'both')}>Both</button>
@@ -172,8 +172,8 @@
       {/if}
     </div>
     <section class="result">
-      <h4>Result (editable)</h4>
-      <div class="editor" bind:this={resultHost}></div>
+      <h4 class="meta">Result · editable</h4>
+      <div class="editor code-ground" bind:this={resultHost}></div>
     </section>
   {/if}
 </div>
@@ -186,60 +186,8 @@
     min-height: 0;
   }
 
-  header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 8px;
-    border-bottom: 1px solid var(--paper-edge);
-  }
-
-  .file {
-    font-family: var(--font-mono);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .badge {
-    font-size: 11px;
-    padding: 0 6px;
-    border: 1px solid var(--danger);
-    color: var(--danger);
-  }
-
   .spacer {
     flex: 1;
-  }
-
-  button {
-    padding: 2px 8px;
-    background: none;
-    border: 1px solid var(--paper-edge);
-    color: var(--ink);
-    cursor: pointer;
-  }
-
-  button:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-
-  .primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
-  }
-
-  .back {
-    border: none;
-    font-size: 16px;
-  }
-
-  .link {
-    border: none;
-    color: var(--accent-a);
-    padding: 0 4px;
   }
 
   .sides {
@@ -262,16 +210,15 @@
 
   h4 {
     margin: 0;
-    padding: 4px 8px;
-    font-size: 12px;
-    color: var(--ink-mute);
+    padding: 8px 14px 6px;
+    font-weight: normal;
   }
 
   .editor {
     flex: 1;
     min-height: 0;
     overflow: auto;
-    font-size: 12px;
+    font-size: 12.5px;
     tab-size: 4;
   }
 
@@ -283,33 +230,60 @@
 
   .editor :global(.cm-gutters) {
     background: var(--paper-warm);
-    color: var(--ink-mute);
+    color: var(--ink-faint);
     border-right: 1px solid var(--paper-edge);
   }
 
   .editor :global(.cm-content) {
     font-family: var(--font-mono);
-    caret-color: var(--ink);
+    caret-color: var(--link);
+  }
+
+  .editor :global(.cm-selectionBackground) {
+    background: var(--selection) !important;
   }
 
   .strip {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px 14px;
     align-items: center;
-    padding: 6px 8px;
+    padding: 8px 14px;
     border-bottom: 1px solid var(--paper-edge);
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .region {
     display: inline-flex;
-    gap: 3px;
+    gap: 2px;
     align-items: center;
+    padding: 2px;
+    border-radius: 6px;
+    background: var(--wash-hover);
+  }
+
+  .region button {
+    height: 24px;
+    padding: 0 8px;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  .region button:hover:not(:disabled) {
+    background: var(--paper);
+  }
+
+  .region .link {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--link);
   }
 
   .done {
     color: var(--success);
+    font-style: italic;
   }
 
   .result {
@@ -321,6 +295,7 @@
 
   .muted {
     color: var(--ink-mute);
-    padding: 8px 12px;
+    padding: 10px 14px;
+    font-style: italic;
   }
 </style>
