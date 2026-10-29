@@ -13,6 +13,7 @@
     StashSave,
     StageFiles,
     UnstageFiles,
+    TakeConflictSide,
     WorkingTree,
   } from '../../wailsjs/go/app/App.js'
   import type { app, git } from '../../wailsjs/go/models'
@@ -68,7 +69,8 @@
   })
 
   let files = $derived(wt?.status.files ?? [])
-  let unstaged = $derived(files.filter((f) => f.untracked || f.conflicted || f.workTree !== '.'))
+  let conflicted = $derived(files.filter((f) => f.conflicted))
+  let unstaged = $derived(files.filter((f) => !f.conflicted && (f.untracked || f.workTree !== '.')))
   let staged = $derived(files.filter((f) => !f.untracked && !f.conflicted && f.index !== '.'))
   let canCommit = $derived(summary.trim() !== '' && (staged.length > 0 || amend) && !busy)
 
@@ -195,6 +197,27 @@
     {/if}
   </div>
   <div class="lists">
+    {#if conflicted.length}
+      <section class="conflicts">
+        <header><span>Conflicts ({conflicted.length})</span></header>
+        <ul>
+          {#each conflicted as f (f.path)}
+            <li class:active={current?.mode === 'conflict' && current.file === f.path}>
+              <button class="name" onclick={() => openFile({ mode: 'conflict', file: f.path })} title="Open the conflict tool">
+                <span class="code c-!">!</span>
+                <span class="path">{f.path}</span>
+              </button>
+              <button class="icon" disabled={busy} title="Use ours" onclick={() => act(() => TakeConflictSide(path, f.path, 'ours'))}
+                >O</button
+              >
+              <button class="icon" disabled={busy} title="Use theirs" onclick={() => act(() => TakeConflictSide(path, f.path, 'theirs'))}
+                >T</button
+              >
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
     <section>
       <header>
         <span>Unstaged ({unstaged.length})</span>
@@ -281,6 +304,10 @@
 
   .stashbar label {
     font-size: 12px;
+  }
+
+  .conflicts header {
+    color: #f48771;
   }
 
   .lists {

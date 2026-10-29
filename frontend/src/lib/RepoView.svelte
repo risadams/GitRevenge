@@ -6,6 +6,7 @@
   import Toolbar from './Toolbar.svelte'
   import { checkoutRef, commitItems, dropItems, newBranchDialog, refItems, type MenuContext } from './menus'
   import CommitPanel from './CommitPanel.svelte'
+  import ConflictView from './diff/ConflictView.svelte'
   import DiffView, { type DiffTarget } from './diff/DiffView.svelte'
   import GraphView from './graph/GraphView.svelte'
   import type { Ref, Row } from './graph/rowCache'
@@ -117,7 +118,13 @@
     </div>
     {#if diff}
       <div class="graph">
-        <DiffView {path} target={diff} onClose={() => (diff = null)} />
+        {#if diff.mode === 'conflict'}
+          {#key diff.file}
+            <ConflictView {path} file={diff.file} onClose={() => (diff = null)} />
+          {/key}
+        {:else}
+          <DiffView {path} target={diff} onClose={() => (diff = null)} />
+        {/if}
       </div>
     {/if}
   </div>

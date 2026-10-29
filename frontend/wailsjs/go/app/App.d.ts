@@ -20,6 +20,8 @@ export function CommitDetail(arg1:string,arg2:string):Promise<app.CommitInfo>;
 
 export function CommitRow(arg1:string,arg2:string):Promise<number>;
 
+export function ConflictFile(arg1:string,arg2:string):Promise<git.ConflictFile>;
+
 export function DiscardFiles(arg1:string,arg2:Array<string>):Promise<void>;
 
 export function Environment():Promise<app.Environment>;
@@ -56,6 +58,8 @@ export function RepoInfo(arg1:string):Promise<app.RepoTab>;
 
 export function RepoState(arg1:string):Promise<app.RepoState>;
 
+export function ResolveConflict(arg1:string,arg2:string,arg3:string):Promise<void>;
+
 export function RestoreSession():Promise<app.SessionState>;
 
 export function RunOperationAction(arg1:string,arg2:string):Promise<void>;
@@ -73,6 +77,8 @@ export function StageFiles(arg1:string,arg2:Array<string>):Promise<void>;
 export function StashAction(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function StashSave(arg1:string,arg2:string,arg3:boolean):Promise<void>;
+
+export function TakeConflictSide(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function UnstageFiles(arg1:string,arg2:Array<string>):Promise<void>;
 

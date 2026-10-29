@@ -306,22 +306,6 @@ export namespace git {
 		    return a;
 		}
 	}
-	export class FileChange {
-	    status: string;
-	    path: string;
-	    oldPath?: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new FileChange(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.status = source["status"];
-	        this.path = source["path"];
-	        this.oldPath = source["oldPath"];
-	    }
-	}
 	export class Side {
 	    exists: boolean;
 	    text: string;
@@ -338,6 +322,62 @@ export namespace git {
 	        this.text = source["text"];
 	        this.image = source["image"];
 	        this.size = source["size"];
+	    }
+	}
+	export class ConflictFile {
+	    path: string;
+	    base: Side;
+	    ours: Side;
+	    theirs: Side;
+	    merged: Side;
+	    binary: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConflictFile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.base = this.convertValues(source["base"], Side);
+	        this.ours = this.convertValues(source["ours"], Side);
+	        this.theirs = this.convertValues(source["theirs"], Side);
+	        this.merged = this.convertValues(source["merged"], Side);
+	        this.binary = source["binary"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class FileChange {
+	    status: string;
+	    path: string;
+	    oldPath?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FileChange(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.path = source["path"];
+	        this.oldPath = source["oldPath"];
 	    }
 	}
 	export class FileContents {
