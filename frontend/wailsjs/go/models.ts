@@ -410,6 +410,38 @@ export namespace git {
 	        this.origLine = source["origLine"];
 	    }
 	}
+	export class BranchAge {
+	    name: string;
+	    kind: string;
+	    last: number;
+	    author: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BranchAge(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.kind = source["kind"];
+	        this.last = source["last"];
+	        this.author = source["author"];
+	    }
+	}
+	export class Bucket {
+	    start: number;
+	    commits: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Bucket(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.start = source["start"];
+	        this.commits = source["commits"];
+	    }
+	}
 	export class Trailer {
 	    key: string;
 	    value: string;
@@ -544,6 +576,42 @@ export namespace git {
 		    return a;
 		}
 	}
+	export class Contributor {
+	    name: string;
+	    email: string;
+	    commits: number;
+	    added: number;
+	    deleted: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Contributor(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.email = source["email"];
+	        this.commits = source["commits"];
+	        this.added = source["added"];
+	        this.deleted = source["deleted"];
+	    }
+	}
+	export class CycleTime {
+	    sample: number;
+	    median: number;
+	    p90: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new CycleTime(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sample = source["sample"];
+	        this.median = source["median"];
+	        this.p90 = source["p90"];
+	    }
+	}
 	export class FileChange {
 	    status: string;
 	    path: string;
@@ -644,6 +712,22 @@ export namespace git {
 	        this.untracked = source["untracked"];
 	        this.conflicted = source["conflicted"];
 	        this.submodule = source["submodule"];
+	    }
+	}
+	export class Hotspot {
+	    path: string;
+	    commits: number;
+	    changed: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Hotspot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.commits = source["commits"];
+	        this.changed = source["changed"];
 	    }
 	}
 	export class LFSFile {
@@ -867,6 +951,48 @@ export namespace git {
 	        this.format = source["format"];
 	        this.key = source["key"];
 	    }
+	}
+	export class Stats {
+	    commits: number;
+	    merges: number;
+	    bucket: string;
+	    activity: Bucket[];
+	    contributors: Contributor[];
+	    hotspots: Hotspot[];
+	    cycle: CycleTime;
+	
+	    static createFrom(source: any = {}) {
+	        return new Stats(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.commits = source["commits"];
+	        this.merges = source["merges"];
+	        this.bucket = source["bucket"];
+	        this.activity = this.convertValues(source["activity"], Bucket);
+	        this.contributors = this.convertValues(source["contributors"], Contributor);
+	        this.hotspots = this.convertValues(source["hotspots"], Hotspot);
+	        this.cycle = this.convertValues(source["cycle"], CycleTime);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class Status {
 	    head: string;

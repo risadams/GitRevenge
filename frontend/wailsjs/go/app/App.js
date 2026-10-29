@@ -18,6 +18,10 @@ export function BranchAction(arg1, arg2, arg3) {
   return window['go']['app']['App']['BranchAction'](arg1, arg2, arg3);
 }
 
+export function BranchAges(arg1) {
+  return window['go']['app']['App']['BranchAges'](arg1);
+}
+
 export function CancelClone() {
   return window['go']['app']['App']['CancelClone']();
 }
@@ -222,6 +226,10 @@ export function RepoState(arg1) {
   return window['go']['app']['App']['RepoState'](arg1);
 }
 
+export function RepoStats(arg1, arg2, arg3, arg4) {
+  return window['go']['app']['App']['RepoStats'](arg1, arg2, arg3, arg4);
+}
+
 export function ResolveConflict(arg1, arg2, arg3) {
   return window['go']['app']['App']['ResolveConflict'](arg1, arg2, arg3);
 }
@@ -232,6 +240,10 @@ export function RestoreSession() {
 
 export function RunOperationAction(arg1, arg2) {
   return window['go']['app']['App']['RunOperationAction'](arg1, arg2);
+}
+
+export function SaveFile(arg1, arg2, arg3) {
+  return window['go']['app']['App']['SaveFile'](arg1, arg2, arg3);
 }
 
 export function SearchGraph(arg1, arg2) {
