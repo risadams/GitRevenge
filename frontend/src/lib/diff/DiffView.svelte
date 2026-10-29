@@ -12,11 +12,13 @@
 <script lang="ts">
   import { FileContents, SetStagedContent, SetWorkTreeContent } from '../../../wailsjs/go/app/App.js'
   import type { git } from '../../../wailsjs/go/models'
+  import { formatShortcut, provideCommands } from '../commands.svelte'
   import { session } from '../session.svelte'
   import Icon from '../ui/Icon.svelte'
   import ImageDiff from './ImageDiff.svelte'
   import SplitDiff from './SplitDiff.svelte'
   import UnifiedDiff, { type Actions } from './UnifiedDiff.svelte'
+  import { toggleWrap, wrap, wrapCommand } from './wrap.svelte'
 
   let {
     path,
@@ -30,6 +32,8 @@
     /** Opens another view of the same file (history or blame). */
     onOpen?: (t: DiffTarget) => void
   } = $props()
+
+  provideCommands(() => (contents?.kind === 'text' ? [wrapCommand()] : []))
 
   const LAYOUT_KEY = 'gitrevenge.diffLayout'
   function savedLayout(): 'unified' | 'split' {
@@ -117,6 +121,9 @@
       >
     {/if}
     {#if contents?.kind === 'text'}
+      <button class="tool" aria-pressed={wrap.on} onclick={toggleWrap} title="Wrap long lines ({formatShortcut('Alt+Z')})"
+      ><Icon name="wrap" />Wrap</button
+    >
       <span class="segmented" role="group" aria-label="Diff layout">
         <button aria-pressed={layout === 'unified'} onclick={() => setLayout('unified')}>Unified</button>
         <button aria-pressed={layout === 'split'} onclick={() => setLayout('split')}>Split</button>

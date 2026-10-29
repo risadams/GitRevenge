@@ -30,7 +30,9 @@ export function matchesShortcut(e: KeyEventLike, shortcut: string, mac: boolean)
   // Shift turns digits into symbols on most layouts; the physical key still says which.
   if (/^[0-9]$/.test(k.key)) return e.code === `Digit${k.key}` || e.key === k.key
   const key = e.key.length === 1 ? e.key.toLowerCase() : e.key
-  return key === k.key
+  if (key === k.key) return true
+  // Option on macOS turns letters into symbols (⌥Z types Ω); the physical key still says which.
+  return k.alt && /^[a-z]$/.test(k.key) && e.code === `Key${k.key.toUpperCase()}`
 }
 
 /** Whether the event comes from somewhere text is typed, where most shortcuts stand aside. */

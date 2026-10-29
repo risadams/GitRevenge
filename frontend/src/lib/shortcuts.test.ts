@@ -31,6 +31,12 @@ describe('matchesShortcut', () => {
     expect(matchesShortcut(ev('z', { ctrl: true, alt: true }), 'Mod+Z', false)).toBe(false)
   })
 
+  it('matches Alt+letter by the physical key, since Option types a symbol on macOS', () => {
+    expect(matchesShortcut(ev('Ω', { alt: true }, 'KeyZ'), 'Alt+Z', true)).toBe(true)
+    expect(matchesShortcut(ev('z', { alt: true }, 'KeyZ'), 'Alt+Z', false)).toBe(true)
+    expect(matchesShortcut(ev('Ω', { alt: true }, 'KeyX'), 'Alt+Z', true)).toBe(false)
+  })
+
   it('matches digits by the physical key', () => {
     expect(matchesShortcut(ev('!', { ctrl: true, shift: true }, 'Digit1'), 'Mod+Shift+1', false)).toBe(true)
     expect(matchesShortcut(ev('1', { ctrl: true }, 'Digit1'), 'Mod+1', false)).toBe(true)
