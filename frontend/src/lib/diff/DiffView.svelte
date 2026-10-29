@@ -10,7 +10,7 @@
 </script>
 
 <script lang="ts">
-  import { FileContents, FileImage, SetStagedContent, SetWorkTreeContent } from '../../../wailsjs/go/app/App.js'
+  import { FileContents, FileData, FileImage, SetStagedContent, SetWorkTreeContent } from '../../../wailsjs/go/app/App.js'
   import type { git } from '../../../wailsjs/go/models'
   import { formatShortcut, provideCommands } from '../commands.svelte'
   import { session } from '../session.svelte'
@@ -80,6 +80,11 @@
   /** Loads another file in the repository at the version shown, for a rendered preview. */
   const loadImage = (file: string) => FileImage(path, target.mode, target.commit ?? '', file)
   const openRelated = (file: string) => onOpen?.({ mode: target.mode, file, commit: target.commit })
+  /** This file's bytes at the version shown (or its last version when deleted). */
+  const loadData = () =>
+    contents?.new.exists === false && target.mode === 'commit'
+      ? Promise.resolve('')
+      : FileData(path, target.mode, target.commit ?? '', target.file)
 
   let contents = $state<git.FileContents | null>(null)
   let force = $state(false)
@@ -177,6 +182,10 @@
         </p>
         <button onclick={() => (force = true)}>Load anyway</button>
       </div>
+    {:else if contents.kind === 'binary' && previewer?.binary && contents.new.exists}
+      {#key target.file + (target.commit ?? '') + target.mode}
+        <previewer.component path={target.file} text="" {loadImage} openFile={openRelated} {loadData} />
+      {/key}
     {:else if contents.kind === 'binary'}
       <p class="muted">Binary file. Sizes: {contents.old.exists ? contents.old.size : '—'} → {contents.new.exists ? contents.new.size : '—'} bytes.</p>
     {:else if contents.kind === 'image'}

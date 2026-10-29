@@ -53,6 +53,8 @@ export function Fetch(arg1:string,arg2:string):Promise<void>;
 
 export function FileContents(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:boolean):Promise<git.FileContents>;
 
+export function FileData(arg1:string,arg2:string,arg3:string,arg4:string):Promise<string>;
+
 export function FileHistory(arg1:string,arg2:string):Promise<Array<git.FileCommit>>;
 
 export function FileImage(arg1:string,arg2:string,arg3:string,arg4:string):Promise<string>;
