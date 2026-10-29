@@ -12,6 +12,11 @@ Git Revenge is a fast, local-only desktop git client for Windows and macOS. It h
 - **Powerful.** Commit graph, staging at file, hunk and line level, interactive rebase, a 3-pane conflict tool, stash, LFS, submodules, blame, and undo/redo.
 - **Multi-repo.** Repos open in tabs, and you can create local project groups with a dashboard and batch fetch/pull.
 - **Local only.** No accounts, cloud or telemetry. It uses your existing git config, credential helpers and SSH agent.
+- **Comfortable to live in.** Light and dark themes, a timeline graph with a compact mode, a command palette (<kbd>Ctrl</kbd>+<kbd>K</kbd>) and keyboard shortcuts for common actions (<kbd>Ctrl</kbd>+<kbd>/</kbd> lists them; <kbd>⌘</kbd> on macOS).
+
+## Install
+
+Download the Windows installer or the macOS disk image from the [latest release](https://github.com/risadams/GitRevenge/releases/latest).
 
 ## Requirements
 
@@ -20,7 +25,11 @@ Git Revenge is a fast, local-only desktop git client for Windows and macOS. It h
 
 ## Development
 
-You need Go 1.27.3+, Node 24+ and the [Wails v2 CLI](https://wails.io/docs/gettingstarted/installation) (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`).
+You need Go 1.27.3+, Node 24+ and the [Wails v2 CLI](https://wails.io/docs/gettingstarted/installation), pinned to the version in `go.mod`:
+
+```sh
+go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0
+```
 
 ```sh
 wails dev        # run with hot reload
@@ -33,6 +42,14 @@ The Go binary embeds `frontend/dist`. On a fresh clone, build the frontend once 
 cd frontend && npm ci && npm run build && cd ..
 go test ./...
 ```
+
+Frontend checks, as CI runs them:
+
+```sh
+cd frontend && npm run check && npm run lint && npm test
+```
+
+The TypeScript bindings in `frontend/wailsjs` are generated from the Go API (`wails dev`, `wails build` or `wails generate module`). Commit them exactly as generated.
 
 ## Docs
 
