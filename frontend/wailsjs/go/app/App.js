@@ -178,6 +178,10 @@ export function Redo(arg1) {
   return window['go']['app']['App']['Redo'](arg1);
 }
 
+export function Reflog(arg1, arg2) {
+  return window['go']['app']['App']['Reflog'](arg1, arg2);
+}
+
 export function Refs(arg1) {
   return window['go']['app']['App']['Refs'](arg1);
 }

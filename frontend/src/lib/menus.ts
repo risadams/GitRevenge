@@ -13,6 +13,8 @@ export interface MenuContext {
   openDialog: (spec: DialogSpec) => void
   /** Opens the interactive rebase editor for the commits after base. */
   openRebase: (base: string) => void
+  /** Opens the reflog browser on a ref ("HEAD" or refs/heads/…). */
+  openReflog: (ref: string) => void
 }
 
 /** Joins groups of items, drawing a rule between non-empty groups. */
@@ -84,6 +86,11 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
                 submit: 'Rename',
                 run: (v) => attempt(() => branch(path, 'rename', ref.short, String(v.name).trim())),
               }),
+          },
+          {
+            label: `Reflog of ${ref.short}…`,
+            icon: 'history',
+            run: () => ctx.openReflog(`refs/heads/${ref.short}`),
           },
           {
             label: `Set upstream of ${ref.short}…`,
@@ -164,16 +171,7 @@ export function commitItems(row: Row, refs: Ref[], ctx: MenuContext): MenuItem[]
     {
       label: 'Create branch here…',
       icon: 'branch',
-      run: () =>
-        openDialog({
-          title: `New branch at ${short}`,
-          fields: [
-            { key: 'name', label: 'Branch name', placeholder: 'feature/my-change' },
-            { key: 'checkout', label: 'Check it out', type: 'checkbox', value: true },
-          ],
-          submit: 'Create branch',
-          run: (v) => attempt(() => branch(path, 'create', String(v.name).trim(), row.id, v.checkout ? 'true' : '')),
-        }),
+      run: () => openDialog(branchAtDialog(path, row.id)),
     },
     {
       label: 'Create tag here…',
@@ -279,6 +277,19 @@ export function dropItems(source: Row, sourceRefs: Ref[], target: Row, targetRef
     return integrateItems(ctx, t.target, t.label)
   }
   return []
+}
+
+/** The dialog for a new branch at a commit (from the graph, or a reflog entry). */
+export function branchAtDialog(path: string, commit: string): DialogSpec {
+  return {
+    title: `New branch at ${commit.slice(0, 7)}`,
+    fields: [
+      { key: 'name', label: 'Branch name', placeholder: 'feature/my-change' },
+      { key: 'checkout', label: 'Check it out', type: 'checkbox', value: true },
+    ],
+    submit: 'Create branch',
+    run: (v) => attempt(() => branch(path, 'create', String(v.name).trim(), commit, v.checkout ? 'true' : '')),
+  }
 }
 
 /** The dialog for "new branch from HEAD". */
