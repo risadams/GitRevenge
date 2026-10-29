@@ -30,6 +30,8 @@ export function FileContents(arg1:string,arg2:string,arg3:string,arg4:string,arg
 
 export function GraphRows(arg1:string,arg2:number,arg3:number):Promise<app.GraphPage>;
 
+export function Integrate(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
+
 export function LastCommitMessage(arg1:string):Promise<string>;
 
 export function OpenRepo(arg1:string):Promise<app.RepoTab>;

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { GraphRows, SearchGraph } from '../../../wailsjs/go/app/App.js'
+  import { CommitRow, GraphRows, SearchGraph } from '../../../wailsjs/go/app/App.js'
   import { session } from '../session.svelte'
   import { EventsOn } from '../../../wailsjs/runtime/runtime.js'
   import { drawRow, graphWidth, layoutColumns, ROW_HEIGHT, type Theme } from './draw'
@@ -10,10 +10,13 @@
     path,
     onSelect,
     onContext,
+    onDrop,
   }: {
     path: string
     /** Right-click on a row, with the refs pointing at it and the mouse position. */
     onContext?: (row: Row, refs: Ref[], x: number, y: number) => void
+    /** A row dragged onto another row. */
+    onDrop?: (source: Row, sourceRefs: Ref[], target: Row, targetRefs: Ref[], x: number, y: number) => void
     /** auto is true for the automatic selection of HEAD when the graph first loads. */
     onSelect?: (row: Row | undefined, auto: boolean) => void
   } = $props()
@@ -31,6 +34,9 @@
   let selected = $state(-1)
   let hovered = -1
   let frame = 0
+  /** Drag state: the row pressed and where; the row under the pointer while dragging. */
+  let drag: { from: number; x: number; y: number; active: boolean } | null = null
+  let dropTarget = -1
 
   // Search state. matchSet is only used for dimming when every match fits in the result.
   let searchInput: HTMLInputElement
@@ -95,7 +101,9 @@
     for (let i = first; i < last; i++) {
       const row = cache.get(i)
       const y = i * ROW_HEIGHT - top
-      if (row) drawRow(ctx, row, cache.refsFor(row.id), y, lay, th, i === selected, i === hovered, !!matchSet && !matchSet.has(i))
+      // The drop target is highlighted like a selection while dragging.
+      if (row)
+        drawRow(ctx, row, cache.refsFor(row.id), y, lay, th, i === selected || i === dropTarget, i === hovered, !!matchSet && !matchSet.has(i))
     }
   }
 
@@ -136,6 +144,25 @@
     }
   }
 
+  /** The commit selected before a reload, so the selection follows it to its new row. */
+  let selectedId = ''
+
+  async function followSelection() {
+    if (selected < 0) return
+    const id = selectedId
+    const row = id ? await CommitRow(path, id).catch(() => -1) : -1
+    // If the commit is gone (e.g. amended), stay on the same position but refresh details.
+    const target = row >= 0 ? row : selected
+    cache.ensure(target, target + 1)
+    // Wait for the row to load, giving up after ~5s (e.g. the graph got shorter).
+    let frames = 300
+    const wait = () => {
+      if (cache.get(target)) select(target, true)
+      else if (frames-- > 0) requestAnimationFrame(wait)
+    }
+    wait()
+  }
+
   function select(i: number, auto = false) {
     if (!auto) autoSelect = 'done'
     selected = Math.max(0, Math.min(total - 1, i))
@@ -145,6 +172,7 @@
     else if (y + ROW_HEIGHT > scroller.scrollTop + scroller.clientHeight) {
       scroller.scrollTop = y + ROW_HEIGHT - scroller.clientHeight
     }
+    selectedId = cache.get(selected)?.id ?? ''
     onSelect?.(cache.get(selected), auto)
     schedule()
   }
@@ -228,6 +256,7 @@
         cache.invalidate()
         error = p.error
         if (query) void runSearch()
+        void followSelection()
       }
       total = p.rows
       loading = !p.done
@@ -287,22 +316,48 @@
         const i = rowAt(e)
         if (i >= 0) select(i)
       }}
+      onmousedown={(e) => {
+        if (e.button !== 0 || !onDrop) return
+        const i = rowAt(e)
+        if (i >= 0) drag = { from: i, x: e.clientX, y: e.clientY, active: false }
+      }}
       onmousemove={(e) => {
+        if (drag && !drag.active && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 6) drag.active = true
+        if (drag?.active) {
+          const t = rowAt(e)
+          if (t !== dropTarget) {
+            dropTarget = t
+            schedule()
+          }
+        }
         const i = rowAt(e)
         if (i !== hovered) {
           hovered = i
           schedule()
         }
       }}
+      onmouseup={(e) => {
+        const d = drag
+        const target = dropTarget
+        drag = null
+        dropTarget = -1
+        if (!d?.active) return
+        schedule()
+        const s = cache.get(d.from)
+        const t = target >= 0 ? cache.get(target) : undefined
+        if (s && t && t.id !== s.id) onDrop?.(s, cache.refsFor(s.id), t, cache.refsFor(t.id), e.clientX, e.clientY)
+      }}
       oncontextmenu={(e) => {
-      const i = rowAt(e)
-      const row = i >= 0 ? cache.get(i) : undefined
-      if (!row || !onContext) return
-      e.preventDefault()
-      select(i)
-      onContext(row, cache.refsFor(row.id), e.clientX, e.clientY)
-    }}
-    onmouseleave={() => {
+        const i = rowAt(e)
+        const row = i >= 0 ? cache.get(i) : undefined
+        if (!row || !onContext) return
+        e.preventDefault()
+        select(i)
+        onContext(row, cache.refsFor(row.id), e.clientX, e.clientY)
+      }}
+      onmouseleave={() => {
+        drag = null
+        dropTarget = -1
         hovered = -1
         schedule()
       }}

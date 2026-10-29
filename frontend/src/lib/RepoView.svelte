@@ -4,7 +4,7 @@
   import Dialog, { type DialogSpec } from './Dialog.svelte'
   import RemotesDialog from './RemotesDialog.svelte'
   import Toolbar from './Toolbar.svelte'
-  import { checkoutRef, commitItems, newBranchDialog, refItems, type MenuContext } from './menus'
+  import { checkoutRef, commitItems, dropItems, newBranchDialog, refItems, type MenuContext } from './menus'
   import CommitPanel from './CommitPanel.svelte'
   import DiffView, { type DiffTarget } from './diff/DiffView.svelte'
   import GraphView from './graph/GraphView.svelte'
@@ -27,6 +27,10 @@
   const ctx: MenuContext = {
     get path() {
       return path
+    },
+    current: () => {
+      const head = session.activeTab?.head ?? ''
+      return head.startsWith('detached') ? '' : head
     },
     openDialog: (spec) => (dialog = spec),
   }
@@ -102,7 +106,14 @@
          survive returning to it. -->
     <div class="graph" class:hidden={diff}>
       <GraphView bind:this={graph} {path} {onSelect} onContext={(row, refs, x, y) =>
-          openMenu([...commitItems(row, refs, ctx), ...refs.flatMap((r) => refItems(r, ctx))], x, y)} />
+          openMenu([...commitItems(row, refs, ctx), ...refs.flatMap((r) => refItems(r, ctx))], x, y)}
+        onDrop={(source, sourceRefs, target, targetRefs, x, y) => {
+          const items = dropItems(source, sourceRefs, target, targetRefs, ctx)
+          if (items.length) openMenu(items, x, y)
+          else
+            session.error =
+              'Drop onto the checked-out branch to merge, rebase or cherry-pick into it, or drag the checked-out branch onto another commit.'
+        }} />
     </div>
     {#if diff}
       <div class="graph">

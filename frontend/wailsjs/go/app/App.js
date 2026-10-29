@@ -54,6 +54,10 @@ export function GraphRows(arg1, arg2, arg3) {
   return window['go']['app']['App']['GraphRows'](arg1, arg2, arg3);
 }
 
+export function Integrate(arg1, arg2, arg3) {
+  return window['go']['app']['App']['Integrate'](arg1, arg2, arg3);
+}
+
 export function LastCommitMessage(arg1) {
   return window['go']['app']['App']['LastCommitMessage'](arg1);
 }
