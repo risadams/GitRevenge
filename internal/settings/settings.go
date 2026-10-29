@@ -37,6 +37,9 @@ type Settings struct {
 	// GraphDensity is "compact" for single-line graph rows, or empty for the default
 	// two-line timeline.
 	GraphDensity string `json:"graphDensity,omitempty"`
+	// UpdateChecksOff stops the check for a newer release at startup. A check the user
+	// asks for still runs.
+	UpdateChecksOff bool `json:"updateChecksOff,omitempty"`
 }
 
 // Group is a named collection of repository paths.

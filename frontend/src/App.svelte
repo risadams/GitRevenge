@@ -14,6 +14,7 @@
   import StartPage from './lib/StartPage.svelte'
   import TabBar from './lib/TabBar.svelte'
   import { theme } from './lib/theme.svelte'
+  import { update } from './lib/update.svelte'
   import Icon from './lib/ui/Icon.svelte'
   import InkButton from './lib/ui/InkButton.svelte'
   import InkFilters from './lib/ui/InkFilters.svelte'
@@ -43,6 +44,14 @@
         title: theme.resolved === 'dark' ? 'Switch to the light theme' : 'Switch to the dark theme',
         keywords: 'appearance colour color mode',
         run: () => session.run(() => theme.toggle()),
+      },
+      { id: 'app.update', group: 'App', title: 'Check for updates', keywords: 'new version release download', run: () => session.run(() => update.checkNow()) },
+      {
+        id: 'app.update-checks',
+        group: 'App',
+        title: update.checksOn ? 'Turn off update checks at startup' : 'Turn on update checks at startup',
+        keywords: 'new version release network privacy',
+        run: () => session.run(() => update.toggleChecks()),
       },
       {
         id: 'app.density',
@@ -85,7 +94,10 @@
 
   onMount(async () => {
     ;[version, env] = await Promise.all([Version(), Environment(), theme.load()])
-    if (!env.problem) await session.restore()
+    if (!env.problem) {
+      await session.restore()
+      void update.startup()
+    }
   })
 </script>
 
@@ -123,6 +135,18 @@
         <Icon name="warning" />
         <span class="message">{session.error}</span>
         <button class="tool" onclick={() => (session.error = '')}>Dismiss</button>
+      </div>
+    {/if}
+    {#if update.available || update.upToDate}
+      <div class="banner notice" role="status">
+        <Icon name="update" />
+        {#if update.available}
+          <span class="message">Git Revenge {update.available.latest} is available. You have {update.available.current}.</span>
+          <button class="tool" onclick={() => BrowserOpenURL(update.available!.url)}><Icon name="external" />Download</button>
+        {:else}
+          <span class="message">{update.upToDate}</span>
+        {/if}
+        <button class="tool" onclick={() => update.dismiss()}>Dismiss</button>
       </div>
     {/if}
     {#if session.activeTab}
@@ -206,6 +230,14 @@
 
   .banner > :global(svg) {
     color: var(--danger);
+  }
+
+  .notice {
+    background: color-mix(in srgb, var(--accent-a) 12%, transparent);
+  }
+
+  .notice > :global(svg) {
+    color: var(--accent-a);
   }
 
   .message {

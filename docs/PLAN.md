@@ -134,5 +134,5 @@ Each feature area has an epic issue. Its tasks are tracked as sub-issues, each s
 - **Builds.** A GitHub Actions workflow is triggered by `v*` tags.
   - Windows: an NSIS installer, unsigned for now.
   - macOS: a universal `.dmg`, signed and notarized with the maintainer's Apple Developer account.
-- **Update check.** The app checks GitHub Releases for a newer semver version. There is no auto-update.
+- **Update check.** At startup the app asks the GitHub API for the latest release (no identifiers beyond a User-Agent) and shows a banner with a download link when it's a newer semver version. A dismissed version isn't announced again. The startup check can be turned off from the command palette; "Check for updates" always runs. There is no auto-update.
 - **Audience.** First the maintainer, then an internal team, then open source under Apache-2.0.

@@ -15,6 +15,8 @@ export function CancelClone():Promise<void>;
 
 export function CancelNetwork(arg1:string):Promise<void>;
 
+export function CheckForUpdate(arg1:boolean):Promise<app.UpdateInfo>;
+
 export function ChooseAndOpenRepo():Promise<app.RepoTab>;
 
 export function ChooseFolder(arg1:string):Promise<string>;
@@ -111,6 +113,8 @@ export function SetStagedContent(arg1:string,arg2:string,arg3:string,arg4:string
 
 export function SetTheme(arg1:string):Promise<void>;
 
+export function SetUpdateChecks(arg1:boolean):Promise<void>;
+
 export function SetWorkTreeContent(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
 export function StageFiles(arg1:string,arg2:Array<string>):Promise<void>;
@@ -130,6 +134,8 @@ export function Undo(arg1:string):Promise<void>;
 export function UndoState(arg1:string):Promise<app.UndoInfo>;
 
 export function UnstageFiles(arg1:string,arg2:Array<string>):Promise<void>;
+
+export function UpdateChecks():Promise<boolean>;
 
 export function UpdateSubmodules(arg1:string):Promise<void>;
 
