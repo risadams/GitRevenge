@@ -926,6 +926,31 @@ export namespace git {
 	        this.describe = source["describe"];
 	    }
 	}
+	
+	export class Worktree {
+	    path: string;
+	    head: string;
+	    branch: string;
+	    main: boolean;
+	    locked: boolean;
+	    prunable: boolean;
+	    current: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Worktree(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.head = source["head"];
+	        this.branch = source["branch"];
+	        this.main = source["main"];
+	        this.locked = source["locked"];
+	        this.prunable = source["prunable"];
+	        this.current = source["current"];
+	    }
+	}
 
 }
 
