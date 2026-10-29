@@ -1,4 +1,4 @@
-import { BranchAction, PushRef, Refs, StashAction } from '../../wailsjs/go/app/App.js'
+import { BranchAction, Integrate, PushRef, Refs, StashAction } from '../../wailsjs/go/app/App.js'
 import type { MenuItem } from './ContextMenu.svelte'
 import type { DialogSpec } from './Dialog.svelte'
 import type { Ref, Row } from './graph/rowCache'
@@ -8,7 +8,23 @@ import { session } from './session.svelte'
 /** What the menus need from the view that opens them. */
 export interface MenuContext {
   path: string
+  /** The checked-out branch, or "" when HEAD is detached. */
+  current: () => string
   openDialog: (spec: DialogSpec) => void
+}
+
+const integrate = (path: string, action: string, ...args: string[]) => () =>
+  session.run(() => Integrate(path, action, args))
+
+/** Merge and rebase items for integrating target (a ref name or commit) with the current branch. */
+function integrateItems(ctx: MenuContext, target: string, label: string): MenuItem[] {
+  const cur = ctx.current()
+  if (!cur) return []
+  return [
+    { label: `Merge ${label} into ${cur}`, run: integrate(ctx.path, 'merge', target) },
+    { label: `Merge ${label} into ${cur} (no fast-forward)`, run: integrate(ctx.path, 'merge', target, 'no-ff') },
+    { label: `Rebase ${cur} onto ${label}`, run: integrate(ctx.path, 'rebase', target) },
+  ]
 }
 
 /** Runs a backend call for a dialog: an error message keeps the dialog open. */
@@ -37,6 +53,7 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
     case 'local':
       return [
         ...(ref.head ? [] : [{ label: `Checkout ${ref.short}`, run: () => session.run(() => branch(path, 'checkout', ref.short)) }]),
+        ...(ref.head ? [] : integrateItems(ctx, ref.short, ref.short)),
         ...(ref.head
           ? []
           : [
@@ -99,11 +116,13 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
         const [remote, ...rest] = ref.short.split('/')
         return [
           { label: `Checkout ${ref.short}`, run: () => session.run(() => branch(path, 'checkout', ref.short)) },
+          ...integrateItems(ctx, ref.short, ref.short),
           { label: `Delete ${ref.short} from ${remote}`, danger: true, run: push(path, remote, 'delete-branch', rest.join('/')) },
         ]
       }
     case 'tag':
       return [
+        ...integrateItems(ctx, ref.name, ref.short),
         { label: `Push tag ${ref.short} to origin`, run: push(path, 'origin', 'tag', ref.short) },
         {
           label: `Delete tag ${ref.short}`,
@@ -159,7 +178,38 @@ export function commitItems(row: Row, refs: Ref[], ctx: MenuContext): MenuItem[]
       label: `Checkout ${short} (detached)`,
       run: () => session.run(() => branch(path, 'checkout', row.id)),
     },
+    ...(ctx.current() && !refs.some((r) => r.head)
+      ? [{ label: `Cherry-pick ${short} onto ${ctx.current()}`, run: integrate(path, 'cherry-pick', row.id) }]
+      : []),
   ]
+}
+
+/**
+ * Items for dropping one graph row onto another. One side must be the checked-out branch:
+ * dropping something onto it brings that thing in; dragging it onto something moves it.
+ */
+export function dropItems(source: Row, sourceRefs: Ref[], target: Row, targetRefs: Ref[], ctx: MenuContext): MenuItem[] {
+  const cur = ctx.current()
+  if (!cur || source.id === target.id) return []
+  const named = (refs: Ref[]) => refs.filter((r) => r.kind !== 'stash' && !r.head)
+  const describe = (row: Row, refs: Ref[]) => {
+    const r = named(refs)[0]
+    return r ? { target: r.kind === 'tag' ? r.name : r.short, label: r.short } : { target: row.id, label: row.id.slice(0, 7) }
+  }
+  if (targetRefs.some((r) => r.head)) {
+    const s = describe(source, sourceRefs)
+    return [
+      ...integrateItems(ctx, s.target, s.label),
+      ...(named(sourceRefs).length === 0
+        ? [{ label: `Cherry-pick ${s.label} onto ${cur}`, run: integrate(ctx.path, 'cherry-pick', source.id) }]
+        : []),
+    ]
+  }
+  if (sourceRefs.some((r) => r.head)) {
+    const t = describe(target, targetRefs)
+    return integrateItems(ctx, t.target, t.label)
+  }
+  return []
 }
 
 /** The dialog for "new branch from HEAD". */
