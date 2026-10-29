@@ -295,7 +295,7 @@ export function newBranchDialog(ctx: MenuContext): DialogSpec {
   }
 }
 
-/** Double-click on a ref in the sidebar checks it out, as in GitKraken. */
+/** Double-click on a ref in the sidebar checks it out. */
 export function checkoutRef(path: string, ref: Ref) {
   if (ref.kind === 'stash' || ref.head) return
   void session.run(() => branch(path, 'checkout', ref.kind === 'tag' ? ref.name : ref.short))

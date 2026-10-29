@@ -1,6 +1,6 @@
 # Git Revenge — Plan
 
-Git Revenge is a fast, local-only desktop git client inspired by GitKraken. It has a Go backend and is built to handle multiple repos, including very large ones.
+Git Revenge is a fast, local-only desktop git client. It has a Go backend and is built to handle multiple repos, including very large ones.
 
 This document records the decisions from the initial requirements session (2026-10-28). Architectural decisions with lasting consequences are recorded in [`docs/adr/`](adr/). Progress is tracked in GitHub issues, grouped by milestone.
 
@@ -14,7 +14,7 @@ This document records the decisions from the initial requirements session (2026-
 ## Non-goals
 
 - AI features.
-- GitKraken Launchpad, Workspaces, Cloud Patches, accounts or any cloud sync.
+- Cloud features: accounts, sync, shared workspaces or hosted patches.
 - Hosting-provider or issue-tracker integrations (GitHub/GitLab/Bitbucket/Jira APIs, pull requests).
 
 ## Platforms

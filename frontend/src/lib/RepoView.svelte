@@ -76,7 +76,7 @@
     const wt = await session.run(() => WorkingTree(path))
     if (!wt) return
     changes = wt.status.files.length
-    // Like GitKraken: open on the changes when there are any.
+    // Open on the changes when there are any.
     if (!checkedInitial) {
       checkedInitial = true
       if (changes > 0) view = 'wip'
