@@ -5,6 +5,7 @@
   import { EventsOn } from '../../wailsjs/runtime/runtime.js'
   import { formatTime } from './graph/draw'
   import { session } from './session.svelte'
+  import Icon from './ui/Icon.svelte'
 
   let { name, onClose }: { name: string; onClose: () => void } = $props()
 
@@ -44,15 +45,20 @@
 
 <section class="dashboard">
   <header>
-    <button class="back" onclick={onClose} title="Back">←</button>
-    <h2>{name}</h2>
+    <button class="tool back" onclick={onClose} title="Back to the start page"><Icon name="back" />Back</button>
+    <div class="title">
+      <span class="hand">dashboard</span>
+      <h2>{name}</h2>
+    </div>
     <span class="spacer"></span>
-    <button disabled={!!running} onclick={refresh}>Refresh</button>
-    <button disabled={!!running || rows.length === 0} onclick={() => batch('fetch')}>{running === 'fetch' ? 'Fetching…' : 'Fetch all'}</button>
-    <button disabled={!!running || rows.length === 0} onclick={() => batch('pull')} title="Fast-forward only: diverged repositories are reported, never merged"
-      >{running === 'pull' ? 'Pulling…' : 'Pull all'}</button
+    <button class="tool" disabled={!!running} onclick={refresh}><Icon name="refresh" />Refresh</button>
+    <button class="tool" disabled={!!running || rows.length === 0} onclick={() => batch('fetch')}
+      ><Icon name="fetch" />{running === 'fetch' ? 'Fetching…' : 'Fetch all'}</button
     >
-    <button disabled={rows.length === 0} onclick={openAll}>Open all as tabs</button>
+    <button class="tool" disabled={!!running || rows.length === 0} onclick={() => batch('pull')} title="Fast-forward only: diverged repositories are reported, never merged"
+      ><Icon name="pull" />{running === 'pull' ? 'Pulling…' : 'Pull all'}</button
+    >
+    <button class="tool" disabled={rows.length === 0} onclick={openAll}><Icon name="folder" />Open all as tabs</button>
   </header>
 
   {#if loading && rows.length === 0}
@@ -62,14 +68,14 @@
   {:else}
     <table>
       <thead>
-        <tr><th>Repository</th><th>Branch</th><th>Sync</th><th>Changes</th><th>Last fetch</th><th></th></tr>
+        <tr><th class="meta">Repository</th><th class="meta">Branch</th><th class="meta">Sync</th><th class="meta">Changes</th><th class="meta">Last fetch</th><th></th></tr>
       </thead>
       <tbody>
         {#each rows as r (r.path)}
           {@const res = results[r.path]}
           <tr class:missing={!r.exists}>
-            <td title={r.path}><strong>{r.name}</strong></td>
-            <td>{r.branch || '—'}</td>
+            <td class="repo" title={r.path}>{r.name}</td>
+            <td class="mono">{r.branch || '—'}</td>
             <td>
               {#if !r.upstream && r.exists}<span class="muted">no upstream</span>
               {:else if r.ahead || r.behind}{#if r.ahead}↑{r.ahead} {/if}{#if r.behind}↓{r.behind}{/if}
@@ -80,7 +86,7 @@
               {:else if r.changes}{r.changes}
               {:else if r.exists}<span class="muted">clean</span>{/if}
             </td>
-            <td class="muted">{r.lastFetch ? formatTime(r.lastFetch) : r.exists ? 'never' : ''}</td>
+            <td class="muted mono">{r.lastFetch ? formatTime(r.lastFetch) : r.exists ? 'never' : ''}</td>
             <td class="action">
               {#if res?.skipped}
                 <span class="muted" title={res.message}>– {res.message}</span>
@@ -89,7 +95,7 @@
               {:else if r.error}
                 <span class="bad">{r.error}</span>
               {:else}
-                <button onclick={() => session.open(r.path)}>Open</button>
+                <button class="tool open" onclick={() => session.open(r.path)}>Open</button>
               {/if}
             </td>
           </tr>
@@ -101,66 +107,87 @@
 
 <style>
   .dashboard {
-    max-width: 1000px;
-    margin: 24px auto;
-    padding: 0 16px;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 28px 40px 40px;
   }
 
   header {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .back {
+    align-self: center;
+    margin: 0 12px 0 -10px;
+  }
+
+  .title {
+    display: flex;
+    flex-direction: column;
   }
 
   h2 {
     margin: 0;
+    font-size: 34px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    font-variation-settings:
+      'SOFT' 50,
+      'WONK' 1;
   }
 
   .spacer {
     flex: 1;
   }
 
-  button {
-    padding: 3px 10px;
-    background: none;
-    border: 1px solid var(--paper-edge);
-    color: var(--ink);
-    cursor: pointer;
-  }
-
-  button:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-
-  .back {
-    border: none;
-    font-size: 16px;
-  }
-
   table {
     width: 100%;
-    margin-top: 16px;
+    margin-top: 24px;
     border-collapse: collapse;
   }
 
   th {
     text-align: left;
-    color: var(--ink-mute);
     font-weight: normal;
-    font-size: 12px;
-    padding: 4px 8px;
+    padding: 6px 10px;
     border-bottom: 1px solid var(--paper-edge);
   }
 
   td {
-    padding: 6px 8px;
-    border-bottom: 1px solid var(--paper-edge);
+    padding: 12px 10px;
+    border-bottom: 1px dashed var(--hairline);
     white-space: nowrap;
+  }
+
+  tbody tr {
+    transition: background-color 0.2s;
+  }
+
+  tbody tr:hover {
+    background: var(--wash-hover);
+  }
+
+  .repo {
+    font-size: 17px;
+    font-weight: 500;
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
   }
 
   td.action {
     white-space: normal;
+  }
+
+  .open {
+    color: var(--link);
+    font-style: italic;
   }
 
   tr.missing {

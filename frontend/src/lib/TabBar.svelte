@@ -1,65 +1,180 @@
 <script lang="ts">
   import { session } from './session.svelte'
+  import { theme } from './theme.svelte'
+  import Icon from './ui/Icon.svelte'
 
   function onAuxClick(e: MouseEvent, path: string) {
     // Middle-click closes a tab, as in browsers.
     if (e.button === 1) void session.close(path)
   }
+
+  let toggleLabel = $derived(theme.resolved === 'dark' ? 'Switch to the light theme' : 'Switch to the dark theme')
 </script>
 
 <nav class="tabs" aria-label="Open repositories">
-  <button class="tab home" class:active={session.active === ''} onclick={() => session.select('')} title="Start page">
-    ⌂
+  <div class="scroll">
+    <button class="tab home" class:active={session.active === ''} onclick={() => session.select('')} title="Start page" aria-label="Start page">
+      <Icon name="home" />
+    </button>
+    {#each session.tabs as tab (tab.path)}
+      <div class="tab" class:active={session.active === tab.path} title={tab.path}>
+        <button class="label" onclick={() => session.select(tab.path)} onauxclick={(e) => onAuxClick(e, tab.path)}>
+          {tab.name}
+          {#if tab.head}<span class="head">{tab.head}</span>{/if}
+        </button>
+        <button class="close" aria-label="Close {tab.name}" title="Close (middle-click)" onclick={() => session.close(tab.path)}>
+          <Icon name="close" size={12} />
+        </button>
+      </div>
+    {/each}
+    <button class="tab add" onclick={() => session.choose()} title="Open repository" aria-label="Open repository">
+      <Icon name="plus" />
+    </button>
+  </div>
+  <button class="theme" onclick={() => session.run(() => theme.toggle())} aria-label={toggleLabel} title={toggleLabel}>
+    <Icon name={theme.resolved === 'dark' ? 'sun' : 'moon'} size={17} />
   </button>
-  {#each session.tabs as tab (tab.path)}
-    <div class="tab" class:active={session.active === tab.path} title={tab.path}>
-      <button class="label" onclick={() => session.select(tab.path)} onauxclick={(e) => onAuxClick(e, tab.path)}>
-        {tab.name}
-        {#if tab.head}<span class="head">{tab.head}</span>{/if}
-      </button>
-      <button class="close" aria-label="Close {tab.name}" onclick={() => session.close(tab.path)}>×</button>
-    </div>
-  {/each}
-  <button class="tab add" onclick={() => session.choose()} title="Open repository">+</button>
 </nav>
 
 <style>
   .tabs {
     display: flex;
-    overflow-x: auto;
+    align-items: stretch;
+    min-height: 40px;
+    padding: 0 6px 0 8px;
     background: var(--paper-warm);
     border-bottom: 1px solid var(--paper-edge);
+  }
+
+  .scroll {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
   button {
     background: none;
     border: none;
+    border-radius: 0;
     color: inherit;
-    font: inherit;
-    cursor: pointer;
-    padding: 6px 10px;
+    padding: 0 12px;
+  }
+
+  button:hover:not(:disabled) {
+    background: none;
   }
 
   .tab {
+    position: relative;
     display: flex;
     align-items: center;
-    border-right: 1px solid var(--paper-edge);
+    height: 34px;
     color: var(--ink-mute);
     white-space: nowrap;
+    font-size: 14px;
+    border-radius: 6px 6px 0 0;
+    transition:
+      color 0.2s,
+      background-color 0.2s;
+  }
+
+  .tab:hover {
+    color: var(--ink);
+    background: var(--wash-hover);
   }
 
   .tab.active {
-    background: var(--paper);
     color: var(--ink);
+    background: var(--paper);
+  }
+
+  /* The active tab wears the navbar's torn rose bar. */
+  .tab.active::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 2px;
+    height: 3px;
+    background: var(--link);
+    filter: url(#wc-edge);
+    opacity: 0.85;
+    border-radius: 45% 55% 50% 50% / 55% 45%;
+    pointer-events: none;
+  }
+
+  .label {
+    height: 100%;
+    padding-right: 4px;
+  }
+
+  .home,
+  .add {
+    padding: 0 10px;
   }
 
   .head {
     margin-left: 6px;
-    color: var(--ink-mute);
+    font-family: var(--font-mono);
     font-size: 11px;
+    color: var(--ink-mute);
   }
 
   .close {
-    padding: 6px 8px 6px 0;
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    margin-right: 6px;
+    padding: 0;
+    border-radius: 50%;
+    color: var(--ink-mute);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .tab:hover .close,
+  .tab.active .close,
+  .close:focus-visible {
+    opacity: 1;
+  }
+
+  .close:hover:not(:disabled) {
+    background: var(--wash-hover);
+    color: var(--ink);
+  }
+
+  .theme {
+    position: relative;
+    align-self: center;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .theme::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    background: var(--accent-a);
+    opacity: 0;
+    filter: url(#wc-edge);
+    border-radius: 45% 55% 50% 50% / 55% 45%;
+    transition: opacity 0.3s;
+  }
+
+  .theme:hover::before {
+    opacity: 0.14;
+  }
+
+  .theme > :global(svg) {
+    position: relative;
   }
 </style>

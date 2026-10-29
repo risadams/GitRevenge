@@ -119,12 +119,9 @@
         if (diff?.mode === 'commit') diff = null
       }}
     >
-      <span class="dot" class:dirty={changes > 0}></span>
-      {#if changes > 0}
-        Working tree · {changes} {changes === 1 ? 'change' : 'changes'}
-      {:else}
-        Working tree · clean
-      {/if}
+      <span class="dot" class:dirty={changes > 0} aria-hidden="true"></span>
+      <span class="wip-title">{changes > 0 ? 'Uncommitted changes' : 'Working tree'}</span>
+      <span class="meta">{changes > 0 ? `${changes} ${changes === 1 ? 'file' : 'files'}` : 'clean'}</span>
     </button>
     <!-- The graph stays mounted while a diff is open, so scroll position and selection
          survive returning to it. -->
@@ -213,18 +210,18 @@
   .wip {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
+    gap: 10px;
+    min-height: 38px;
+    padding: 0 14px;
     background: none;
     border: none;
-    border-bottom: 1px solid var(--paper-edge);
-    color: inherit;
-    font: inherit;
+    border-bottom: 1px dashed var(--hairline);
+    border-radius: 0;
     text-align: left;
-    cursor: pointer;
+    transition: background-color 0.2s;
   }
 
-  .wip:hover {
+  .wip:hover:not(:disabled) {
     background: var(--wash-hover);
   }
 
@@ -232,14 +229,19 @@
     background: var(--selected);
   }
 
+  .wip-title {
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
   .dot {
-    width: 10px;
-    height: 10px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
-    border: 2px dashed var(--ink-mute);
+    border: 2px dashed var(--ink-faint);
   }
 
   .dot.dirty {
-    border-color: var(--warning);
+    border-color: var(--accent-a);
   }
 </style>

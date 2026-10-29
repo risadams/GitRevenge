@@ -4,6 +4,7 @@
   import { EventsOn } from '../../wailsjs/runtime/runtime.js'
   import ContextMenu, { type MenuItem } from './ContextMenu.svelte'
   import { session } from './session.svelte'
+  import Icon from './ui/Icon.svelte'
 
   let { path }: { path: string } = $props()
 
@@ -85,19 +86,19 @@
 
 <svelte:window onkeydown={onKey} />
 
-<div class="toolbar">
-  <button disabled={!undoLabel || !!running} onclick={undo} title={undoLabel ? `Undo: ${undoLabel} (Ctrl+Z)` : 'Nothing to undo'}
-    >Undo</button
-  >
-  <button disabled={!redoLabel || !!running} onclick={redo} title={redoLabel ? `Redo: ${redoLabel} (Ctrl+Shift+Z)` : 'Nothing to redo'}
-    >Redo</button
-  >
-  <span class="sep"></span>
-  <button disabled={!!running} onclick={fetchAll} title="Fetch all remotes">Fetch</button>
+<div class="toolbar" role="toolbar" aria-label="Repository actions">
+  <button class="tool" disabled={!undoLabel || !!running} onclick={undo} title={undoLabel ? `Undo: ${undoLabel} (Ctrl+Z)` : 'Nothing to undo'}>
+    <Icon name="undo" />Undo
+  </button>
+  <button class="tool" disabled={!redoLabel || !!running} onclick={redo} title={redoLabel ? `Redo: ${redoLabel} (Ctrl+Shift+Z)` : 'Nothing to redo'}>
+    <Icon name="redo" />Redo
+  </button>
+  <span class="sep" aria-hidden="true"></span>
+  <button class="tool" disabled={!!running} onclick={fetchAll} title="Fetch all remotes"><Icon name="fetch" />Fetch</button>
   <span class="split">
-    <button disabled={!!running} onclick={() => pull('')} title="Pull using your git config (pull.rebase)">Pull</button>
+    <button class="tool" disabled={!!running} onclick={() => pull('')} title="Pull using your git config (pull.rebase)"><Icon name="pull" />Pull</button>
     <button
-      class="caret"
+      class="tool caret"
       disabled={!!running}
       aria-label="Pull options"
       onclick={(e) =>
@@ -105,25 +106,24 @@
           { label: 'Pull (fast-forward only)', run: () => pull('ff-only') },
           { label: 'Pull (merge)', run: () => pull('merge') },
           { label: 'Pull (rebase)', run: () => pull('rebase') },
-        ])}>▾</button
+        ])}><Icon name="chevron" size={13} /></button
     >
   </span>
   <span class="split">
-    <button disabled={!!running} onclick={() => push(false)} title="Push the current branch">Push</button>
+    <button class="tool" disabled={!!running} onclick={() => push(false)} title="Push the current branch"><Icon name="push" />Push</button>
     <button
-      class="caret"
+      class="tool caret"
       disabled={!!running}
       aria-label="Push options"
-      onclick={(e) =>
-        dropdown(e, [{ label: 'Force push (with lease)', danger: true, run: () => push(true) }])}>▾</button
+      onclick={(e) => dropdown(e, [{ label: 'Force push (with lease)', danger: true, run: () => push(true) }])}><Icon name="chevron" size={13} /></button
     >
   </span>
 
   {#if running}
     <span class="progress" role="status">
-      <span class="spinner"></span>
+      <span class="spinner" aria-hidden="true"></span>
       <span class="text">{labels[running]}{progress ? `: ${progress}` : '…'}</span>
-      <button onclick={() => CancelNetwork(path)}>Cancel</button>
+      <button class="tool cancel" onclick={() => CancelNetwork(path)}>Cancel</button>
     </span>
   {/if}
 </div>
@@ -135,44 +135,29 @@
 <style>
   .toolbar {
     display: flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 44px;
+    padding: 0 12px;
     white-space: nowrap;
     overflow: hidden;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
     border-bottom: 1px solid var(--paper-edge);
-  }
-
-  button {
-    padding: 2px 10px;
-    background: none;
-    border: 1px solid var(--paper-edge);
-    color: var(--ink);
-    cursor: pointer;
-  }
-
-  button:disabled {
-    opacity: 0.5;
-    cursor: default;
   }
 
   .split {
     display: inline-flex;
   }
 
+  .caret {
+    padding: 0 6px;
+    margin-left: -4px;
+  }
+
   .sep {
     width: 1px;
-    height: 18px;
+    height: 20px;
+    margin: 0 8px;
     background: var(--paper-edge);
-    margin: 0 4px;
-  }
-
-  .split button:first-child {
-    border-right: none;
-  }
-
-  .caret {
-    padding: 2px 5px;
   }
 
   .progress {
@@ -181,8 +166,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    color: var(--ink-mute);
+    padding-left: 12px;
+    font-family: var(--font-mono);
     font-size: 12px;
+    color: var(--ink-mute);
     white-space: nowrap;
   }
 
@@ -193,14 +180,17 @@
     text-overflow: ellipsis;
   }
 
-  .progress button {
+  .cancel {
     flex-shrink: 0;
+    font-family: var(--font-serif);
+    color: var(--link);
   }
 
   .spinner {
-    width: 10px;
-    height: 10px;
-    border: 2px solid var(--ink-mute);
+    flex: none;
+    width: 11px;
+    height: 11px;
+    border: 2px solid var(--accent);
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
