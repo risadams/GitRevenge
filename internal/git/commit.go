@@ -29,7 +29,7 @@ type CommitDetail struct {
 	Subject  string    `json:"subject"`
 	Body     string    `json:"body"`
 	Trailers []Trailer `json:"trailers"`
-	Signed  bool   `json:"signed"`
+	Signed   bool      `json:"signed"`
 }
 
 // ReadCommit reads a commit through the persistent object reader.
