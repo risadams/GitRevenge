@@ -181,6 +181,52 @@ export function commitItems(row: Row, refs: Ref[], ctx: MenuContext): MenuItem[]
     ...(ctx.current() && !refs.some((r) => r.head)
       ? [{ label: `Cherry-pick ${short} onto ${ctx.current()}`, run: integrate(path, 'cherry-pick', row.id) }]
       : []),
+    {
+      label: `Reset ${ctx.current() || 'HEAD'} to ${short}…`,
+      run: () =>
+        openDialog({
+          title: `Reset ${ctx.current() || 'HEAD'} to ${short}`,
+          message:
+            'Soft keeps your changes staged. Mixed keeps them as unstaged changes. Hard discards uncommitted changes to tracked files and cannot be undone from the working tree.',
+          fields: [
+            {
+              key: 'mode',
+              label: 'Mode',
+              type: 'select',
+              value: 'mixed',
+              options: [
+                { value: 'soft', label: 'Soft: keep changes staged' },
+                { value: 'mixed', label: 'Mixed: keep changes unstaged' },
+                { value: 'hard', label: 'Hard: discard all changes' },
+              ],
+            },
+          ],
+          submit: 'Reset',
+          danger: true,
+          run: (v) => attempt(() => Integrate(path, 'reset', [row.id, String(v.mode)])),
+        }),
+    },
+    row.parents > 1
+      ? {
+          label: `Revert merge ${short}…`,
+          run: () =>
+            openDialog({
+              title: `Revert merge ${short}`,
+              message: 'Choose the parent whose side to keep. Parent 1 is usually the branch that was merged into.',
+              fields: [
+                {
+                  key: 'mainline',
+                  label: 'Keep',
+                  type: 'select',
+                  value: '1',
+                  options: Array.from({ length: row.parents }, (_, i) => ({ value: String(i + 1), label: `Parent ${i + 1}` })),
+                },
+              ],
+              submit: 'Revert',
+              run: (v) => attempt(() => Integrate(path, 'revert', [row.id, String(v.mainline)])),
+            }),
+        }
+      : { label: `Revert ${short}`, run: integrate(path, 'revert', row.id, '') },
   ]
 }
 

@@ -35,3 +35,24 @@ func TestIntegrate(t *testing.T) {
 		t.Fatalf("banner state = %+v", st)
 	}
 }
+
+func TestResetAndRevertActions(t *testing.T) {
+	a := newTestApp(t)
+	fx := gittest.New(t)
+	base := fx.CommitFile("a.txt", "one\n", "base")
+	change := fx.CommitFile("b.txt", "b\n", "add b")
+	tab, _ := a.OpenRepo(fx.Dir)
+
+	if err := a.Integrate(tab.Path, "revert", []string{change, ""}); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Integrate(tab.Path, "reset", []string{base, "hard"}); err != nil {
+		t.Fatal(err)
+	}
+	if fx.Head() != base {
+		t.Fatal("hard reset should move HEAD to base")
+	}
+	if err := a.Integrate(tab.Path, "reset", []string{base, "sideways"}); err == nil {
+		t.Fatal("bad mode accepted")
+	}
+}
