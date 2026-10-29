@@ -38,6 +38,7 @@ This document records the decisions from the initial requirements session (2026-
 - **Persistent helper.** Each open repo keeps a long-lived `git cat-file --batch` process for fast object reads.
 - **Per-repo operation queue.** Mutating operations are serialized, and reads run concurrently. If `index.lock` is held by another process, the app retries briefly and then reports it clearly.
 - **Commit graph.** The lane layout is computed incrementally in Go while commits stream from `git log`. Only compact row data is sent to the UI.
+- **Progressive loading.** The `git log` reader pauses once the graph is a set number of rows (20–50k, tunable) past the furthest row the UI has requested, and resumes as the user scrolls, so memory follows how far someone has scrolled, not repo size. Jump-to-commit, search and ref clicks load up to their target. The scrollbar total comes from `git rev-list --count`.
 - **Watching for external changes.** Each repo gets one native recursive file-system subscription (`ReadDirectoryChangesW` on Windows, FSEvents on macOS). Changes are classified and debounced to about 150ms, and ignored files are filtered out. Where `core.fsmonitor` is enabled, it speeds up the `git status` that follows.
 - **In-progress operations.** A merge, rebase, cherry-pick, revert or bisect that is in progress is detected even if it started outside the app.
 
@@ -97,6 +98,8 @@ GITREVENGE_BENCH_REPO=/path/to/linux go test ./internal/perf -v -count=1 -timeou
 ```
 
 It reports time to the first 100 rows, full load, heap in use, window reads, search and refs, and fails if a target is missed.
+
+**Progressive loading.** The reader loads ahead of the viewport instead of the whole history, rather than capping the graph at a fixed size. A fixed cap would leave jump-to-commit, search, the scrollbar total and refs on old commits with nothing to point at. No benchmark numbers have been recorded yet; the first kernel run, with and without read-ahead, goes in this section once #163 lands.
 
 **What the measurements so far show:**
 - **Commit-graph file.** `git log --topo-order` only produces its first commits quickly when the repo has a commit-graph file (`git commit-graph write --reachable`, or `fetch.writeCommitGraph=true`). The check warns when it's missing.
