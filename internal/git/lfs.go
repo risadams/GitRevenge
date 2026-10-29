@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strings"
 )
 
 // ErrNoLFS means git-lfs is not installed.
@@ -38,7 +37,7 @@ func (r *Repo) lfsJSON(ctx context.Context, v any, args ...string) error {
 	out, err := r.Read(ctx, append([]string{"lfs"}, args...)...)
 	if err != nil {
 		var gerr *Error
-		if errors.As(err, &gerr) && strings.Contains(gerr.Stderr, "is not a git command") {
+		if errors.As(err, &gerr) && gerr.MissingLFS() {
 			return ErrNoLFS
 		}
 		return err

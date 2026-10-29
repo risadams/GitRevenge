@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"os"
 	"os/exec"
 	"slices"
 	"strings"
@@ -108,5 +109,44 @@ func TestBaseEnv(t *testing.T) {
 		if !slices.Contains(env, want) {
 			t.Errorf("env missing %q", want)
 		}
+	}
+}
+
+func TestWithPath(t *testing.T) {
+	sep := string(os.PathListSeparator)
+	cases := []struct {
+		name string
+		env  []string
+		want string
+	}{
+		{"appends missing dirs after the user's", []string{"PATH=/usr/bin" + sep + "/bin"}, "PATH=/usr/bin" + sep + "/bin" + sep + "/opt/homebrew/bin"},
+		{"keeps dirs already present", []string{"PATH=/opt/homebrew/bin" + sep + "/usr/bin"}, "PATH=/opt/homebrew/bin" + sep + "/usr/bin"},
+		{"matches the name case-insensitively", []string{"Path=/usr/bin"}, "Path=/usr/bin" + sep + "/opt/homebrew/bin"},
+		{"adds PATH when unset", []string{"HOME=/home/u"}, "PATH=/usr/bin" + sep + "/opt/homebrew/bin"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			env := withPath(c.env, "/usr/bin", "/opt/homebrew/bin")
+			if !slices.Contains(env, c.want) {
+				t.Errorf("env = %q, want it to contain %q", env, c.want)
+			}
+		})
+	}
+}
+
+func TestMissingLFSError(t *testing.T) {
+	for _, stderr := range []string{
+		"This repository is configured for Git LFS but 'git-lfs' was not found on your path. If you no longer wish to use Git LFS, remove this hook by deleting the 'post-checkout' file in the hooks directory (set by 'core.hookspath'; usually '.git/hooks').",
+		"git-lfs filter-process: git-lfs: command not found\nfatal: the remote end hung up unexpectedly",
+		"git: 'lfs' is not a git command. See 'git --help'.",
+	} {
+		err := &Error{Args: []string{"checkout", "main"}, Stderr: stderr}
+		if !err.MissingLFS() || err.Error() != lfsInstallHint {
+			t.Errorf("stderr %q: MissingLFS = %v, Error = %q", stderr, err.MissingLFS(), err.Error())
+		}
+	}
+	other := &Error{Args: []string{"checkout", "nope"}, Stderr: "error: pathspec 'nope' did not match"}
+	if other.MissingLFS() || !strings.Contains(other.Error(), "pathspec") {
+		t.Errorf("unrelated error rewritten: %q", other.Error())
 	}
 }

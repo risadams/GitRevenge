@@ -10,6 +10,9 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
+	"slices"
 	"strings"
 	"time"
 )
@@ -29,7 +32,40 @@ type Runner struct {
 
 // NewRunner returns a Runner for the git binary at bin.
 func NewRunner(bin string) *Runner {
-	return &Runner{bin: bin, env: baseEnv(os.Environ())}
+	return &Runner{bin: bin, env: withPath(baseEnv(os.Environ()), toolDirs(bin)...)}
+}
+
+// toolDirs are directories git's helpers (git-lfs, credential helpers, hooks' tools) are
+// likely installed beside. macOS apps launched from Finder get a minimal PATH without
+// Homebrew, so findBinary can find git there while git itself can't find git-lfs.
+func toolDirs(bin string) []string {
+	dirs := []string{filepath.Dir(bin)}
+	if runtime.GOOS == "darwin" {
+		dirs = append(dirs, "/opt/homebrew/bin", "/usr/local/bin")
+	}
+	return dirs
+}
+
+// withPath appends dirs missing from env's PATH, so the user's own PATH order still wins.
+func withPath(env []string, dirs ...string) []string {
+	out := slices.Clone(env)
+	i := slices.IndexFunc(out, func(kv string) bool {
+		name, _, _ := strings.Cut(kv, "=")
+		return strings.EqualFold(name, "PATH")
+	})
+	if i < 0 {
+		out = append(out, "PATH=")
+		i = len(out) - 1
+	}
+	name, value, _ := strings.Cut(out[i], "=")
+	list := filepath.SplitList(value)
+	for _, d := range dirs {
+		if !slices.Contains(list, d) {
+			list = append(list, d)
+		}
+	}
+	out[i] = name + "=" + strings.Join(slices.DeleteFunc(list, func(d string) bool { return d == "" }), string(os.PathListSeparator))
+	return out
 }
 
 // baseEnv strips variables that would redirect git to another repo and adds the
@@ -161,7 +197,28 @@ type Error struct {
 	Err      error
 }
 
+// lfsMissingSigns are what git, the LFS hooks and the LFS filter print when git-lfs
+// isn't installed or isn't on PATH.
+var lfsMissingSigns = []string{
+	"'git-lfs' was not found on your path",
+	"git-lfs: command not found",
+	"'git-lfs filter-process' failed",
+	"'lfs' is not a git command",
+}
+
+// MissingLFS reports whether git failed because git-lfs isn't available.
+func (e *Error) MissingLFS() bool {
+	return slices.ContainsFunc(lfsMissingSigns, func(s string) bool { return strings.Contains(e.Stderr, s) })
+}
+
+// lfsInstallHint replaces git's raw output when git-lfs is missing.
+const lfsInstallHint = "This repository uses Git LFS, but git-lfs isn't installed. Install it from https://git-lfs.com " +
+	"(on macOS: brew install git-lfs), then restart Git Revenge."
+
 func (e *Error) Error() string {
+	if e.MissingLFS() {
+		return lfsInstallHint
+	}
 	msg := e.Stderr
 	if msg == "" {
 		msg = e.Err.Error()
