@@ -102,6 +102,38 @@ export namespace app {
 		    return a;
 		}
 	}
+	export class LFSInfo {
+	    available: boolean;
+	    status: git.LFSStatus;
+	
+	    static createFrom(source: any = {}) {
+	        return new LFSInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.available = source["available"];
+	        this.status = this.convertValues(source["status"], git.LFSStatus);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class RecentRepo {
 	    path: string;
 	    name: string;
@@ -456,6 +488,94 @@ export namespace git {
 	        this.submodule = source["submodule"];
 	    }
 	}
+	export class LFSFile {
+	    name: string;
+	    size: number;
+	    downloaded: boolean;
+	    oid: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LFSFile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.size = source["size"];
+	        this.downloaded = source["downloaded"];
+	        this.oid = source["oid"];
+	    }
+	}
+	export class LFSLock {
+	    id: string;
+	    path: string;
+	    owner: string;
+	    lockedAt: string;
+	    ours: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new LFSLock(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.path = source["path"];
+	        this.owner = source["owner"];
+	        this.lockedAt = source["lockedAt"];
+	        this.ours = source["ours"];
+	    }
+	}
+	export class LFSPattern {
+	    pattern: string;
+	    source: string;
+	    lockable: boolean;
+	    tracked: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new LFSPattern(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.pattern = source["pattern"];
+	        this.source = source["source"];
+	        this.lockable = source["lockable"];
+	        this.tracked = source["tracked"];
+	    }
+	}
+	export class LFSStatus {
+	    patterns: LFSPattern[];
+	    files: LFSFile[];
+	
+	    static createFrom(source: any = {}) {
+	        return new LFSStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.patterns = this.convertValues(source["patterns"], LFSPattern);
+	        this.files = this.convertValues(source["files"], LFSFile);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class RebaseItem {
 	    commit: string;
 	    subject: string;
@@ -577,6 +697,24 @@ export namespace git {
 		    }
 		    return a;
 		}
+	}
+	export class Submodule {
+	    path: string;
+	    commit: string;
+	    state: string;
+	    describe: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Submodule(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.commit = source["commit"];
+	        this.state = source["state"];
+	        this.describe = source["describe"];
+	    }
 	}
 
 }

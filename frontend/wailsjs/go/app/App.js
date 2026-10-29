@@ -66,6 +66,18 @@ export function InteractiveRebase(arg1, arg2, arg3) {
   return window['go']['app']['App']['InteractiveRebase'](arg1, arg2, arg3);
 }
 
+export function LFS(arg1) {
+  return window['go']['app']['App']['LFS'](arg1);
+}
+
+export function LFSAction(arg1, arg2, arg3) {
+  return window['go']['app']['App']['LFSAction'](arg1, arg2, arg3);
+}
+
+export function LFSLocks(arg1) {
+  return window['go']['app']['App']['LFSLocks'](arg1);
+}
+
 export function LastCommitMessage(arg1) {
   return window['go']['app']['App']['LastCommitMessage'](arg1);
 }
@@ -162,6 +174,10 @@ export function StashSave(arg1, arg2, arg3) {
   return window['go']['app']['App']['StashSave'](arg1, arg2, arg3);
 }
 
+export function Submodules(arg1) {
+  return window['go']['app']['App']['Submodules'](arg1);
+}
+
 export function TakeConflictSide(arg1, arg2, arg3) {
   return window['go']['app']['App']['TakeConflictSide'](arg1, arg2, arg3);
 }
@@ -176,6 +192,10 @@ export function UndoState(arg1) {
 
 export function UnstageFiles(arg1, arg2) {
   return window['go']['app']['App']['UnstageFiles'](arg1, arg2);
+}
+
+export function UpdateSubmodules(arg1) {
+  return window['go']['app']['App']['UpdateSubmodules'](arg1);
 }
 
 export function Version() {

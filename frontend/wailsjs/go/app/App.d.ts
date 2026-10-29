@@ -36,6 +36,12 @@ export function Integrate(arg1:string,arg2:string,arg3:Array<string>):Promise<vo
 
 export function InteractiveRebase(arg1:string,arg2:string,arg3:Array<git.RebaseItem>):Promise<void>;
 
+export function LFS(arg1:string):Promise<app.LFSInfo>;
+
+export function LFSAction(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
+
+export function LFSLocks(arg1:string):Promise<Array<git.LFSLock>>;
+
 export function LastCommitMessage(arg1:string):Promise<string>;
 
 export function OpenRepo(arg1:string):Promise<app.RepoTab>;
@@ -84,6 +90,8 @@ export function StashAction(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function StashSave(arg1:string,arg2:string,arg3:boolean):Promise<void>;
 
+export function Submodules(arg1:string):Promise<Array<git.Submodule>>;
+
 export function TakeConflictSide(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function Undo(arg1:string):Promise<void>;
@@ -91,6 +99,8 @@ export function Undo(arg1:string):Promise<void>;
 export function UndoState(arg1:string):Promise<app.UndoInfo>;
 
 export function UnstageFiles(arg1:string,arg2:Array<string>):Promise<void>;
+
+export function UpdateSubmodules(arg1:string):Promise<void>;
 
 export function Version():Promise<string>;
 

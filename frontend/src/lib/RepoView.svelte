@@ -93,6 +93,7 @@
     onNewBranch={() => (dialog = newBranchDialog(ctx))}
     onManageRemotes={() => (remotesOpen = true)}
     onContext={(ref, x, y) => openMenu(refItems(ref, ctx), x, y)}
+    openDialog={ctx.openDialog}
   />
   <div class="main">
     <Toolbar {path} />
