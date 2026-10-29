@@ -710,6 +710,20 @@ export namespace git {
 		    return a;
 		}
 	}
+	export class Note {
+	    ref: string;
+	    text: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Note(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ref = source["ref"];
+	        this.text = source["text"];
+	    }
+	}
 	export class RebaseItem {
 	    commit: string;
 	    subject: string;
