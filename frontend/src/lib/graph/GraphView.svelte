@@ -6,7 +6,7 @@
   import { theme as colorTheme } from '../theme.svelte'
   import { provideCommands } from '../commands.svelte'
   import Icon from '../ui/Icon.svelte'
-  import { drawRow, graphWidth, LANE_COUNT, layoutColumns, METRICS, setLaneColors, type Theme } from './draw'
+  import { drawRow, graphWidth, LANE_COUNT, laneCapacity, laneWindow, layoutColumns, METRICS, setLaneColors, type Theme } from './draw'
   import { RowCache, type GraphProgress, type Page, type Ref, type Row } from './rowCache'
   import { scrollMap, toScroll, toVirtual } from './scrollMap'
 
@@ -151,8 +151,21 @@
     cache.ensure(first - OVERSCAN, last + OVERSCAN)
 
     let lanes = 1
-    for (let i = first; i < last; i++) lanes = Math.max(lanes, cache.get(i)?.width ?? 0)
-    const lay = layoutColumns(w, graphWidth(lanes, w * MAX_GRAPH_SHARE, METRICS[density]), density)
+    let minCol = Infinity
+    let maxCol = 0
+    for (let i = first; i < last; i++) {
+      const row = cache.get(i)
+      if (!row) continue
+      lanes = Math.max(lanes, row.width)
+      minCol = Math.min(minCol, row.col)
+      maxCol = Math.max(maxCol, row.col)
+    }
+    const m = METRICS[density]
+    const graphW = graphWidth(lanes, w * MAX_GRAPH_SHARE, m)
+    // A history wider than the column scrolls its lanes so the nodes in view stay visible.
+    const sel = cache.get(selected)
+    const firstLane = minCol === Infinity ? 0 : laneWindow(minCol, maxCol, sel && selected >= first && selected < last ? sel.col : null, laneCapacity(graphW, m))
+    const lay = layoutColumns(w, graphW, density, firstLane)
     const th = theme()
     const now = Date.now() / 1000
     for (let i = first; i < last; i++) {
@@ -161,6 +174,14 @@
       // The drop target is highlighted like a selection while dragging.
       if (row)
         drawRow(ctx, row, cache.refsFor(row.id), y, lay, th, i === selected || i === dropTarget, i === hovered, !!matchSet && !matchSet.has(i), now)
+    }
+    // Lanes scrolled out on the left fade in from the edge, so the cut doesn't look like the end.
+    if (firstLane > 0) {
+      const fade = ctx.createLinearGradient(0, 0, m.pad + m.laneW, 0)
+      fade.addColorStop(0, th.bg)
+      fade.addColorStop(1, 'transparent')
+      ctx.fillStyle = fade
+      ctx.fillRect(0, 0, m.pad + m.laneW, h)
     }
   }
 
