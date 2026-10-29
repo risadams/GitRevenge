@@ -31,6 +31,8 @@ export function CommitChanges(arg1:string,arg2:string,arg3:boolean):Promise<stri
 
 export function CommitDetail(arg1:string,arg2:string):Promise<app.CommitInfo>;
 
+export function CommitNotes(arg1:string,arg2:string):Promise<Array<git.Note>>;
+
 export function CommitRow(arg1:string,arg2:string):Promise<number>;
 
 export function ConflictFile(arg1:string,arg2:string):Promise<git.ConflictFile>;
@@ -110,6 +112,8 @@ export function RunOperationAction(arg1:string,arg2:string):Promise<void>;
 export function SearchGraph(arg1:string,arg2:string):Promise<graph.SearchResult>;
 
 export function SetActiveRepo(arg1:string):Promise<void>;
+
+export function SetCommitNote(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function SetGraphDensity(arg1:string):Promise<void>;
 

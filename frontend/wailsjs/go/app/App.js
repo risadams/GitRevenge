@@ -54,6 +54,10 @@ export function CommitDetail(arg1, arg2) {
   return window['go']['app']['App']['CommitDetail'](arg1, arg2);
 }
 
+export function CommitNotes(arg1, arg2) {
+  return window['go']['app']['App']['CommitNotes'](arg1, arg2);
+}
+
 export function CommitRow(arg1, arg2) {
   return window['go']['app']['App']['CommitRow'](arg1, arg2);
 }
@@ -212,6 +216,10 @@ export function SearchGraph(arg1, arg2) {
 
 export function SetActiveRepo(arg1) {
   return window['go']['app']['App']['SetActiveRepo'](arg1);
+}
+
+export function SetCommitNote(arg1, arg2, arg3) {
+  return window['go']['app']['App']['SetCommitNote'](arg1, arg2, arg3);
 }
 
 export function SetGraphDensity(arg1) {

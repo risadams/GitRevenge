@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CommitDetail, IssueURL } from '../../wailsjs/go/app/App.js'
+  import { CommitDetail, CommitNotes, IssueURL, SetCommitNote } from '../../wailsjs/go/app/App.js'
   import type { app, git } from '../../wailsjs/go/models'
   import { BrowserOpenURL } from '../../wailsjs/runtime/runtime.js'
   import { formatTime } from './graph/draw'
@@ -32,6 +32,37 @@
   }
 
   let info = $state<app.CommitInfo | null>(null)
+
+  // git notes on the commit, from every notes ref; the default ref's note can be edited.
+  let notes = $state<git.Note[]>([])
+  let noteDraft = $state<string | null>(null)
+  let noteBusy = $state(false)
+  const DEFAULT_NOTES = 'refs/notes/commits'
+  let ownNote = $derived(notes.find((n) => n.ref === DEFAULT_NOTES))
+
+  async function loadNotes(id: string) {
+    const res = await CommitNotes(path, id).catch(() => [])
+    if (id === commitId) notes = res
+  }
+
+  $effect(() => {
+    const id = commitId
+    notes = []
+    noteDraft = null
+    void loadNotes(id)
+  })
+
+  async function saveNote(text: string) {
+    const id = commitId
+    noteBusy = true
+    try {
+      await session.run(() => SetCommitNote(path, id, text))
+      noteDraft = null
+      await loadNotes(id)
+    } finally {
+      noteBusy = false
+    }
+  }
   /** Where "#123" in a trailer links to, from the repository's remote; "" for nowhere. */
   let issueURL = $state('')
 
@@ -150,6 +181,29 @@
           <span class="when">{formatTime(c.committer.time)}</span>
         </dd>
         {/if}
+        <dt class="meta">Notes</dt>
+        <dd class="notes">
+          {#each notes as n (n.ref)}
+            {#if !(n.ref === DEFAULT_NOTES && noteDraft !== null)}
+              <div class="note">
+                {#if n.ref !== DEFAULT_NOTES}<span class="meta note-ref">{n.ref.replace(/^refs\/notes\//, '')}</span>{/if}
+                <p>{n.text}</p>
+              </div>
+            {/if}
+          {/each}
+          {#if noteDraft !== null}
+            <textarea bind:value={noteDraft} rows="3" aria-label="Note" disabled={noteBusy}></textarea>
+            <span class="note-actions">
+              <button class="tool" disabled={noteBusy} onclick={() => saveNote(noteDraft ?? '')}>Save note</button>
+              <button class="tool" disabled={noteBusy} onclick={() => (noteDraft = null)}>Cancel</button>
+            </span>
+          {:else}
+            <span class="note-actions">
+              <button class="tool" onclick={() => (noteDraft = ownNote?.text ?? '')}><Icon name={ownNote ? 'edit' : 'plus'} size={14} />{ownNote ? 'Edit note' : 'Add note'}</button>
+              {#if ownNote}<button class="tool" disabled={noteBusy} onclick={() => saveNote('')}><Icon name="trash" size={14} />Remove</button>{/if}
+            </span>
+          {/if}
+        </dd>
         <dt class="meta">Commit</dt>
         <dd><code>{c.id}</code></dd>
         {#if c.parents.length}
@@ -279,6 +333,32 @@
   .raw-toggle:hover:not(:disabled) {
     background: var(--wash-hover);
     color: var(--ink);
+  }
+
+  .notes .note p {
+    margin: 0 0 6px;
+    white-space: pre-wrap;
+  }
+
+  .note-ref {
+    display: block;
+  }
+
+  .notes textarea {
+    width: 100%;
+    font: inherit;
+    font-size: 13.5px;
+  }
+
+  .note-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: -10px;
+  }
+
+  .note-actions .tool {
+    height: 26px;
+    font-size: 13px;
   }
 
   /* Trailers read as a short record under the message: key, then person or value. */
