@@ -263,6 +263,23 @@ func (a *App) Remotes(path string) ([]git.Remote, error) {
 	return r.Git.Remotes(context.Background())
 }
 
+// IssueURL returns a pattern for links to the repository's issues, with "{n}" for the
+// issue number, from origin (or the first remote). It's "" when the remote isn't on GitHub
+// or GitLab.
+func (a *App) IssueURL(path string) (string, error) {
+	remotes, err := a.Remotes(path)
+	if err != nil || len(remotes) == 0 {
+		return "", err
+	}
+	pick := remotes[0]
+	for _, r := range remotes {
+		if r.Name == "origin" {
+			pick = r
+		}
+	}
+	return git.IssueURL(pick.FetchURL), nil
+}
+
 // RemoteAction edits remotes: add (name, url), rename (from, to), seturl (name, url),
 // remove (name).
 func (a *App) RemoteAction(path, action string, args []string) error {

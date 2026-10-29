@@ -63,6 +63,8 @@ export function Integrate(arg1:string,arg2:string,arg3:Array<string>):Promise<vo
 
 export function InteractiveRebase(arg1:string,arg2:string,arg3:Array<git.RebaseItem>):Promise<void>;
 
+export function IssueURL(arg1:string):Promise<string>;
+
 export function LFS(arg1:string):Promise<app.LFSInfo>;
 
 export function LFSAction(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;

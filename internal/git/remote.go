@@ -197,3 +197,46 @@ func (r *Repo) Push(ctx context.Context, p PushOptions, o NetOptions) error {
 	_, err := r.runner.Run(ctx, c)
 	return err
 }
+
+// IssueURL returns a pattern for links to a remote's issues, with "{n}" standing for the
+// issue number, for remotes on GitHub or GitLab (including self-hosted GitLab, recognised
+// by "gitlab" in the host name). It returns "" for anything else.
+func IssueURL(remoteURL string) string {
+	host, path := webLocation(remoteURL)
+	if host == "" || path == "" {
+		return ""
+	}
+	base := "https://" + host + "/" + path
+	switch {
+	case host == "github.com":
+		return base + "/issues/{n}"
+	case strings.Contains(host, "gitlab"):
+		return base + "/-/issues/{n}"
+	}
+	return ""
+}
+
+// webLocation extracts the host and "owner/repo" path from an https, ssh or scp-style
+// (git@host:owner/repo.git) remote URL.
+func webLocation(remoteURL string) (host, path string) {
+	u := strings.TrimSpace(remoteURL)
+	if i := strings.Index(u, "://"); i >= 0 {
+		u = u[i+3:]
+		if at := strings.LastIndex(u, "@"); at >= 0 && at < strings.Index(u+"/", "/") {
+			u = u[at+1:]
+		}
+		host, path, _ = strings.Cut(u, "/")
+		host, _, _ = strings.Cut(host, ":") // drop a port
+	} else {
+		// scp-style: [user@]host:path
+		if at := strings.Index(u, "@"); at >= 0 {
+			u = u[at+1:]
+		}
+		var ok bool
+		if host, path, ok = strings.Cut(u, ":"); !ok {
+			return "", ""
+		}
+	}
+	path = strings.TrimSuffix(strings.Trim(path, "/"), ".git")
+	return strings.ToLower(host), path
+}
