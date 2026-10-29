@@ -221,3 +221,16 @@ func (r *Repo) SetWorkTreeContent(path string, content string) error {
 	}
 	return f.Close()
 }
+
+// FileBytes reads one version of a file whole, up to MaxForcedBytes, for previews of binary
+// formats (PDF). exists is false when the file isn't there.
+func (r *Repo) FileBytes(ctx context.Context, v FileRef) (data []byte, exists bool, err error) {
+	side, data, err := r.readSide(ctx, v, MaxForcedBytes)
+	if err != nil || !side.Exists {
+		return nil, false, err
+	}
+	if side.Size > MaxForcedBytes {
+		return nil, true, fmt.Errorf("%s is %d MB, over the %d MB preview limit", v.Path, side.Size>>20, MaxForcedBytes>>20)
+	}
+	return data, true, nil
+}
