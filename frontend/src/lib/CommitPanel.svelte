@@ -7,7 +7,7 @@
   import { session } from './session.svelte'
   import { reflow } from './text'
   import { asPerson, valueParts } from './trailers'
-  import MessageBody from './MessageBody.svelte'
+  import Markdown from './Markdown.svelte'
   import Icon from './ui/Icon.svelte'
 
   let {
@@ -106,7 +106,7 @@
           <button class="raw-toggle meta" aria-pressed={raw} onclick={toggleRaw} title={raw ? 'Show the message rendered as markdown' : 'Show the message as plain text'}
             >{raw ? 'Raw' : 'Markdown'}</button
           >
-          {#if raw}<p class="body">{reflow(c.body)}</p>{:else}<MessageBody text={c.body} {issueURL} />{/if}
+          {#if raw}<p class="body">{reflow(c.body)}</p>{:else}<Markdown text={c.body} {issueURL} />{/if}
         </div>
       {/if}
       {#if c.trailers.length}

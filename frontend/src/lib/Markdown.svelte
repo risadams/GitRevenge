@@ -1,21 +1,43 @@
 <script lang="ts">
-  // A commit message body rendered as markdown. marked only tokenizes; every token becomes a
-  // Svelte element, so nothing is ever inserted as HTML. Raw HTML in a message shows as its
-  // text, and links open in the system browser.
+  // Markdown rendered for a commit message, or a whole document (a file's rendered
+  // preview). marked only tokenizes; every token becomes a Svelte element, so nothing is ever
+  // inserted as HTML: raw HTML shows as its text. Web links open in the system browser.
   import { marked, type Token, type Tokens } from 'marked'
   import { BrowserOpenURL } from '../../wailsjs/runtime/runtime.js'
+  import MarkdownImage from './MarkdownImage.svelte'
   import { valueParts } from './trailers'
 
-  let { text, issueURL = '' }: { text: string; issueURL?: string } = $props()
+  let {
+    text,
+    issueURL = '',
+    document = false,
+    onLink,
+    resolveImage,
+  }: {
+    text: string
+    issueURL?: string
+    /** A whole document: keeps heading levels and sets a reading size. */
+    document?: boolean
+    /** Handles a relative link, such as another file in the repository. */
+    onLink?: (href: string) => void
+    /** Loads a relative image as a data URL; without it, images show as links. */
+    resolveImage?: (src: string) => Promise<string>
+  } = $props()
 
   let tokens = $derived(marked.lexer(text, { gfm: true }))
 
-  const SAFE_LINK = /^(https?:|mailto:)/i
+  const WEB_LINK = /^(https?:|mailto:)/i
+  /** A relative path: no scheme, not protocol-relative, not just a fragment. */
+  const RELATIVE = /^(?![a-z][a-z0-9+.-]*:|\/\/|#)/i
 
   function open(e: MouseEvent, href: string) {
     e.preventDefault()
-    if (SAFE_LINK.test(href)) BrowserOpenURL(href)
+    if (WEB_LINK.test(href)) BrowserOpenURL(href)
+    else if (RELATIVE.test(href)) onLink?.(href)
   }
+
+  /** Heading level in a document (h2 down, under the view's own heading), or h3 in a message. */
+  const headingTag = (depth: number) => (document ? `h${Math.min(6, depth + 1)}` : 'h3')
 </script>
 
 {#snippet links(value: string)}{#each valueParts(value, issueURL) as part, k (k)}{#if part.href}<a
@@ -34,16 +56,20 @@
         href={(t as Tokens.Link).href}
         title={(t as Tokens.Link).href}
         onclick={(e) => open(e, (t as Tokens.Link).href)}>{@render inline((t as Tokens.Link).tokens)}</a
-      >{:else if t.type === 'image'}<a href={(t as Tokens.Image).href} onclick={(e) => open(e, (t as Tokens.Image).href)}
-        >{(t as Tokens.Image).text || (t as Tokens.Image).href}</a
-      >{:else if t.type === 'checkbox'}<input type="checkbox" checked={(t as Tokens.Checkbox).checked} disabled />{:else}{t.raw}{/if}{/each}{/snippet}
+      >{:else if t.type === 'image'}{#if resolveImage && RELATIVE.test((t as Tokens.Image).href)}<MarkdownImage
+          src={(t as Tokens.Image).href}
+          alt={(t as Tokens.Image).text}
+          resolve={resolveImage}
+        />{:else}<a href={(t as Tokens.Image).href} title="Image (not loaded)" onclick={(e) => open(e, (t as Tokens.Image).href)}
+          >{(t as Tokens.Image).text || (t as Tokens.Image).href}</a
+        >{/if}{:else if t.type === 'checkbox'}<input type="checkbox" checked={(t as Tokens.Checkbox).checked} disabled />{:else}{t.raw}{/if}{/each}{/snippet}
 
 {#snippet blocks(list: Token[])}
   {#each list as t, i (i)}
     {#if t.type === 'paragraph'}
       <p>{@render inline((t as Tokens.Paragraph).tokens)}</p>
     {:else if t.type === 'heading'}
-      <h3>{@render inline((t as Tokens.Heading).tokens)}</h3>
+      <svelte:element this={headingTag((t as Tokens.Heading).depth)}>{@render inline((t as Tokens.Heading).tokens)}</svelte:element>
     {:else if t.type === 'code'}
       <pre><code>{(t as Tokens.Code).text}</code></pre>
     {:else if t.type === 'blockquote'}
@@ -85,7 +111,7 @@
   {/each}
 {/snippet}
 
-<div class="markdown">{@render blocks(tokens)}</div>
+<div class="markdown" class:document>{@render blocks(tokens)}</div>
 
 <style>
   .markdown {
@@ -108,11 +134,36 @@
     margin: 0 0 10px;
   }
 
-  h3 {
+  .markdown :global(:is(h2, h3, h4, h5, h6)) {
     margin: 14px 0 6px;
     font-size: 15px;
     font-weight: 600;
     color: var(--ink);
+  }
+
+  /* A document reads at body size, with a heading scale and a measure. */
+  .document {
+    max-width: 72ch;
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--ink);
+  }
+
+  .document :global(h2) {
+    margin: 22px 0 10px;
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .document :global(h3) {
+    margin: 20px 0 8px;
+    font-size: 22px;
+    font-weight: 500;
+  }
+
+  .document :global(h4) {
+    font-size: 18px;
   }
 
   ul,

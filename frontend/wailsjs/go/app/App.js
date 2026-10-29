@@ -82,6 +82,10 @@ export function FileHistory(arg1, arg2) {
   return window['go']['app']['App']['FileHistory'](arg1, arg2);
 }
 
+export function FileImage(arg1, arg2, arg3, arg4) {
+  return window['go']['app']['App']['FileImage'](arg1, arg2, arg3, arg4);
+}
+
 export function GraphDensity() {
   return window['go']['app']['App']['GraphDensity']();
 }

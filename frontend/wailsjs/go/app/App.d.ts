@@ -45,6 +45,8 @@ export function FileContents(arg1:string,arg2:string,arg3:string,arg4:string,arg
 
 export function FileHistory(arg1:string,arg2:string):Promise<Array<git.FileCommit>>;
 
+export function FileImage(arg1:string,arg2:string,arg3:string,arg4:string):Promise<string>;
+
 export function GraphDensity():Promise<string>;
 
 export function GraphRows(arg1:string,arg2:number,arg3:number):Promise<app.GraphPage>;

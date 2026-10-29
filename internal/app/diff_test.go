@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/risadams/gitrevenge/internal/gittest"
@@ -70,5 +71,29 @@ func TestPartialStagingGuards(t *testing.T) {
 	}
 	if b, _ := os.ReadFile(fx.Path("a.txt")); string(b) != "edited elsewhere\n" {
 		t.Fatal("newer edits must not be overwritten")
+	}
+}
+
+func TestFileImage(t *testing.T) {
+	a := newTestApp(t)
+	fx := gittest.New(t)
+	// A 1x1 PNG.
+	png := "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82"
+	fx.WriteFile("docs/img/dot.png", png)
+	fx.WriteFile("docs/readme.md", "![dot](img/dot.png)")
+	head := fx.Commit("docs with an image")
+	tab, err := a.OpenRepo(fx.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	url, err := a.FileImage(tab.Path, DiffCommit, head, "docs/img/dot.png")
+	if err != nil || !strings.HasPrefix(url, "data:image/png;base64,") {
+		t.Fatalf("FileImage(png) = %.40q, %v", url, err)
+	}
+	for _, p := range []string{"docs/readme.md", "docs/missing.png", "../outside.png", "/etc/passwd"} {
+		if url, err := a.FileImage(tab.Path, DiffUnstaged, "", p); err != nil || url != "" {
+			t.Errorf("FileImage(%q) = %.40q, %v; want empty", p, url, err)
+		}
 	}
 }
