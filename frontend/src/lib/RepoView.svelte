@@ -189,7 +189,7 @@
   {#if view === 'wip'}
     <WorkingTreePanel {path} current={diff} openFile={(t) => (diff = t)} />
   {:else if selected}
-    <CommitPanel {path} commitId={selected.id} current={diff} openFile={(t) => (diff = t)} />
+    <CommitPanel {path} commitId={selected.id} current={diff} openFile={(t) => (diff = t)} onSearch={(q) => graph?.search(q)} />
   {/if}
 </div>
 

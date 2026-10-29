@@ -8,19 +8,28 @@
   import { reflow } from './text'
   import { asPerson, valueParts } from './trailers'
   import MessageBody from './MessageBody.svelte'
+  import Icon from './ui/Icon.svelte'
 
   let {
     path,
     commitId,
     openFile,
     current,
+    onSearch,
   }: {
     path: string
     commitId: string
     openFile: (t: DiffTarget) => void
     /** The diff currently open, to highlight its file. */
     current?: DiffTarget | null
+    /** Searches the graph, e.g. for other commits with the same trailer. */
+    onSearch?: (query: string) => void
   } = $props()
+
+  /** The graph search for commits sharing this trailer: by name for a person. */
+  function trailerQuery(key: string, value: string): string {
+    return `${key}: ${asPerson(value)?.name ?? value}`
+  }
 
   let info = $state<app.CommitInfo | null>(null)
   /** Where "#123" in a trailer links to, from the repository's remote; "" for nowhere. */
@@ -105,7 +114,7 @@
           {#each c.trailers as t, i (i)}
             {@const who = asPerson(t.value)}
             <dt class="meta">{t.key}</dt>
-            <dd>
+            <dd class="trailer">
               {#if who}
                 {who.name}<span class="email" title={who.email}>{who.email}</span>
               {:else}
@@ -114,6 +123,14 @@
                       title={part.href}
                       onclick={(e) => openLink(e, part.href!)}>{part.text}</a
                     >{:else}{part.text}{/if}{/each}
+              {/if}
+              {#if onSearch}
+                <button
+                  class="find"
+                  title="Find commits with this trailer"
+                  aria-label="Find commits with {trailerQuery(t.key, t.value)}"
+                  onclick={() => onSearch(trailerQuery(t.key, t.value))}><Icon name="search" size={13} /></button
+                >
               {/if}
             </dd>
           {/each}
@@ -276,6 +293,35 @@
     max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* The find button shows on hover or focus, so the record stays quiet. */
+  .trailer {
+    position: relative;
+    padding-right: 24px;
+  }
+
+  .find {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: inline-flex;
+    padding: 3px;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: var(--ink-mute);
+    opacity: 0;
+  }
+
+  .trailer:hover .find,
+  .find:focus-visible {
+    opacity: 1;
+  }
+
+  .find:hover:not(:disabled) {
+    background: var(--wash-hover);
+    color: var(--link);
   }
 
   .trailers a {
