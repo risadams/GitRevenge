@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clip, graphWidth, initials, LANE_COUNT, laneColor, laneVar, laneX, layoutColumns, METRICS, relativeTime, setLaneColors, sortRefs } from './draw'
+import { clip, graphWidth, initials, LANE_COUNT, laneColor, laneVar, laneWindow, laneX, layoutColumns, METRICS, relativeTime, setLaneColors, sortRefs } from './draw'
 
 describe('graph geometry', () => {
   it('spaces lanes evenly in both densities', () => {
@@ -78,5 +78,21 @@ describe('initials', () => {
     expect(initials('dependabot[bot]')).toBe('D')
     expect(initials('jane.doe')).toBe('JD')
     expect(initials('')).toBe('?')
+  })
+})
+
+describe('laneWindow', () => {
+  it('shows from the first lane when the nodes in view fit', () => {
+    expect(laneWindow(0, 5, null, 10)).toBe(0)
+  })
+
+  it('scrolls right just far enough for the nodes in view', () => {
+    expect(laneWindow(40, 45, null, 10)).toBe(36)
+    expect(laneWindow(800, 801, null, 10)).toBe(792)
+  })
+
+  it('centres the selected node when the nodes in view are wider than the column', () => {
+    expect(laneWindow(0, 900, 300, 10)).toBe(295)
+    expect(laneWindow(100, 900, null, 10)).toBe(95)
   })
 })
