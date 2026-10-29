@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { CommitRow, GraphRows, SearchGraph } from '../../../wailsjs/go/app/App.js'
+  import { CommitRow, CommitSignatures, GraphRows, SearchGraph } from '../../../wailsjs/go/app/App.js'
   import { session } from '../session.svelte'
   import { EventsOn } from '../../../wailsjs/runtime/runtime.js'
   import { theme as colorTheme } from '../theme.svelte'
   import { provideCommands } from '../commands.svelte'
   import Icon from '../ui/Icon.svelte'
-  import { drawRow, graphWidth, LANE_COUNT, laneCapacity, laneWindow, layoutColumns, METRICS, setLaneColors, type Theme } from './draw'
+  import { drawRow, sealOf, graphWidth, LANE_COUNT, laneCapacity, laneWindow, layoutColumns, METRICS, setLaneColors, type Theme } from './draw'
   import { RowCache, type GraphProgress, type Page, type Ref, type Row } from './rowCache'
   import { scrollMap, toScroll, toVirtual } from './scrollMap'
 
@@ -122,7 +122,36 @@
       selected: token('--selected'),
       hover: token('--wash-hover'),
       tag: token('--lane-4'),
+      good: token('--success'),
+      bad: token('--danger'),
+      warn: token('--warning'),
     }
+  }
+
+  // Signature status of rows that have been on screen, fetched a screen at a time. Plain
+  // collections on purpose: the canvas repaints through schedule(), not reactivity.
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity
+  const sigs = new Map<string, string>()
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity
+  const sigWanted = new Set<string>()
+  let sigTimer: ReturnType<typeof setTimeout> | undefined
+  function wantSignature(id: string) {
+    if (sigs.has(id) || sigWanted.has(id)) return
+    sigWanted.add(id)
+    clearTimeout(sigTimer)
+    sigTimer = setTimeout(fetchSignatures, 150)
+  }
+  async function fetchSignatures() {
+    const ids = [...sigWanted]
+    sigWanted.clear()
+    for (const id of ids) sigs.set(id, '') // asked; don't ask again
+    const checks = await CommitSignatures(path, ids).catch(() => [])
+    let signed = false
+    for (const c of checks) {
+      sigs.set(c.id, c.status)
+      signed ||= c.status !== 'none'
+    }
+    if (signed) schedule()
   }
 
   function schedule() {
@@ -172,8 +201,9 @@
       const row = cache.get(i)
       const y = i * rowH - top
       // The drop target is highlighted like a selection while dragging.
-      if (row)
-        drawRow(ctx, row, cache.refsFor(row.id), y, lay, th, i === selected || i === dropTarget, i === hovered, !!matchSet && !matchSet.has(i), now)
+      if (!row) continue
+      wantSignature(row.id)
+      drawRow(ctx, row, cache.refsFor(row.id), y, lay, th, i === selected || i === dropTarget, i === hovered, !!matchSet && !matchSet.has(i), now, sealOf(sigs.get(row.id)))
     }
     // Lanes scrolled out on the left fade in from the edge, so the cut doesn't look like the end.
     if (firstLane > 0) {
@@ -402,6 +432,7 @@
       document.fonts.removeEventListener('loadingdone', schedule)
       off()
       clearTimeout(searchTimer)
+      clearTimeout(sigTimer)
       cancelAnimationFrame(frame)
     }
   })

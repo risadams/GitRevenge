@@ -129,3 +129,22 @@ func TestSearchesCancelThePreviousOne(t *testing.T) {
 		t.Fatalf("searches left running: %v", s.running)
 	}
 }
+
+func TestCommitSignaturesCachesUnsigned(t *testing.T) {
+	a := newTestApp(t)
+	fx := gittest.New(t)
+	shas := fx.Linear(2)
+	tab, err := a.OpenRepo(fx.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range 2 { // the second call is served from the cache
+		got, err := a.CommitSignatures(tab.Path, shas)
+		if err != nil || len(got) != 2 || got[0].Status != "none" || got[1].Status != "none" {
+			t.Fatalf("signatures = %+v, %v", got, err)
+		}
+	}
+	if n := len(a.sigs.byRe[tab.Path]); n != 2 {
+		t.Fatalf("cache holds %d entries, want 2", n)
+	}
+}

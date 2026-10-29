@@ -790,6 +790,26 @@ export namespace git {
 	}
 	
 	
+	export class SignatureCheck {
+	    id: string;
+	    status: string;
+	    signer: string;
+	    key: string;
+	    format: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SignatureCheck(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.status = source["status"];
+	        this.signer = source["signer"];
+	        this.key = source["key"];
+	        this.format = source["format"];
+	    }
+	}
 	export class Signing {
 	    enabled: boolean;
 	    format: string;

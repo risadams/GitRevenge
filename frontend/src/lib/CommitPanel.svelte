@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CommitDetail, CommitNotes, IssueURL, SetCommitNote } from '../../wailsjs/go/app/App.js'
+  import { CommitDetail, CommitNotes, CommitSignatures, IssueURL, SetCommitNote } from '../../wailsjs/go/app/App.js'
   import type { app, git } from '../../wailsjs/go/models'
   import { BrowserOpenURL } from '../../wailsjs/runtime/runtime.js'
   import { formatTime } from './graph/draw'
@@ -62,6 +62,29 @@
     } finally {
       noteBusy = false
     }
+  }
+
+  /** git's verdict on the selected commit's signature, for signed commits. */
+  let sig = $state<git.SignatureCheck | null>(null)
+
+  $effect(() => {
+    const id = commitId
+    const signed = info?.commit.id === id && info.commit.signed
+    sig = null
+    if (!signed) return
+    void CommitSignatures(path, [id])
+      .then(([c]) => {
+        if (id === commitId) sig = c ?? null
+      })
+      .catch(() => {})
+  })
+
+  const SIG_TEXT: Record<string, string> = {
+    good: 'Verified',
+    bad: 'Bad signature',
+    unknown: "Can't verify: unknown or untrusted key",
+    expired: 'Expired signature or key',
+    revoked: 'Revoked key',
   }
   /** Where "#123" in a trailer links to, from the repository's remote; "" for nowhere. */
   let issueURL = $state('')
@@ -204,6 +227,19 @@
             </span>
           {/if}
         </dd>
+        {#if info.commit.signed}
+          <dt class="meta">Signature</dt>
+          <dd class="sig sig-{sig?.status ?? 'pending'}">
+            {#if !sig}
+              Checking…
+            {:else}
+              <Icon name={sig.status === 'good' ? 'check' : 'warning'} size={14} />
+              {SIG_TEXT[sig.status] ?? 'Unsigned'}{sig.format ? ` · ${sig.format.toUpperCase()}` : ''}
+              {#if sig.signer}<span class="email" title={sig.signer}>{sig.signer}</span>{/if}
+              {#if sig.key}<span class="key-id" title="Key">{sig.key}</span>{/if}
+            {/if}
+          </dd>
+        {/if}
         <dt class="meta">Commit</dt>
         <dd><code>{c.id}</code></dd>
         {#if c.parents.length}
@@ -359,6 +395,36 @@
   .note-actions .tool {
     height: 26px;
     font-size: 13px;
+  }
+
+  .sig :global(svg) {
+    vertical-align: -2px;
+  }
+
+  .sig-good {
+    color: var(--success);
+  }
+
+  .sig-bad,
+  .sig-revoked {
+    color: var(--danger);
+  }
+
+  .sig-unknown,
+  .sig-expired {
+    color: var(--warning);
+  }
+
+  .sig-pending {
+    color: var(--ink-mute);
+  }
+
+  .key-id {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--ink-mute);
+    overflow-wrap: anywhere;
   }
 
   /* Trailers read as a short record under the message: key, then person or value. */
