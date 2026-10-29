@@ -7,7 +7,8 @@
   import RemotesDialog from './RemotesDialog.svelte'
   import Toolbar from './Toolbar.svelte'
   import Icon from './ui/Icon.svelte'
-  import { checkoutRef, commitItems, dropItems, groups, newBranchDialog, refItems, type MenuContext } from './menus'
+  import { branchAtDialog, checkoutRef, commitItems, dropItems, groups, newBranchDialog, refItems, type MenuContext } from './menus'
+  import ReflogDialog from './ReflogDialog.svelte'
   import CommitPanel from './CommitPanel.svelte'
   import BlameView from './diff/BlameView.svelte'
   import ConflictView from './diff/ConflictView.svelte'
@@ -32,6 +33,8 @@
   let remotesOpen = $state(false)
   /** Commit after which the interactive rebase editor rewrites history, or "" when closed. */
   let rebaseBase = $state('')
+  /** The ref whose reflog is open, or "" when closed. */
+  let reflogRef = $state('')
   const ctx: MenuContext = {
     get path() {
       return path
@@ -45,6 +48,7 @@
       diff = null
       rebaseBase = base
     },
+    openReflog: (ref) => (reflogRef = ref),
   }
 
   provideCommands(() => [
@@ -52,6 +56,7 @@
     // The rebase editor is left out: Escape shouldn't throw away a plan being edited.
     ...(diff ? [{ id: 'view.close', group: 'View', title: 'Back to the graph', keywords: 'close diff', shortcut: 'Escape', run: () => (diff = null) }] : []),
     { id: 'repo.remotes', group: 'Repository', title: 'Manage remotes…', keywords: 'origin url', run: () => (remotesOpen = true) },
+    { id: 'repo.reflog', group: 'Repository', title: 'Show the reflog…', keywords: 'history head moves recover lost commit', run: () => (reflogRef = 'HEAD') },
     {
       id: 'view.changes',
       group: 'View',
@@ -100,7 +105,7 @@
     const row = await session.run(() => CommitRow(path, commit))
     if (row === undefined) return
     if (row < 0) {
-      session.error = 'That commit isn’t in the graph (it may not be on any branch).'
+      session.error = 'That commit isn’t in the graph: it isn’t on any branch. Start a branch there to bring it back.'
       return
     }
     diff = null
@@ -199,6 +204,22 @@
 {#if dialog}
   <Dialog spec={dialog} onClose={() => (dialog = null)} />
 {/if}
+{#if reflogRef}
+  <ReflogDialog
+    {path}
+    initialRef={reflogRef}
+    onReveal={(commit) => {
+      reflogRef = ''
+      void revealCommit(commit)
+    }}
+    onCreateBranch={(commit) => {
+      reflogRef = ''
+      dialog = branchAtDialog(path, commit)
+    }}
+    onClose={() => (reflogRef = '')}
+  />
+{/if}
+
 {#if remotesOpen}
   <RemotesDialog {path} onClose={() => (remotesOpen = false)} />
 {/if}
