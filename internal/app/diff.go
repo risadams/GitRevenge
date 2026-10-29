@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"path/filepath"
+	"strings"
 
 	"github.com/risadams/gitrevenge/internal/git"
 )
@@ -47,6 +49,37 @@ func (a *App) FileContents(path, mode, commit, file, oldPath string, force bool)
 		return git.FileContents{}, userError("Unknown diff mode " + mode + ".")
 	}
 	return r.Git.Contents(ctx, file, from, to, force)
+}
+
+// FileImage returns an image in the repository as a data URL, at the version a diff of
+// mode shows (a commit, the index or the working tree). Rendered markdown uses it for
+// relative images. It returns "" when the file isn't an image or doesn't exist there.
+func (a *App) FileImage(path, mode, commit, file string) (string, error) {
+	r, err := a.openRepo(path)
+	if err != nil {
+		return "", err
+	}
+	// The path comes from a document's link: keep it inside the repository.
+	clean := filepath.ToSlash(filepath.Clean(file))
+	if file == "" || filepath.IsAbs(file) || clean == ".." || strings.HasPrefix(clean, "../") {
+		return "", nil
+	}
+	var at git.FileRef
+	switch mode {
+	case DiffCommit:
+		at = git.FileRef{Rev: commit, Path: clean}
+	case DiffStaged:
+		at = git.IndexVersion(clean)
+	case DiffUnstaged:
+		at = git.WorkTreeVersion(clean)
+	default:
+		return "", userError("Unknown diff mode " + mode + ".")
+	}
+	fc, err := r.Git.Contents(context.Background(), clean, git.FileRef{}, at, false)
+	if err != nil || fc.Kind != "image" || !fc.New.Exists {
+		return "", nil // a broken image in a document isn't an error worth a banner
+	}
+	return "data:" + fc.Mime + ";base64," + fc.New.Image, nil
 }
 
 // errChanged is returned when a file changed after it was displayed.

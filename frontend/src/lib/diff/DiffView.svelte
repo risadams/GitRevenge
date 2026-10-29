@@ -10,13 +10,14 @@
 </script>
 
 <script lang="ts">
-  import { FileContents, SetStagedContent, SetWorkTreeContent } from '../../../wailsjs/go/app/App.js'
+  import { FileContents, FileImage, SetStagedContent, SetWorkTreeContent } from '../../../wailsjs/go/app/App.js'
   import type { git } from '../../../wailsjs/go/models'
   import { formatShortcut, provideCommands } from '../commands.svelte'
   import { session } from '../session.svelte'
   import Icon from '../ui/Icon.svelte'
   import FileView from './FileView.svelte'
   import ImageDiff from './ImageDiff.svelte'
+  import { previewerFor } from './previews/registry'
   import SplitDiff from './SplitDiff.svelte'
   import UnifiedDiff, { type Actions } from './UnifiedDiff.svelte'
   import { toggleWrap, wrap, wrapCommand } from './wrap.svelte'
@@ -55,6 +56,30 @@
       // Storage unavailable; the choice lasts for this session only.
     }
   }
+
+  // In File mode a file with a previewer shows rendered by default; Raw shows its source.
+  const RENDER_KEY = 'gitrevenge.renderPreviews'
+  let rendered = $state(readRendered())
+  function readRendered(): boolean {
+    try {
+      return localStorage.getItem(RENDER_KEY) !== 'off'
+    } catch {
+      return true
+    }
+  }
+  function setRendered(on: boolean) {
+    rendered = on
+    try {
+      localStorage.setItem(RENDER_KEY, on ? 'on' : 'off')
+    } catch {
+      // Storage unavailable; the choice lasts for this session only.
+    }
+  }
+  let previewer = $derived(previewerFor(target.file))
+
+  /** Loads another file in the repository at the version shown, for a rendered preview. */
+  const loadImage = (file: string) => FileImage(path, target.mode, target.commit ?? '', file)
+  const openRelated = (file: string) => onOpen?.({ mode: target.mode, file, commit: target.commit })
 
   let contents = $state<git.FileContents | null>(null)
   let force = $state(false)
@@ -132,6 +157,12 @@
         <button aria-pressed={layout === 'split'} onclick={() => setLayout('split')}>Split</button>
         <button aria-pressed={layout === 'file'} onclick={() => setLayout('file')} title="The whole file as of this version">File</button>
       </span>
+      {#if layout === 'file' && previewer}
+        <span class="segmented" role="group" aria-label="File view">
+          <button aria-pressed={rendered} onclick={() => setRendered(true)}>Rendered</button>
+          <button aria-pressed={!rendered} onclick={() => setRendered(false)}>Raw</button>
+        </span>
+      {/if}
     {/if}
   </header>
 
@@ -154,7 +185,12 @@
       {#if !contents.new.exists}
         <p class="muted hint">Deleted here. Showing the file as it was before.</p>
       {/if}
-      <FileView path={target.file} text={contents.new.exists ? contents.new.text : contents.old.text} />
+      {@const text = contents.new.exists ? contents.new.text : contents.old.text}
+      {#if previewer && rendered}
+        <previewer.component path={target.file} {text} {loadImage} openFile={openRelated} />
+      {:else}
+        <FileView path={target.file} {text} />
+      {/if}
     {:else if layout === 'split'}
       <SplitDiff path={target.file} oldText={contents.old.text} newText={contents.new.text} />
       {#if target.mode !== 'commit'}
