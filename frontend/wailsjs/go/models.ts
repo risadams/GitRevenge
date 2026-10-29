@@ -305,6 +305,24 @@ export namespace app {
 	        this.redo = source["redo"];
 	    }
 	}
+	export class UpdateInfo {
+	    current: string;
+	    latest: string;
+	    url: string;
+	    available: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.current = source["current"];
+	        this.latest = source["latest"];
+	        this.url = source["url"];
+	        this.available = source["available"];
+	    }
+	}
 	export class WorkingTree {
 	    status: git.Status;
 	    signing: git.Signing;

@@ -11,7 +11,7 @@ Git Revenge is a fast, local-only desktop git client for Windows and macOS. It h
 - **Fast on very large repos.** The reference is the Linux kernel: the first screen of the graph appears in under 1s, and the graph scrolls at 60fps.
 - **Powerful.** Commit graph, staging at file, hunk and line level, interactive rebase, a 3-pane conflict tool, stash, LFS, submodules, blame, and undo/redo.
 - **Multi-repo.** Repos open in tabs, and you can create local project groups with a dashboard and batch fetch/pull.
-- **Local only.** No accounts, cloud or telemetry. It uses your existing git config, credential helpers and SSH agent.
+- **Local only.** No accounts, cloud or telemetry. It uses your existing git config, credential helpers and SSH agent. The one request it makes on its own is a check of GitHub Releases for a newer version at startup, which you can turn off from the command palette.
 - **Comfortable to live in.** Light and dark themes, a timeline graph with a compact mode, a command palette (<kbd>Ctrl</kbd>+<kbd>K</kbd>) and keyboard shortcuts for common actions (<kbd>Ctrl</kbd>+<kbd>/</kbd> lists them; <kbd>⌘</kbd> on macOS).
 
 ## Install

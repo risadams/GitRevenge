@@ -29,6 +29,8 @@ type App struct {
 	undo undoStacks
 	// promptHook answers credential prompts in tests instead of the UI.
 	promptHook func(text string, kind askpass.Kind) (string, bool)
+	// updateURL overrides the GitHub releases endpoint; tests use it.
+	updateURL string
 }
 
 // Environment reports the git installation the app will use.

@@ -22,6 +22,10 @@ export function CancelNetwork(arg1) {
   return window['go']['app']['App']['CancelNetwork'](arg1);
 }
 
+export function CheckForUpdate(arg1) {
+  return window['go']['app']['App']['CheckForUpdate'](arg1);
+}
+
 export function ChooseAndOpenRepo() {
   return window['go']['app']['App']['ChooseAndOpenRepo']();
 }
@@ -214,6 +218,10 @@ export function SetTheme(arg1) {
   return window['go']['app']['App']['SetTheme'](arg1);
 }
 
+export function SetUpdateChecks(arg1) {
+  return window['go']['app']['App']['SetUpdateChecks'](arg1);
+}
+
 export function SetWorkTreeContent(arg1, arg2, arg3, arg4) {
   return window['go']['app']['App']['SetWorkTreeContent'](arg1, arg2, arg3, arg4);
 }
@@ -252,6 +260,10 @@ export function UndoState(arg1) {
 
 export function UnstageFiles(arg1, arg2) {
   return window['go']['app']['App']['UnstageFiles'](arg1, arg2);
+}
+
+export function UpdateChecks() {
+  return window['go']['app']['App']['UpdateChecks']();
 }
 
 export function UpdateSubmodules(arg1) {
