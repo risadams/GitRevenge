@@ -1,7 +1,13 @@
 package git
 
 import (
+	"bufio"
+	"bytes"
+	"context"
+	"errors"
+	"io"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -65,4 +71,97 @@ func parseTrailerParagraph(para string) []Trailer {
 		out = append(out, Trailer{Key: m[1], Value: m[2]})
 	}
 	return out
+}
+
+// TrailerQuery searches for commits with a trailer: Key, matched without regard to case,
+// whose value contains Value (any value when it's empty).
+type TrailerQuery struct {
+	Key   string
+	Value string
+}
+
+var trailerQueryRE = regexp.MustCompile(`^([A-Za-z][A-Za-z0-9-]*)[ \t]*:[ \t]*(.*?)[ \t]*$`)
+
+// commonTrailerKeys are trailer keys that don't end in "-by".
+var commonTrailerKeys = map[string]bool{
+	"close": true, "closes": true, "closed": true, "fixes": true, "fixed": true,
+	"resolve": true, "resolves": true, "resolved": true, "link": true, "cc": true, "refs": true,
+	"bug": true, "change-id": true,
+}
+
+// ParseTrailerQuery reads a search like "Co-authored-by: ada" or "Closes: #12" as a trailer
+// search. The key must look like a trailer: ending in "-by", or a common one such as
+// Closes, Fixes or Link. Conventional-commit searches like "fix: crash" stay text searches.
+func ParseTrailerQuery(q string) (TrailerQuery, bool) {
+	m := trailerQueryRE.FindStringSubmatch(strings.TrimSpace(q))
+	if m == nil {
+		return TrailerQuery{}, false
+	}
+	key := strings.ToLower(m[1])
+	if !strings.HasSuffix(key, "-by") && !commonTrailerKeys[key] {
+		return TrailerQuery{}, false
+	}
+	return TrailerQuery{Key: m[1], Value: m[2]}, true
+}
+
+// Matches reports whether t is a trailer the query asks for. An issue reference such as
+// "#12" must match whole, so it doesn't match "#123".
+func (q TrailerQuery) Matches(t Trailer) bool {
+	if !strings.EqualFold(t.Key, q.Key) {
+		return false
+	}
+	if q.Value == "" {
+		return true
+	}
+	if issueRef.MatchString(q.Value) {
+		return regexp.MustCompile(`(^|\D)` + regexp.QuoteMeta(q.Value) + `(\D|$)`).MatchString(t.Value)
+	}
+	return strings.Contains(strings.ToLower(t.Value), strings.ToLower(q.Value))
+}
+
+var issueRef = regexp.MustCompile(`^#\d+$`)
+
+// ereQuote escapes s for a POSIX extended regular expression.
+func ereQuote(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if strings.ContainsRune(`\.^$|?*+()[]{}`, r) {
+			b.WriteByte('\\')
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
+// CommitsWithTrailer returns the IDs of commits in the graph's history that have a trailer
+// matching q. git log --grep narrows the history to messages with a matching line, then
+// each message's trailers are parsed, so a line elsewhere in a message doesn't count.
+func (r *Repo) CommitsWithTrailer(ctx context.Context, q TrailerQuery) ([]string, error) {
+	pattern := "^" + ereQuote(q.Key) + "[[:space:]]*:?[[:space:]]*.*" + ereQuote(q.Value)
+	args := append([]string{"log", "-i", "-E", "--grep=" + pattern, "--format=%H%x1f%B%x1e", "--no-show-signature"},
+		r.logRevs(ctx, LogOptions{})...)
+	ids := []string{}
+	err := r.Stream(ctx, func(rd io.Reader) error {
+		br := bufio.NewReaderSize(rd, 64*1024)
+		for {
+			rec, err := br.ReadBytes(0x1e)
+			if id, msg, ok := strings.Cut(strings.TrimLeft(string(bytes.TrimSuffix(rec, []byte{0x1e})), "\n"), "\x1f"); ok {
+				_, body, _ := strings.Cut(msg, "\n")
+				_, trailers := SplitTrailers(strings.TrimSpace(body))
+				if slices.ContainsFunc(trailers, q.Matches) {
+					ids = append(ids, id)
+				}
+			}
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+		}
+	}, args...)
+	if isEmptyRepoLogError(err) {
+		return ids, nil
+	}
+	return ids, err
 }

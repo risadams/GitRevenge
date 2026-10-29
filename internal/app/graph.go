@@ -2,6 +2,9 @@ package app
 
 import (
 	"context"
+	"errors"
+	"slices"
+	"sync"
 
 	"github.com/risadams/gitrevenge/internal/git"
 	"github.com/risadams/gitrevenge/internal/graph"
@@ -122,7 +125,8 @@ func (a *App) emitGraphProgress(path string, p session.GraphProgress) {
 const maxSearchRows = 10000
 
 // SearchGraph finds commits whose subject or author contains query, or whose ID starts
-// with it. It searches the whole history, so it first reads the rest of it.
+// with it. A query like "Co-authored-by: ada" or "Closes: #12" searches trailers instead.
+// It searches the whole history, so it first reads the rest of it.
 func (a *App) SearchGraph(path, query string) (graph.SearchResult, error) {
 	r, err := a.openRepo(path)
 	if err != nil {
@@ -135,5 +139,64 @@ func (a *App) SearchGraph(path, query string) (graph.SearchResult, error) {
 	if g == nil {
 		return graph.SearchResult{Rows: []int{}}, nil
 	}
+	if q, ok := git.ParseTrailerQuery(query); ok {
+		ctx, done := a.searches.start(path)
+		defer done()
+		ids, err := r.Git.CommitsWithTrailer(ctx, q)
+		if errors.Is(err, context.Canceled) {
+			return graph.SearchResult{Rows: []int{}}, nil // superseded by a newer search
+		}
+		if err != nil {
+			return graph.SearchResult{}, err
+		}
+		return rowsOf(g, ids, maxSearchRows), nil
+	}
 	return g.Search(query, maxSearchRows), nil
+}
+
+// searches cancels a repository's previous trailer search when a new one starts: the search
+// box searches on each keystroke, and a trailer search reads every commit message.
+type searches struct {
+	mu      sync.Mutex
+	running map[string]*context.CancelFunc
+}
+
+// start returns the context for a new search on path, cancelling the one before it, and the
+// function to call when the search ends.
+func (s *searches) start(path string) (context.Context, func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.running == nil {
+		s.running = map[string]*context.CancelFunc{}
+	}
+	if prev := s.running[path]; prev != nil {
+		(*prev)()
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	mine := &cancel
+	s.running[path] = mine
+	return ctx, func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		cancel()
+		if s.running[path] == mine { // a newer search may have replaced it
+			delete(s.running, path)
+		}
+	}
+}
+
+// rowsOf returns the graph rows of the commits ids, in graph order, at most limit of them.
+func rowsOf(g *graph.Graph, ids []string, limit int) graph.SearchResult {
+	rows := make([]int, 0, len(ids))
+	for _, id := range ids {
+		if row, ok := g.RowOf(id); ok {
+			rows = append(rows, row)
+		}
+	}
+	slices.Sort(rows)
+	res := graph.SearchResult{Rows: rows, Total: len(rows)}
+	if len(rows) > limit {
+		res.Rows = rows[:limit]
+	}
+	return res
 }
