@@ -136,7 +136,7 @@
     align-items: center;
     gap: 8px;
     padding: 4px 8px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   .spacer {
@@ -147,14 +147,14 @@
   select {
     padding: 2px 8px;
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     font: inherit;
     cursor: pointer;
   }
 
   select {
-    background: var(--bg);
+    background: var(--paper);
   }
 
   button:disabled {
@@ -163,8 +163,9 @@
   }
 
   .primary {
-    background: var(--bg-selected);
-    border-color: var(--bg-selected);
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
   }
 
   .back {
@@ -184,12 +185,12 @@
     align-items: flex-start;
     gap: 8px;
     padding: 6px 8px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   li.drop .subject {
     text-decoration: line-through;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   .move {
@@ -203,7 +204,7 @@
 
   .sha {
     font-family: var(--font-mono);
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     padding-top: 2px;
   }
 
@@ -216,9 +217,9 @@
   }
 
   textarea {
-    background: var(--bg);
-    color: var(--fg);
-    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--paper-edge);
     font: inherit;
     padding: 4px 6px;
     resize: vertical;
@@ -229,19 +230,19 @@
   }
 
   .muted {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   .warn {
     margin: 0;
     padding: 4px 8px;
-    color: #e2c08d;
+    color: var(--warning);
   }
 
   .error {
     margin: 0;
     padding: 4px 8px;
-    color: #f48771;
+    color: var(--danger);
     white-space: pre-wrap;
   }
 </style>

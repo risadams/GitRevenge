@@ -80,7 +80,7 @@
     align-items: center;
     gap: 8px;
     padding: 4px 8px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   .file {
@@ -97,8 +97,8 @@
   header button {
     padding: 2px 8px;
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     cursor: pointer;
   }
 
@@ -113,7 +113,7 @@
     padding: 0;
     max-height: 35%;
     overflow-y: auto;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   .list button {
@@ -131,16 +131,16 @@
   }
 
   .list button:hover {
-    background: var(--bg-hover);
+    background: var(--wash-hover);
   }
 
   .list button.active {
-    background: var(--bg-selected);
+    background: var(--selected);
   }
 
   .sha {
     font-family: var(--font-mono);
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   .subject {
@@ -158,8 +158,8 @@
   .badge {
     font-size: 10px;
     padding: 0 4px;
-    border: 1px solid var(--border);
-    color: #75beff;
+    border: 1px solid var(--paper-edge);
+    color: var(--accent-a);
   }
 
   .diff {
@@ -168,7 +168,7 @@
   }
 
   .muted {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   .pad {

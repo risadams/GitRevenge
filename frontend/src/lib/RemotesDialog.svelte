@@ -114,7 +114,7 @@
     z-index: 200;
     display: grid;
     place-items: center;
-    background: rgba(0, 0, 0, 0.45);
+    background: var(--scrim);
   }
 
   .dialog {
@@ -123,8 +123,8 @@
     flex-direction: column;
     gap: 10px;
     padding: 16px;
-    background: var(--bg-raised);
-    border: 1px solid var(--border);
+    background: var(--paper-warm);
+    border: 1px solid var(--paper-edge);
   }
 
   h3 {
@@ -143,7 +143,7 @@
     gap: 6px;
     align-items: center;
     padding: 6px 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   .info {
@@ -154,7 +154,7 @@
   }
 
   .url {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     font-family: var(--font-mono);
     font-size: 12px;
     overflow: hidden;
@@ -176,9 +176,9 @@
 
   input {
     padding: 4px 6px;
-    background: var(--bg);
-    color: var(--fg);
-    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--paper-edge);
     font: inherit;
   }
 
@@ -191,28 +191,29 @@
   button {
     padding: 3px 10px;
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     cursor: pointer;
   }
 
   .primary {
-    background: var(--bg-selected);
-    border-color: var(--bg-selected);
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
   }
 
   .danger {
-    border-color: #a33;
-    color: #f48771;
+    border-color: var(--danger);
+    color: var(--danger);
   }
 
   .muted {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     margin: 0;
   }
 
   .error {
-    color: #f48771;
+    color: var(--danger);
     margin: 0;
     white-space: pre-wrap;
   }

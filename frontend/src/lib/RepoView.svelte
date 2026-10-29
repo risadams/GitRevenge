@@ -217,7 +217,7 @@
     padding: 6px 12px;
     background: none;
     border: none;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
     color: inherit;
     font: inherit;
     text-align: left;
@@ -225,21 +225,21 @@
   }
 
   .wip:hover {
-    background: var(--bg-hover);
+    background: var(--wash-hover);
   }
 
   .wip.active {
-    background: var(--bg-selected);
+    background: var(--selected);
   }
 
   .dot {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    border: 2px dashed var(--fg-muted);
+    border: 2px dashed var(--ink-mute);
   }
 
   .dot.dirty {
-    border-color: #e2c08d;
+    border-color: var(--warning);
   }
 </style>

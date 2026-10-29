@@ -58,9 +58,9 @@
     z-index: 100;
     min-width: 160px;
     padding: 4px 0;
-    background: var(--bg-raised);
-    border: 1px solid var(--border);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    background: var(--paper-warm);
+    border: 1px solid var(--paper-edge);
+    box-shadow: var(--shadow);
     outline: none;
   }
 
@@ -70,17 +70,17 @@
     padding: 5px 14px;
     background: none;
     border: none;
-    color: var(--fg);
+    color: var(--ink);
     font: inherit;
     text-align: left;
     cursor: pointer;
   }
 
   button:hover {
-    background: var(--bg-selected);
+    background: var(--selected);
   }
 
   .danger {
-    color: #f48771;
+    color: var(--danger);
   }
 </style>

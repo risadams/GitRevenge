@@ -91,8 +91,8 @@
     flex-direction: column;
     width: 420px;
     min-width: 300px;
-    border-left: 1px solid var(--border);
-    background: var(--bg-raised);
+    border-left: 1px solid var(--paper-edge);
+    background: var(--paper-warm);
     overflow-y: auto;
   }
 
@@ -108,7 +108,7 @@
   h4 {
     margin: 12px 0 4px;
     font-size: 12px;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   .body {
@@ -125,7 +125,7 @@
   }
 
   dt {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 
   dd {
@@ -163,11 +163,11 @@
   }
 
   .files button:hover {
-    background: var(--bg-hover);
+    background: var(--wash-hover);
   }
 
   .files button.active {
-    background: var(--bg-selected);
+    background: var(--selected);
   }
 
   .status {
@@ -177,21 +177,21 @@
   }
 
   .s-A {
-    color: #89d185;
+    color: var(--success);
   }
 
   .s-D {
-    color: #f48771;
+    color: var(--danger);
   }
 
   .s-M,
   .s-T {
-    color: #e2c08d;
+    color: var(--accent-c);
   }
 
   .s-R,
   .s-C {
-    color: #75beff;
+    color: var(--accent-a);
   }
 
   .file {
@@ -199,6 +199,6 @@
   }
 
   .muted {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
   }
 </style>

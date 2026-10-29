@@ -105,6 +105,8 @@ export function SetActiveRepo(arg1:string):Promise<void>;
 
 export function SetStagedContent(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
+export function SetTheme(arg1:string):Promise<void>;
+
 export function SetWorkTreeContent(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
 export function StageFiles(arg1:string,arg2:Array<string>):Promise<void>;
@@ -116,6 +118,8 @@ export function StashSave(arg1:string,arg2:string,arg3:boolean):Promise<void>;
 export function Submodules(arg1:string):Promise<Array<git.Submodule>>;
 
 export function TakeConflictSide(arg1:string,arg2:string,arg3:string):Promise<void>;
+
+export function Theme():Promise<string>;
 
 export function Undo(arg1:string):Promise<void>;
 

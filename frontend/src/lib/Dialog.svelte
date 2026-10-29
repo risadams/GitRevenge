@@ -88,7 +88,7 @@
     z-index: 200;
     display: grid;
     place-items: center;
-    background: rgba(0, 0, 0, 0.45);
+    background: var(--scrim);
   }
 
   .dialog {
@@ -100,9 +100,9 @@
     flex-direction: column;
     gap: 10px;
     padding: 16px;
-    background: var(--bg-raised);
-    border: 1px solid var(--border);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    background: var(--paper-warm);
+    border: 1px solid var(--paper-edge);
+    box-shadow: var(--shadow);
   }
 
   h3 {
@@ -112,7 +112,7 @@
 
   p {
     margin: 0;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     white-space: pre-wrap;
   }
 
@@ -132,14 +132,14 @@
   textarea,
   select {
     padding: 4px 6px;
-    background: var(--bg);
-    color: var(--fg);
-    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--paper-edge);
     font: inherit;
   }
 
   .error {
-    color: #f48771;
+    color: var(--danger);
   }
 
   .buttons {
@@ -151,18 +151,20 @@
   button {
     padding: 4px 12px;
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     cursor: pointer;
   }
 
   .primary {
-    background: var(--bg-selected);
-    border-color: var(--bg-selected);
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
   }
 
   .primary.danger {
-    background: #6b2020;
-    border-color: #a33;
+    background: var(--danger);
+    color: var(--on-accent);
+    border-color: var(--danger);
   }
 </style>

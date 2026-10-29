@@ -32,6 +32,8 @@ type Settings struct {
 	ActiveTab string `json:"activeTab"`
 	// Groups are user-defined collections of repositories. A repo may be in several.
 	Groups []Group `json:"groups"`
+	// Theme is "light" or "dark", or empty to follow the operating system.
+	Theme string `json:"theme,omitempty"`
 }
 
 // Group is a named collection of repository paths.

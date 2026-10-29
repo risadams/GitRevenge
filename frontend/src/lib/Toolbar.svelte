@@ -140,14 +140,14 @@
     align-items: center;
     gap: 6px;
     padding: 4px 12px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   button {
     padding: 2px 10px;
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     cursor: pointer;
   }
 
@@ -163,7 +163,7 @@
   .sep {
     width: 1px;
     height: 18px;
-    background: var(--border);
+    background: var(--paper-edge);
     margin: 0 4px;
   }
 
@@ -181,7 +181,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     font-size: 12px;
     white-space: nowrap;
   }
@@ -200,7 +200,7 @@
   .spinner {
     width: 10px;
     height: 10px;
-    border: 2px solid var(--fg-muted);
+    border: 2px solid var(--ink-mute);
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;

@@ -160,7 +160,7 @@
     align-items: center;
     gap: 8px;
     padding: 4px 8px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--paper-edge);
   }
 
   .file {
@@ -173,8 +173,8 @@
   .badge {
     font-size: 11px;
     padding: 0 6px;
-    border: 1px solid var(--border);
-    color: var(--fg-muted);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink-mute);
   }
 
   .layout {
@@ -185,14 +185,14 @@
 
   button {
     background: none;
-    border: 1px solid var(--border);
-    color: var(--fg);
+    border: 1px solid var(--paper-edge);
+    color: var(--ink);
     cursor: pointer;
     padding: 2px 8px;
   }
 
   button.on {
-    background: var(--bg-selected);
+    background: var(--selected);
   }
 
   .back {
@@ -211,7 +211,7 @@
   }
 
   .muted {
-    color: var(--fg-muted);
+    color: var(--ink-mute);
     padding: 8px 12px;
   }
 

@@ -5,22 +5,29 @@ export const LANE_WIDTH = 16
 export const GRAPH_PAD = 10
 const NODE_RADIUS = 5
 
-/** Lane colors, cycled by color index. Plain until the 0.6 design pass. */
-export const PALETTE = [
-  '#4fc1ff',
-  '#f78c6c',
-  '#c3e88d',
-  '#c792ea',
-  '#ffcb6b',
-  '#ff5370',
-  '#89ddff',
-  '#f07178',
-  '#82aaff',
-  '#b2ccd6',
-]
+/** Lane colours are the theme's --lane-0 … --lane-5 tokens, cycled by colour index. */
+export const LANE_COUNT = 6
 
+// Resolved from the tokens by setLaneColors, since a canvas can't read CSS variables.
+let palette: string[] = Array.from({ length: LANE_COUNT }, () => '#888')
+
+/** Sets the lane colours the canvas paints with, resolved from the current theme. */
+export function setLaneColors(colors: string[]) {
+  palette = colors
+}
+
+function laneIndex(i: number): number {
+  return ((i % LANE_COUNT) + LANE_COUNT) % LANE_COUNT
+}
+
+/** Lane colour i as a concrete colour, for the canvas. */
 export function laneColor(i: number): string {
-  return PALETTE[((i % PALETTE.length) + PALETTE.length) % PALETTE.length]
+  return palette[laneIndex(i)]
+}
+
+/** Lane colour i as a CSS value, for DOM elements; it follows theme changes by itself. */
+export function laneVar(i: number): string {
+  return `var(--lane-${laneIndex(i)})`
 }
 
 /** X coordinate of the center of lane column col. */
