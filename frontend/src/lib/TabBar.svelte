@@ -38,6 +38,9 @@
     <span>Commands</span>
     <kbd>{formatShortcut('Mod+K')}</kbd>
   </button>
+  <button class="theme" onclick={() => (commands.settingsOpen = true)} aria-label="Settings" title="Settings ({formatShortcut('Mod+,')})">
+    <Icon name="gear" size={17} />
+  </button>
   <button class="theme" onclick={() => session.run(() => theme.toggle())} aria-label={toggleLabel} title={toggleLabel}>
     <Icon name={theme.resolved === 'dark' ? 'sun' : 'moon'} size={17} />
   </button>

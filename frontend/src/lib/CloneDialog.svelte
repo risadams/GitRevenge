@@ -3,6 +3,7 @@
   import { CancelClone, ChooseFolder, Clone, CloneName } from '../../wailsjs/go/app/App.js'
   import { EventsOn } from '../../wailsjs/runtime/runtime.js'
   import { errorText } from './errors'
+  import { prefs } from './prefs.svelte'
   import { session } from './session.svelte'
   import Icon from './ui/Icon.svelte'
   import InkButton from './ui/InkButton.svelte'
@@ -14,7 +15,7 @@
 
   let url = $state('')
   // Default to the folder holding the most recently opened repository.
-  let parent = $state(session.recent[0] ? dirOf(session.recent[0].path) : '')
+  let parent = $state(prefs.cloneDir || (session.recent[0] ? dirOf(session.recent[0].path) : ''))
   let name = $state('')
   /** True once the user types a name, so it stops following the URL. */
   let nameEdited = $state(false)

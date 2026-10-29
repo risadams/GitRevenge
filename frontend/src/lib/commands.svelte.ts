@@ -43,6 +43,7 @@ class Commands {
   shortcutsOpen = $state(false)
   /** The clone dialog lives at the top level so the palette can open it from anywhere. */
   cloneOpen = $state(false)
+  settingsOpen = $state(false)
 
   /** Adds a provider; returns the function that removes it. */
   add(provider: Provider): () => void {

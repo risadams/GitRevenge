@@ -188,6 +188,30 @@ export namespace app {
 		    return a;
 		}
 	}
+	export class Preferences {
+	    theme: string;
+	    graphDensity: string;
+	    updateChecks: boolean;
+	    gitPath: string;
+	    gitInUse: string;
+	    cloneDir: string;
+	    zoom: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Preferences(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.theme = source["theme"];
+	        this.graphDensity = source["graphDensity"];
+	        this.updateChecks = source["updateChecks"];
+	        this.gitPath = source["gitPath"];
+	        this.gitInUse = source["gitInUse"];
+	        this.cloneDir = source["cloneDir"];
+	        this.zoom = source["zoom"];
+	    }
+	}
 	export class RecentRepo {
 	    path: string;
 	    name: string;

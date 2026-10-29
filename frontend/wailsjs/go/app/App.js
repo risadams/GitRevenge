@@ -30,6 +30,10 @@ export function ChooseAndOpenRepo() {
   return window['go']['app']['App']['ChooseAndOpenRepo']();
 }
 
+export function ChooseFile(arg1) {
+  return window['go']['app']['App']['ChooseFile'](arg1);
+}
+
 export function ChooseFolder(arg1) {
   return window['go']['app']['App']['ChooseFolder'](arg1);
 }
@@ -154,6 +158,10 @@ export function OpenRepo(arg1) {
   return window['go']['app']['App']['OpenRepo'](arg1);
 }
 
+export function Preferences() {
+  return window['go']['app']['App']['Preferences']();
+}
+
 export function Pull(arg1, arg2) {
   return window['go']['app']['App']['Pull'](arg1, arg2);
 }
@@ -232,6 +240,10 @@ export function SetCommitNote(arg1, arg2, arg3) {
 
 export function SetGraphDensity(arg1) {
   return window['go']['app']['App']['SetGraphDensity'](arg1);
+}
+
+export function SetPreferences(arg1) {
+  return window['go']['app']['App']['SetPreferences'](arg1);
 }
 
 export function SetStagedContent(arg1, arg2, arg3, arg4) {
