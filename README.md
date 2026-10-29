@@ -55,6 +55,7 @@ The TypeScript bindings in `frontend/wailsjs` are generated from the Go API (`wa
 
 - [Plan](docs/PLAN.md): scope, architecture, performance targets, milestones and workflow.
 - [Architecture decision records](docs/adr/).
+- [Accessibility](ACCESSIBILITY.md), [contributing](CONTRIBUTING.md), [code of conduct](CODE_OF_CONDUCT.md) and [security policy](SECURITY.md).
 - Progress is tracked in [issues](https://github.com/risadams/GitRevenge/issues), grouped by [milestone](https://github.com/risadams/GitRevenge/milestones).
 
 ## License
