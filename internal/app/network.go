@@ -117,6 +117,13 @@ func (a *App) runNetwork(path, op string, fn func(ctx context.Context, r *sessio
 	if err != nil {
 		return err
 	}
+	return a.track(r.Path, r.Path, op, "Another fetch, pull or push is already running in this repository.",
+		func(ctx context.Context, o git.NetOptions) error { return fn(ctx, r, o) })
+}
+
+// track runs fn as the network operation registered under key (busy is the message when one
+// is already running there), reporting progress as "net:progress" events for path.
+func (a *App) track(key, path, op string, busy userError, fn func(ctx context.Context, o git.NetOptions) error) error {
 	env, err := a.askEnv()
 	if err != nil {
 		return err
@@ -124,15 +131,15 @@ func (a *App) runNetwork(path, op string, fn func(ctx context.Context, r *sessio
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	a.net.mu.Lock()
-	if _, busy := a.net.running[r.Path]; busy {
+	if _, running := a.net.running[key]; running {
 		a.net.mu.Unlock()
-		return userError("Another fetch, pull or push is already running in this repository.")
+		return busy
 	}
-	a.net.running[r.Path] = cancel
+	a.net.running[key] = cancel
 	a.net.mu.Unlock()
 	defer func() {
 		a.net.mu.Lock()
-		delete(a.net.running, r.Path)
+		delete(a.net.running, key)
 		a.net.mu.Unlock()
 	}()
 
@@ -143,9 +150,9 @@ func (a *App) runNetwork(path, op string, fn func(ctx context.Context, r *sessio
 			return
 		}
 		last = time.Now()
-		a.emit("net:progress", NetProgress{Path: r.Path, Op: op, Phase: p.Phase, Percent: p.Percent, Line: p.Line})
+		a.emit("net:progress", NetProgress{Path: path, Op: op, Phase: p.Phase, Percent: p.Percent, Line: p.Line})
 	}}
-	err = fn(ctx, r, o)
+	err = fn(ctx, o)
 	if errors.Is(err, context.Canceled) {
 		return userError("Cancelled.")
 	}
@@ -158,8 +165,12 @@ func (a *App) CancelNetwork(path string) {
 	if err != nil {
 		return
 	}
+	a.cancelNetwork(r.Path)
+}
+
+func (a *App) cancelNetwork(key string) {
 	a.net.mu.Lock()
-	cancel := a.net.running[r.Path]
+	cancel := a.net.running[key]
 	a.net.mu.Unlock()
 	if cancel != nil {
 		cancel()
@@ -303,6 +314,10 @@ func netErr(err error) error {
 		return userError("The server refused your SSH key. Make sure your key is loaded in ssh-agent and added to your account.\n\n" + string(gitMessage(s)))
 	case strings.Contains(s, "Host key verification failed"):
 		return userError("The server's SSH host key wasn't trusted, so the connection was stopped.")
+	case strings.Contains(s, "Repository not found"), strings.Contains(s, "' does not exist"),
+		strings.Contains(s, "does not appear to be a git repository"),
+		strings.Contains(s, "repository '") && strings.Contains(s, "' not found"):
+		return userError("No repository was found at that URL. Check the URL, and that your account can access the repository.")
 	case strings.Contains(s, "Could not resolve host"), strings.Contains(s, "unable to access"):
 		return userError("Couldn't reach the remote. Check the URL and your network connection.\n\n" + string(gitMessage(s)))
 	case strings.Contains(s, "[rejected]") || strings.Contains(s, "fetch first") || strings.Contains(s, "non-fast-forward"):

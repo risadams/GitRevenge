@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { ChooseFolder, GroupAction, Groups } from '../../wailsjs/go/app/App.js'
+  import { ChooseFolder, GroupAction, Groups, Init } from '../../wailsjs/go/app/App.js'
   import type { settings } from '../../wailsjs/go/models'
+  import CloneDialog from './CloneDialog.svelte'
   import Dialog, { type DialogSpec } from './Dialog.svelte'
   import { errorText } from './errors'
   import GroupDashboard from './GroupDashboard.svelte'
@@ -12,6 +13,7 @@
   let dialog = $state<DialogSpec | null>(null)
   /** The group whose dashboard is showing, or ''. */
   let dashboard = $state('')
+  let cloning = $state(false)
 
   const base = (p: string) => p.split(/[\\/]/).pop() ?? p
 
@@ -97,6 +99,24 @@
     }
   }
 
+  async function newRepo() {
+    const dir = await session.run(() => ChooseFolder('Choose or create a folder for the new repository'))
+    if (!dir) return
+    dialog = {
+      title: 'New repository',
+      message: `Create an empty repository in ${dir}`,
+      fields: [{ key: 'branch', label: 'Initial branch', placeholder: 'Your git default (init.defaultBranch)' }],
+      submit: 'Create',
+      run: async (v) => {
+        try {
+          await session.open(await Init(dir, String(v.branch)))
+        } catch (e) {
+          return errorText(e)
+        }
+      },
+    }
+  }
+
   async function openAll(g: settings.Group) {
     for (const p of g.paths) await session.open(p)
   }
@@ -109,7 +129,11 @@
 {:else}
   <section class="start">
     <h2>Open a repository</h2>
-    <button onclick={() => session.choose()}>Open repository…</button>
+    <div class="start-actions">
+      <button onclick={() => session.choose()}>Open repository…</button>
+      <button onclick={() => (cloning = true)}>Clone…</button>
+      <button onclick={newRepo}>New repository…</button>
+    </div>
 
     <div class="heading">
       <h3>Groups</h3>
@@ -168,6 +192,10 @@
   </section>
 {/if}
 
+{#if cloning}
+  <CloneDialog onClose={() => (cloning = false)} />
+{/if}
+
 {#if dialog}
   <Dialog spec={dialog} onClose={() => (dialog = null)} />
 {/if}
@@ -177,6 +205,11 @@
     max-width: 720px;
     margin: 48px auto;
     padding: 0 16px;
+  }
+
+  .start-actions {
+    display: flex;
+    gap: 8px;
   }
 
   .heading {

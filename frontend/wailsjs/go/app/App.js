@@ -14,6 +14,10 @@ export function BranchAction(arg1, arg2, arg3) {
   return window['go']['app']['App']['BranchAction'](arg1, arg2, arg3);
 }
 
+export function CancelClone() {
+  return window['go']['app']['App']['CancelClone']();
+}
+
 export function CancelNetwork(arg1) {
   return window['go']['app']['App']['CancelNetwork'](arg1);
 }
@@ -24,6 +28,14 @@ export function ChooseAndOpenRepo() {
 
 export function ChooseFolder(arg1) {
   return window['go']['app']['App']['ChooseFolder'](arg1);
+}
+
+export function Clone(arg1, arg2, arg3) {
+  return window['go']['app']['App']['Clone'](arg1, arg2, arg3);
+}
+
+export function CloneName(arg1) {
+  return window['go']['app']['App']['CloneName'](arg1);
 }
 
 export function CloseRepo(arg1) {
@@ -84,6 +96,10 @@ export function GroupDashboard(arg1) {
 
 export function Groups() {
   return window['go']['app']['App']['Groups']();
+}
+
+export function Init(arg1, arg2) {
+  return window['go']['app']['App']['Init'](arg1, arg2);
 }
 
 export function Integrate(arg1, arg2, arg3) {
