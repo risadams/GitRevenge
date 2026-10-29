@@ -4,6 +4,9 @@
   import { EventsOn } from '../../wailsjs/runtime/runtime.js'
   import { errorText } from './errors'
   import { session } from './session.svelte'
+  import Icon from './ui/Icon.svelte'
+  import InkButton from './ui/InkButton.svelte'
+  import Modal from './ui/Modal.svelte'
 
   let { onClose }: { onClose: () => void } = $props()
 
@@ -18,7 +21,6 @@
   let running = $state(false)
   let progress = $state('')
   let error = $state('')
-  let input: HTMLInputElement
 
   async function onUrl() {
     if (nameEdited) return
@@ -54,95 +56,47 @@
     else onClose()
   }
 
-  onMount(() => {
-    input.focus()
-    return EventsOn('net:progress', (p: { op: string; phase: string; percent: number; line: string }) => {
+  onMount(() =>
+    EventsOn('net:progress', (p: { op: string; phase: string; percent: number; line: string }) => {
       if (p.op !== 'clone') return
       progress = p.phase ? `${p.phase} ${p.percent}%` : p.line
-    })
-  })
+    }),
+  )
 </script>
 
-<svelte:window onkeydown={(e) => e.key === 'Escape' && cancel()} />
-
-<div class="backdrop" role="presentation" onmousedown={(e) => e.target === e.currentTarget && !running && onClose()}>
-  <div class="dialog" role="dialog" aria-modal="true" aria-label="Clone a repository">
-    <form onsubmit={submit}>
-      <h3>Clone a repository</h3>
-      <label>
-        <span>Repository URL</span>
-        <input
-          bind:this={input}
-          bind:value={url}
-          oninput={onUrl}
-          disabled={running}
-          placeholder="https://… or git@host:owner/repo.git"
-        />
-      </label>
-      <label>
-        <span>Into folder</span>
-        <span class="row">
-          <input bind:value={parent} disabled={running} placeholder="Choose a folder" />
-          <button type="button" disabled={running} onclick={browse}>Browse…</button>
-        </span>
-      </label>
-      <label>
-        <span>Folder name</span>
-        <input bind:value={name} oninput={() => (nameEdited = true)} disabled={running} />
-      </label>
-      {#if running}
-        <p class="status" role="status"><span class="spinner"></span> {progress || 'Connecting…'}</p>
-      {/if}
-      {#if error}<p class="error" role="alert">{error}</p>{/if}
-      <div class="buttons">
-        <button type="button" onclick={cancel}>Cancel</button>
-        <button type="submit" class="primary" disabled={running || !url.trim() || !parent.trim() || !name.trim()}
-          >Clone</button
-        >
-      </div>
-    </form>
-  </div>
-</div>
+<Modal title="Clone a repository" eyebrow="bring it aboard" width={540} onClose={cancel} scrimCloses={!running}>
+  <form onsubmit={submit}>
+    <label class="form-field">
+      <span>Repository URL</span>
+      <input bind:value={url} oninput={onUrl} disabled={running} placeholder="https://… or git@host:owner/repo.git" />
+    </label>
+    <label class="form-field">
+      <span>Into folder</span>
+      <span class="row">
+        <input bind:value={parent} disabled={running} placeholder="Choose a folder" />
+        <button type="button" class="tool" disabled={running} onclick={browse}><Icon name="folder" />Browse…</button>
+      </span>
+    </label>
+    <label class="form-field">
+      <span>Folder name</span>
+      <input bind:value={name} oninput={() => (nameEdited = true)} disabled={running} />
+    </label>
+    {#if running}
+      <p class="status" role="status"><span class="spinner" aria-hidden="true"></span> {progress || 'Connecting…'}</p>
+    {/if}
+    {#if error}<p class="form-error" role="alert">{error}</p>{/if}
+    <div class="form-actions">
+      <InkButton variant="ghost" onclick={cancel}>{running ? 'Stop' : 'Cancel'}</InkButton>
+      <InkButton type="submit" arrow disabled={running || !url.trim() || !parent.trim() || !name.trim()}>Clone</InkButton>
+    </div>
+  </form>
+</Modal>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    display: grid;
-    place-items: center;
-    background: var(--scrim);
-  }
-
-  .dialog {
-    width: min(520px, calc(100vw - 32px));
-  }
-
   form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 16px;
-    background: var(--paper-warm);
-    border: 1px solid var(--paper-edge);
-    box-shadow: var(--shadow);
-  }
-
-  h3 {
-    margin: 0;
-    font-size: 14px;
-  }
-
-  p {
-    margin: 0;
-    color: var(--ink-mute);
-    white-space: pre-wrap;
-  }
-
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    gap: 14px;
   }
 
   .row {
@@ -155,25 +109,22 @@
     min-width: 0;
   }
 
-  input {
-    padding: 4px 6px;
-    background: var(--paper);
-    color: var(--ink);
-    border: 1px solid var(--paper-edge);
-    font: inherit;
-  }
-
   .status {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-mute);
+    overflow-wrap: anywhere;
   }
 
   .spinner {
     flex: none;
-    width: 10px;
-    height: 10px;
-    border: 2px solid var(--ink-mute);
+    width: 11px;
+    height: 11px;
+    border: 2px solid var(--accent);
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
@@ -183,29 +134,5 @@
     to {
       transform: rotate(360deg);
     }
-  }
-
-  .error {
-    color: var(--danger);
-  }
-
-  .buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-
-  button {
-    padding: 4px 12px;
-    background: none;
-    border: 1px solid var(--paper-edge);
-    color: var(--ink);
-    cursor: pointer;
-  }
-
-  .primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
   }
 </style>

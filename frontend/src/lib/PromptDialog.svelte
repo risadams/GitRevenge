@@ -2,6 +2,8 @@
   import { onMount } from 'svelte'
   import { AnswerPrompt } from '../../wailsjs/go/app/App.js'
   import { EventsOn } from '../../wailsjs/runtime/runtime.js'
+  import InkButton from './ui/InkButton.svelte'
+  import Modal from './ui/Modal.svelte'
 
   /** A credential or host-key prompt relayed from git/ssh (app.Prompt in Go). */
   interface Prompt {
@@ -14,7 +16,6 @@
   let queue = $state<Prompt[]>([])
   let current = $derived(queue[0])
   let value = $state('')
-  let input = $state<HTMLInputElement | null>(null)
 
   function answer(ok: boolean) {
     if (!current) return
@@ -23,10 +24,6 @@
     value = ''
     queue = queue.slice(1)
   }
-
-  $effect(() => {
-    if (current && input) input.focus()
-  })
 
   onMount(() => {
     const offPrompt = EventsOn('askpass:prompt', (p: Prompt) => (queue = [...queue, p]))
@@ -39,8 +36,15 @@
 </script>
 
 {#if current}
-  <div class="backdrop">
-    <div class="dialog" role="dialog" aria-modal="true" aria-label="Credentials requested">
+  {#key current.id}
+    <Modal
+      title={current.kind === 'hostkey' ? 'Trust this SSH host?' : 'Git needs your credentials'}
+      eyebrow={current.kind === 'hostkey' ? 'a new harbour' : undefined}
+      width={500}
+      layer={300}
+      scrimCloses={false}
+      onClose={() => answer(false)}
+    >
       <form
         onsubmit={(e) => {
           e.preventDefault()
@@ -48,112 +52,50 @@
         }}
       >
         {#if current.kind === 'hostkey'}
-          <h3>Trust this SSH host?</h3>
           <!-- ssh's own wording, including the key fingerprint to compare. -->
           <pre>{current.text}</pre>
-          <p class="muted">
-            Only continue if the fingerprint matches the one your Git host publishes. The key is then saved to
-            known_hosts.
-          </p>
-          <div class="buttons">
-            <button type="button" onclick={() => answer(false)}>Cancel</button>
-            <button type="submit" class="primary">Trust and connect</button>
+          <p class="form-note">Only continue if the fingerprint matches the one your Git host publishes. The key is then saved to known_hosts.</p>
+          <div class="form-actions">
+            <InkButton variant="ghost" onclick={() => answer(false)}>Cancel</InkButton>
+            <InkButton type="submit">Trust and connect</InkButton>
           </div>
         {:else}
-          <h3>Git needs your credentials</h3>
-          <label>
+          <label class="form-field">
             <span>{current.text}</span>
             {#if current.kind === 'secret'}
-              <input type="password" bind:this={input} bind:value autocomplete="off" />
+              <input type="password" bind:value autocomplete="off" />
             {:else}
-              <input bind:this={input} bind:value autocomplete="off" />
+              <input bind:value autocomplete="off" />
             {/if}
           </label>
-          <p class="muted">Git Revenge passes this to git and doesn't store it.</p>
-          <div class="buttons">
-            <button type="button" onclick={() => answer(false)}>Cancel</button>
-            <button type="submit" class="primary">Continue</button>
+          <p class="form-note">Git Revenge passes this to git and doesn't store it.</p>
+          <div class="form-actions">
+            <InkButton variant="ghost" onclick={() => answer(false)}>Cancel</InkButton>
+            <InkButton type="submit">Continue</InkButton>
           </div>
         {/if}
       </form>
-    </div>
-  </div>
+    </Modal>
+  {/key}
 {/if}
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 300;
-    display: grid;
-    place-items: center;
-    background: var(--scrim);
-  }
-
-  .dialog {
-    width: min(480px, calc(100vw - 32px));
-  }
-
   form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 16px;
-    background: var(--paper-warm);
-    border: 1px solid var(--paper-edge);
-  }
-
-  h3 {
-    margin: 0;
-    font-size: 14px;
+    gap: 14px;
   }
 
   pre {
     margin: 0;
-    padding: 8px;
-    background: var(--paper);
+    padding: 12px 14px;
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 5px;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
     font-family: var(--font-mono);
     font-size: 12px;
-  }
-
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  input {
-    padding: 4px 6px;
-    background: var(--paper);
-    color: var(--ink);
-    border: 1px solid var(--paper-edge);
-    font: inherit;
-  }
-
-  .muted {
-    margin: 0;
-    color: var(--ink-mute);
-    font-size: 12px;
-  }
-
-  .buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-
-  button {
-    padding: 4px 12px;
-    background: none;
-    border: 1px solid var(--paper-edge);
-    color: var(--ink);
-    cursor: pointer;
-  }
-
-  .primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
+    line-height: 1.6;
   }
 </style>

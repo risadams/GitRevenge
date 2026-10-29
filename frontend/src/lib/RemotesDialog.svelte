@@ -3,6 +3,8 @@
   import { RemoteAction, Remotes } from '../../wailsjs/go/app/App.js'
   import type { git } from '../../wailsjs/go/models'
   import { errorText } from './errors'
+  import InkButton from './ui/InkButton.svelte'
+  import Modal from './ui/Modal.svelte'
 
   let { path, onClose }: { path: string; onClose: () => void } = $props()
 
@@ -63,75 +65,49 @@
   onMount(load)
 </script>
 
-<svelte:window onkeydown={(e) => e.key === 'Escape' && onClose()} />
-
-<div class="backdrop" role="presentation" onmousedown={(e) => e.target === e.currentTarget && onClose()}>
-  <div class="dialog" role="dialog" aria-modal="true" aria-label="Remotes">
-    <h3>Remotes</h3>
-    {#if remotes.length === 0 && editing === null}<p class="muted">No remotes yet.</p>{/if}
+<Modal title="Remotes" eyebrow="ports of call" width={580} {onClose}>
+  {#if remotes.length === 0 && editing === null}<p class="form-note">No remotes yet. Add one to fetch from and push to.</p>{/if}
+  {#if remotes.length}
     <ul>
       {#each remotes as r (r.name)}
         <li>
           <div class="info">
-            <strong>{r.name}</strong>
+            <span class="name">{r.name}</span>
             <span class="url" title={r.fetchUrl}>{r.fetchUrl}</span>
             {#if r.pushUrl && r.pushUrl !== r.fetchUrl}<span class="url" title={r.pushUrl}>push: {r.pushUrl}</span>{/if}
           </div>
           {#if confirmRemove === r.name}
-            <button class="danger" onclick={() => remove(r.name)}>Remove {r.name}?</button>
-            <button onclick={() => (confirmRemove = null)}>Keep</button>
+            <button class="tool confirm" onclick={() => remove(r.name)}>Remove {r.name}</button>
+            <button class="tool" onclick={() => (confirmRemove = null)}>Keep</button>
           {:else}
-            <button onclick={() => startEdit(r)}>Edit</button>
-            <button onclick={() => (confirmRemove = r.name)}>Remove</button>
+            <button class="tool" onclick={() => startEdit(r)}>Edit</button>
+            <button class="tool" onclick={() => (confirmRemove = r.name)}>Remove</button>
           {/if}
         </li>
       {/each}
     </ul>
+  {/if}
 
-    {#if editing !== null}
-      <form onsubmit={save}>
-        <label><span>Name</span><input bind:value={name} placeholder="origin" /></label>
-        <label><span>URL</span><input bind:value={url} placeholder="git@github.com:you/repo.git" /></label>
-        <div class="buttons">
-          <button type="button" onclick={() => (editing = null)}>Cancel</button>
-          <button type="submit" class="primary">{editing === '' ? 'Add remote' : 'Save'}</button>
-        </div>
-      </form>
-    {:else}
-      <div class="buttons">
-        <button onclick={() => startEdit()}>Add remote…</button>
-        <button class="primary" onclick={onClose}>Done</button>
+  {#if editing !== null}
+    <form onsubmit={save}>
+      <label class="form-field"><span>Name</span><input bind:value={name} placeholder="origin" /></label>
+      <label class="form-field"><span>URL</span><input bind:value={url} placeholder="git@github.com:you/repo.git" /></label>
+      {#if error}<p class="form-error" role="alert">{error}</p>{/if}
+      <div class="form-actions">
+        <InkButton variant="ghost" onclick={() => (editing = null)}>Cancel</InkButton>
+        <InkButton type="submit">{editing === '' ? 'Add remote' : 'Save'}</InkButton>
       </div>
-    {/if}
-    {#if error}<p class="error" role="alert">{error}</p>{/if}
-  </div>
-</div>
+    </form>
+  {:else}
+    {#if error}<p class="form-error" role="alert">{error}</p>{/if}
+    <div class="form-actions">
+      <InkButton variant="ghost" onclick={() => startEdit()}>Add remote…</InkButton>
+      <InkButton onclick={onClose}>Done</InkButton>
+    </div>
+  {/if}
+</Modal>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    display: grid;
-    place-items: center;
-    background: var(--scrim);
-  }
-
-  .dialog {
-    width: min(560px, calc(100vw - 32px));
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 16px;
-    background: var(--paper-warm);
-    border: 1px solid var(--paper-edge);
-  }
-
-  h3 {
-    margin: 0;
-    font-size: 14px;
-  }
-
   ul {
     list-style: none;
     margin: 0;
@@ -140,10 +116,10 @@
 
   li {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     align-items: center;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--paper-edge);
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--hairline);
   }
 
   .info {
@@ -151,6 +127,12 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
+    gap: 2px;
+  }
+
+  .name {
+    font-size: 16px;
+    font-weight: 500;
   }
 
   .url {
@@ -162,59 +144,14 @@
     white-space: nowrap;
   }
 
+  .confirm {
+    background: var(--danger-wash);
+    color: var(--danger);
+  }
+
   form {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-  }
-
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  input {
-    padding: 4px 6px;
-    background: var(--paper);
-    color: var(--ink);
-    border: 1px solid var(--paper-edge);
-    font: inherit;
-  }
-
-  .buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-
-  button {
-    padding: 3px 10px;
-    background: none;
-    border: 1px solid var(--paper-edge);
-    color: var(--ink);
-    cursor: pointer;
-  }
-
-  .primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
-  }
-
-  .danger {
-    border-color: var(--danger);
-    color: var(--danger);
-  }
-
-  .muted {
-    color: var(--ink-mute);
-    margin: 0;
-  }
-
-  .error {
-    color: var(--danger);
-    margin: 0;
-    white-space: pre-wrap;
+    gap: 14px;
   }
 </style>

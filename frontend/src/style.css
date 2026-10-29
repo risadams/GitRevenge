@@ -258,6 +258,74 @@ textarea {
   }
 }
 
+/* Dialog and panel forms. */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.form-field input:not([type='checkbox']),
+.form-field select,
+.form-field textarea {
+  padding: 7px 10px;
+  font-size: 14px;
+  border-radius: 5px;
+  transition: border-color 0.2s;
+}
+
+.form-field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  border-color: var(--link);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--selection);
+}
+
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.form-check input {
+  accent-color: var(--accent);
+}
+
+.form-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-mute);
+}
+
+.form-error {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 5px;
+  background: var(--danger-wash);
+  color: var(--ink);
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
 /* Syntax colors for @lezer/highlight's classHighlighter, used by both diff views. */
 .tok-keyword,
 .tok-operatorKeyword,
