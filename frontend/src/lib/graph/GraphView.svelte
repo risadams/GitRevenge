@@ -8,6 +8,7 @@
   import Icon from '../ui/Icon.svelte'
   import { drawRow, graphWidth, LANE_COUNT, layoutColumns, METRICS, setLaneColors, type Theme } from './draw'
   import { RowCache, type GraphProgress, type Page, type Ref, type Row } from './rowCache'
+  import { scrollMap, toScroll, toVirtual } from './scrollMap'
 
   let {
     path,
@@ -41,6 +42,44 @@
   /** Rows the scroll area spans: the estimated whole history while it's still loading, so
    * the scrollbar is about right and scrolling past the loaded rows reads them in. */
   let span = $derived(loading && estimate > total ? estimate : total)
+
+  let viewH = $state(0)
+  let map = $derived(scrollMap(span * rowH, viewH))
+  /** The scroll position within the full history's height. scroller.scrollTop is scaled
+   * from it when the history is taller than a scroll area can be (see scrollMap). */
+  let top = 0
+  /** The scrollTop last set from top, so the scroll event that causes isn't read back
+   * (that would round top to the scale). */
+  let setScroll = -1
+
+  function scrollTo(t: number) {
+    top = Math.max(0, Math.min(map.maxTop, t))
+    setScroll = Math.round(toScroll(top, map))
+    scroller.scrollTop = setScroll
+    schedule()
+  }
+
+  function onScroll() {
+    if (Math.abs(scroller.scrollTop - setScroll) > 1) top = toVirtual(scroller.scrollTop, map)
+    setScroll = -1
+    schedule()
+  }
+
+  /** When scaled, the wheel moves through rows at its normal speed rather than the scale's. */
+  function onWheel(e: WheelEvent) {
+    if (map.ratio === 1 || e.ctrlKey) return
+    e.preventDefault()
+    const unit = e.deltaMode === 1 ? rowH : e.deltaMode === 2 ? viewH : 1
+    scrollTo(top + e.deltaY * unit)
+  }
+
+  // Keep the scrollbar in step as the history's height changes while loading.
+  $effect(() => {
+    const m = map
+    if (!scroller) return
+    setScroll = Math.round(toScroll(top, m))
+    scroller.scrollTop = setScroll
+  })
   let error = $state('')
   let selected = $state(-1)
   let hovered = -1
@@ -96,6 +135,7 @@
     const dpr = window.devicePixelRatio || 1
     const w = scroller.clientWidth
     const h = scroller.clientHeight
+    if (h !== viewH) viewH = h
     if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
       canvas.width = Math.round(w * dpr)
       canvas.height = Math.round(h * dpr)
@@ -106,7 +146,6 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, w, h)
 
-    const top = scroller.scrollTop
     const first = Math.floor(top / rowH)
     const last = Math.min(span, Math.ceil((top + h) / rowH))
     cache.ensure(first - OVERSCAN, last + OVERSCAN)
@@ -127,7 +166,7 @@
 
   function rowAt(e: MouseEvent): number {
     const rect = scroller.getBoundingClientRect()
-    const i = Math.floor((e.clientY - rect.top + scroller.scrollTop) / rowH)
+    const i = Math.floor((e.clientY - rect.top + top) / rowH)
     return i >= 0 && i < span ? i : -1
   }
 
@@ -135,7 +174,7 @@
   export function reveal(i: number) {
     if (i < 0) return
     // Center it rather than pinning it to an edge.
-    scroller.scrollTop = Math.max(0, i * rowH - scroller.clientHeight / 2)
+    scrollTo(i * rowH - viewH / 2)
     select(i)
     scroller.focus()
   }
@@ -186,10 +225,8 @@
     selected = Math.max(0, Math.min(span - 1, i))
     // Keep the selection in view.
     const y = selected * rowH
-    if (y < scroller.scrollTop) scroller.scrollTop = y
-    else if (y + rowH > scroller.scrollTop + scroller.clientHeight) {
-      scroller.scrollTop = y + rowH - scroller.clientHeight
-    }
+    if (y < top) scrollTo(y)
+    else if (y + rowH > top + viewH) scrollTo(y + rowH - viewH)
     selectedId = cache.get(selected)?.id ?? ''
     onSelect?.(cache.get(selected), auto)
     schedule()
@@ -279,7 +316,7 @@
   let lastRowH = 0
   $effect(() => {
     const h = rowH
-    if (scroller && lastRowH && lastRowH !== h) scroller.scrollTop = (scroller.scrollTop / lastRowH) * h
+    if (scroller && lastRowH && lastRowH !== h) scrollTo((top / lastRowH) * h)
     lastRowH = h
     schedule()
   })
@@ -287,6 +324,8 @@
   onMount(() => {
     const ro = new ResizeObserver(schedule)
     ro.observe(scroller)
+    // Not passive: a scaled history handles the wheel itself.
+    scroller.addEventListener('wheel', onWheel, { passive: false })
     // The canvas paints with the bundled fonts; repaint once they finish loading.
     void document.fonts.ready.then(schedule)
     document.fonts.addEventListener('loadingdone', schedule)
@@ -316,6 +355,7 @@
     cache.ensure(0, 200)
     return () => {
       ro.disconnect()
+      scroller.removeEventListener('wheel', onWheel)
       document.fonts.removeEventListener('loadingdone', schedule)
       off()
       cancelAnimationFrame(frame)
@@ -375,7 +415,7 @@
       role="grid"
       aria-label="Commit history"
       aria-rowcount={span}
-      onscroll={schedule}
+      onscroll={onScroll}
       onkeydown={onKey}
       onclick={(e) => {
         const i = rowAt(e)
@@ -427,7 +467,7 @@
         schedule()
       }}
     >
-      <div class="spacer" style:height="{span * rowH}px"></div>
+      <div class="spacer" style:height="{map.spacer}px"></div>
     </div>
   </div>
 </div>

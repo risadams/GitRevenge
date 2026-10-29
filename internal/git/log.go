@@ -92,15 +92,22 @@ func (r *Repo) Log(ctx context.Context, opts LogOptions, fn func(LogCommit) erro
 	return err
 }
 
+// maxTagTips caps how many tags are passed to git log as separate starting points; past
+// it, --tags is used instead (a command line has a length limit).
+const maxTagTips = 500
+
 // logRevs returns the starting points and the trailing "--" for a log over opts.
 func (r *Repo) logRevs(ctx context.Context, opts LogOptions) []string {
 	var args []string
 	if len(opts.Revs) == 0 {
-		args = append(args, "--branches", "--remotes", "--tags")
+		args = append(args, "--branches", "--remotes")
 		// HEAD is only valid once it points at a commit (not in an empty repo or on an
 		// orphan branch).
 		if _, err := r.Read(ctx, "rev-parse", "--verify", "-q", "HEAD"); err == nil {
 			args = append(args, "HEAD")
+			args = append(args, r.tagTips(ctx)...)
+		} else {
+			args = append(args, "--tags")
 		}
 	} else {
 		args = append(args, opts.Revs...)
@@ -108,6 +115,22 @@ func (r *Repo) logRevs(ctx context.Context, opts LogOptions) []string {
 	args = append(args, opts.Extra...)
 	// "--" stops revs from being read as paths.
 	return append(args, "--")
+}
+
+// tagTips returns the tags to start a log from besides branches and HEAD: only those HEAD
+// can't reach. The others are in the history anyway, and every extra starting point makes
+// --topo-order walk down from it before printing anything. On the Linux kernel, with 953
+// tags, passing --tags made the first 100 commits take a second instead of 90ms.
+func (r *Repo) tagTips(ctx context.Context) []string {
+	out, err := r.ReadString(ctx, "for-each-ref", "--no-merged=HEAD", "--format=%(refname)", "refs/tags")
+	if err != nil {
+		return []string{"--tags"}
+	}
+	tips := strings.Fields(out)
+	if len(tips) > maxTagTips {
+		return []string{"--tags"}
+	}
+	return tips
 }
 
 // CountCommits counts the commits Log would list for opts, ignoring MaxCount. It is cheap

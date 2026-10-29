@@ -60,7 +60,10 @@ type Row struct {
 }
 
 type lane struct {
-	want  oid
+	want oid
+	// pos is where want sits in Graph.parents, so a checkpoint can store the lane as a
+	// position instead of a 32-byte ID.
+	pos   int32
 	color int
 	used  bool
 }
@@ -72,6 +75,41 @@ type state struct {
 
 func (st state) clone() state {
 	st.lanes = append([]lane(nil), st.lanes...)
+	return st
+}
+
+// checkpoint is a state stored compactly: each lane as the position of the parent it waits
+// for (-1 for a free lane) and its color. On a wide history (the Linux kernel runs to
+// about 800 lanes) this is a sixth of the size of the state itself.
+type checkpoint struct {
+	lanes     []cpLane
+	nextColor int
+}
+
+type cpLane struct {
+	pos   int32
+	color int32
+}
+
+func (st state) pack() checkpoint {
+	cp := checkpoint{lanes: make([]cpLane, len(st.lanes)), nextColor: st.nextColor}
+	for i, l := range st.lanes {
+		cp.lanes[i] = cpLane{pos: -1}
+		if l.used {
+			cp.lanes[i] = cpLane{pos: l.pos, color: int32(l.color)}
+		}
+	}
+	return cp
+}
+
+// unpack restores a checkpoint, reading each lane's commit ID back from parents.
+func (cp checkpoint) unpack(parents []oid) state {
+	st := state{lanes: make([]lane, len(cp.lanes)), nextColor: cp.nextColor}
+	for i, l := range cp.lanes {
+		if l.pos >= 0 {
+			st.lanes[i] = lane{want: parents[l.pos], pos: l.pos, color: int(l.color), used: true}
+		}
+	}
 	return st
 }
 
@@ -95,7 +133,7 @@ type Graph struct {
 	nodeColor []uint16
 
 	cur         state
-	checkpoints []state // checkpoints[k] is the state before row k*checkpointEvery
+	checkpoints []checkpoint // checkpoints[k] is the state before row k*checkpointEvery
 }
 
 // New returns an empty Graph.
@@ -127,10 +165,11 @@ func (g *Graph) Add(c git.LogCommit) error {
 	}
 	row := len(g.ids)
 	if row%checkpointEvery == 0 {
-		g.checkpoints = append(g.checkpoints, g.cur.clone())
+		g.checkpoints = append(g.checkpoints, g.cur.pack())
 	}
 	g.index[id] = int32(row)
 	g.ids = append(g.ids, id)
+	base := int32(len(g.parents))
 	g.parents = append(g.parents, ps...)
 	g.parentStart = append(g.parentStart, int32(len(g.parents)))
 	a, ok := g.authorLookup[c.AuthorName]
@@ -143,7 +182,7 @@ func (g *Graph) Add(c git.LogCommit) error {
 	g.times = append(g.times, c.AuthorTime)
 	g.subjects = append(g.subjects, c.Subject)
 
-	col, color := step(&g.cur, id, ps, nil)
+	col, color := step(&g.cur, id, ps, base, nil)
 	g.nodeCol = append(g.nodeCol, uint16(min(col, 0xffff)))
 	g.nodeColor = append(g.nodeColor, uint16(color%0x10000))
 	return nil
@@ -182,17 +221,17 @@ func (g *Graph) Rows(start, count int) []Row {
 	}
 
 	cp := start / checkpointEvery
-	st := g.checkpoints[cp].clone()
+	st := g.checkpoints[cp].unpack(g.parents)
 	out := make([]Row, 0, end-start)
 	for i := cp * checkpointEvery; i < end; i++ {
 		ps := g.parents[g.parentStart[i]:g.parentStart[i+1]]
 		if i < start {
-			step(&st, g.ids[i], ps, nil)
+			step(&st, g.ids[i], ps, g.parentStart[i], nil)
 			continue
 		}
 		// Empty, not nil: the frontend iterates these, and nil marshals to JSON null.
 		r := Row{Index: i, Up: []Seg{}, Down: []Seg{}}
-		r.Col, r.Color = step(&st, g.ids[i], ps, &r)
+		r.Col, r.Color = step(&st, g.ids[i], ps, g.parentStart[i], &r)
 		r.ID = hex.EncodeToString(g.ids[i][:g.hashLen])
 		r.Parents = len(ps)
 		r.Author = g.authors[g.authorIdx[i]]
@@ -203,12 +242,13 @@ func (g *Graph) Rows(start, count int) []Row {
 	return out
 }
 
-// step places the commit id with parents ps, advancing st by one row. If row is non-nil,
+// step places the commit id with parents ps, advancing st by one row. base is where ps
+// starts in Graph.parents. If row is non-nil,
 // the segments drawn in this row are recorded in it. It returns the node column and color.
 //
 // Lanes keep their column while active, so lines run straight down; a freed column is
 // reused by the next new lane.
-func step(st *state, id oid, ps []oid, row *Row) (col, color int) {
+func step(st *state, id oid, ps []oid, base int32, row *Row) (col, color int) {
 	col = -1
 	for i, l := range st.lanes {
 		if l.used && l.want == id {
@@ -257,7 +297,7 @@ func step(st *state, id oid, ps []oid, row *Row) (col, color int) {
 			} else {
 				target, tcolor = st.freeSlot(col+1), st.newColor()
 			}
-			st.lanes[target] = lane{want: p, color: tcolor, used: true}
+			st.lanes[target] = lane{want: p, pos: base + int32(pi), color: tcolor, used: true}
 			created = append(created, target)
 		}
 		if row != nil {

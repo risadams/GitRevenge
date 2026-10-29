@@ -104,11 +104,29 @@ It reports time to the first 100 rows, full load, heap in use, window reads, sea
 - The scrollbar spans `git rev-list --count` over the same revisions while loading. It slightly overcounts stash snapshots, so the status bar calls it approximate.
 - Jumping to a commit (a ref, the selection after a reload) reads on until the commit appears. Search reads the rest of the history first, so memory after a search is the full history.
 - A background refresh builds off-screen and swaps in once it reaches the same point, then keeps reading on demand.
-- `TestReadAhead` in `internal/perf` reports time and heap at the first pause, the estimate, and the jump to the oldest commit. The first kernel run goes here with #78.
+- `TestReadAhead` in `internal/perf` reports time and heap at the first pause, the estimate, and the jump to the oldest commit.
+- The graph's scroll area is capped at 8M px and its position scaled beyond that, since browsers cap element height (Chromium at about 33.5M px) and 1.5M rows at 52 px is 78M px. Scaled, the wheel still moves at its normal speed.
+
+**Kernel run, 2026-10-29** (Windows 11, Linux at c339f4010dea: 1,503,174 commits, 956 refs, with a commit-graph file):
+
+| Measure | Result | Target |
+|---|---|---|
+| First 100 rows | 328 ms | < 1 s |
+| First pause (30,000 rows) | 971 ms, 12 MB heap | |
+| Estimate known | 1.35 s | |
+| Full load and layout | 15.5 s | |
+| Heap, whole history loaded | 467 MB | < 500 MB |
+| 100-row window read | avg 0.74 ms, worst 3.0 ms | < 16 ms |
+| Search "fix" (whole history) | 158 ms | |
+| Jump to the oldest commit (reads all of it) | 15.5 s | |
+| Status, warm | 153 ms | < 500 ms |
+
+Two fixes from this run (#78): `git log` starts only from tags HEAD can't reach, because with all 953 tags as starting points `--topo-order` walked down from each and the first rows took 1.1 s. And checkpoints store each lane as a parent position instead of a 32-byte ID, which took the full-history heap from 857 MB to 467 MB.
 
 **What the measurements so far show:**
 - **Commit-graph file.** `git log --topo-order` only produces its first commits quickly when the repo has a commit-graph file (`git commit-graph write --reachable`, or `fetch.writeCommitGraph=true`). The check warns when it's missing.
 - **Ref short names.** `%(refname:short)` is quadratic in the number of refs, so the app strips ref prefixes itself.
+- **Tags as starting points.** Every starting point makes `--topo-order` walk down from it before printing anything, so old tags are expensive. Tags that HEAD reaches are left out, since their commits are in the history anyway.
 - **Loose refs.** A repo with thousands of loose (unpacked) refs reads them slowly on Windows. `git pack-refs --all` fixes this, and git does it during `gc`.
 
 ## Milestones
