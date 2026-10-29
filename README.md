@@ -1,8 +1,10 @@
+<img src="build/appicon.svg" alt="" width="96" align="right">
+
 # Git Revenge
 
 Git Revenge is a fast, local-only desktop git client for Windows and macOS. It has a Go backend and is inspired by GitKraken, minus the AI, Launchpad and cloud features.
 
-> **Status:** early development. The project is working toward `0.1.0`, and nothing is usable yet.
+> **Status:** early development. [`0.5.0`](https://github.com/risadams/GitRevenge/releases/tag/v0.5.0) is the latest release, and `0.6.0` (visual design and release polish) is in progress.
 
 ## Goals
 

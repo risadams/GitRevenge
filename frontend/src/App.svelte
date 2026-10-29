@@ -13,6 +13,7 @@
   import Icon from './lib/ui/Icon.svelte'
   import InkButton from './lib/ui/InkButton.svelte'
   import InkFilters from './lib/ui/InkFilters.svelte'
+  import Mark from './lib/ui/Mark.svelte'
 
   let version = $state('')
   let env = $state<app.Environment | null>(null)
@@ -30,6 +31,7 @@
   {#if env?.problem}
     <main class="center">
       <div class="problem">
+        <Mark size={56} label="Git Revenge" />
         <span class="hand">one more thing</span>
         <h1>Git Revenge needs git</h1>
         <p>{env.problem}</p>
@@ -92,7 +94,14 @@
   }
 
   .problem {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     max-width: 520px;
+  }
+
+  .problem > :global(svg) {
+    margin-bottom: 12px;
   }
 
   .problem h1 {
