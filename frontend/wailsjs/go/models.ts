@@ -89,6 +89,8 @@ export namespace app {
 	    refs: Record<string, Array<git.Ref>>;
 	    total: number;
 	    loading: boolean;
+	    paused: boolean;
+	    estimate: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new GraphPage(source);
@@ -100,6 +102,8 @@ export namespace app {
 	        this.refs = this.convertValues(source["refs"], Array<git.Ref>, true);
 	        this.total = source["total"];
 	        this.loading = source["loading"];
+	        this.paused = source["paused"];
+	        this.estimate = source["estimate"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

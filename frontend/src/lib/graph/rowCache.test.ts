@@ -22,7 +22,7 @@ function backend(total: number, available = total) {
   const state = { total, available }
   const fetch = vi.fn(async (start: number, count: number): Promise<Page> => {
     const n = Math.max(0, Math.min(count, state.available - start))
-    return { rows: rows(start, n), refs: {}, total: state.available, loading: state.available < state.total }
+    return { rows: rows(start, n), refs: {}, total: state.available, loading: state.available < state.total, paused: false, estimate: state.total }
   })
   return { state, fetch }
 }

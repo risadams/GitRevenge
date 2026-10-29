@@ -99,7 +99,12 @@ GITREVENGE_BENCH_REPO=/path/to/linux go test ./internal/perf -v -count=1 -timeou
 
 It reports time to the first 100 rows, full load, heap in use, window reads, search and refs, and fails if a target is missed.
 
-**Progressive loading.** The reader loads ahead of the viewport instead of the whole history, rather than capping the graph at a fixed size. A fixed cap would leave jump-to-commit, search, the scrollbar total and refs on old commits with nothing to point at. No benchmark numbers have been recorded yet; the first kernel run, with and without read-ahead, goes in this section once #163 lands.
+**Progressive loading.** The reader loads ahead of the viewport instead of the whole history, rather than capping the graph at a fixed size. A fixed cap would leave jump-to-commit, search, the scrollbar total and refs on old commits with nothing to point at.
+- `git log` streams into the graph until it is 30,000 rows past the furthest row the UI has asked for (`GITREVENGE_READ_AHEAD` overrides it), then the reader blocks, which blocks git on its output pipe. Asking for later rows resumes it.
+- The scrollbar spans `git rev-list --count` over the same revisions while loading. It slightly overcounts stash snapshots, so the status bar calls it approximate.
+- Jumping to a commit (a ref, the selection after a reload) reads on until the commit appears. Search reads the rest of the history first, so memory after a search is the full history.
+- A background refresh builds off-screen and swaps in once it reaches the same point, then keeps reading on demand.
+- `TestReadAhead` in `internal/perf` reports time and heap at the first pause, the estimate, and the jump to the oldest commit. The first kernel run goes here with #78.
 
 **What the measurements so far show:**
 - **Commit-graph file.** `git log --topo-order` only produces its first commits quickly when the repo has a commit-graph file (`git commit-graph write --reachable`, or `fetch.writeCommitGraph=true`). The check warns when it's missing.

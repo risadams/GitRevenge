@@ -38,6 +38,23 @@ export interface Page {
   refs: Record<string, Ref[]>
   total: number
   loading: boolean
+  /** The reader stopped ahead of the viewport; asking for later rows resumes it. */
+  paused: boolean
+  /** About how many rows the whole history has, or 0 until known. */
+  estimate: number
+}
+
+/** The payload of the "graph:progress" event (app.GraphProgress in Go). */
+export interface GraphProgress {
+  path: string
+  rows: number
+  done: boolean
+  paused: boolean
+  estimate: number
+  /** A reloaded graph replaced the displayed one; cached rows are stale. */
+  reset: boolean
+  refsReady: boolean
+  error: string
 }
 
 export const CHUNK = 200
@@ -53,6 +70,8 @@ export class RowCache {
   private generation = 0
   total = 0
   loading = true
+  paused = false
+  estimate = 0
 
   constructor(
     private fetchPage: (start: number, count: number) => Promise<Page>,
@@ -80,9 +99,11 @@ export class RowCache {
   }
 
   /** Records a new total from a progress event; short chunks will be refetched. */
-  setTotal(total: number, loading: boolean) {
+  setTotal(total: number, loading: boolean, paused = false, estimate = 0) {
     this.total = total
     this.loading = loading
+    this.paused = paused
+    if (estimate) this.estimate = estimate
   }
 
   /** Drops everything, e.g. after the backend swapped in a reloaded graph. */
@@ -102,6 +123,8 @@ export class RowCache {
         for (const [id, refs] of Object.entries(page.refs ?? {})) this.labels.set(id, refs)
         this.total = page.total
         this.loading = page.loading
+        this.paused = page.paused
+        if (page.estimate) this.estimate = page.estimate
         this.onUpdate()
       })
       .catch(() => {

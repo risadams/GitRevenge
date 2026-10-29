@@ -44,6 +44,32 @@ func (r *Repo) Graph() (*graph.Graph, bool) { return r.graph.Graph() }
 // Refs returns the refs matching the displayed graph.
 func (r *Repo) Refs() *RefIndex { return r.graph.Refs() }
 
+// GraphStatus reports whether the graph reader is paused ahead of the viewport, and the
+// estimated size of the whole history (0 until known).
+func (r *Repo) GraphStatus() (paused bool, estimate int) { return r.graph.Status() }
+
+// DemandRows records that the UI wants graph rows up to row, so a paused reader reads on.
+func (r *Repo) DemandRows(row int) { r.graph.Demand(row) }
+
+// FindRow returns the graph row of the commit id, reading on through the history until it
+// appears. It returns false if the commit isn't in the history.
+func (r *Repo) FindRow(ctx context.Context, id string) (int, bool, error) {
+	g, err := r.graph.LoadUntil(ctx, func(g *graph.Graph) bool {
+		_, ok := g.RowOf(id)
+		return ok
+	})
+	if err != nil || g == nil {
+		return -1, false, err
+	}
+	row, ok := g.RowOf(id)
+	return row, ok, nil
+}
+
+// FullGraph returns the graph once the whole history has loaded, for searching it.
+func (r *Repo) FullGraph(ctx context.Context) (*graph.Graph, error) {
+	return r.graph.LoadUntil(ctx, func(*graph.Graph) bool { return false })
+}
+
 // Name is the folder name shown on the tab.
 func (r *Repo) Name() string { return filepath.Base(r.Path) }
 
@@ -65,6 +91,8 @@ type Manager struct {
 	repos    []*Repo // tab order
 	onChange func(path string, k watch.Kind)
 	onGraph  func(path string, p GraphProgress)
+	// readAhead overrides DefaultReadAhead; tests use it.
+	readAhead int
 }
 
 // OnGraph registers fn to receive commit graph loading progress for open repositories.
@@ -86,6 +114,14 @@ func (m *Manager) OnChange(fn func(path string, k watch.Kind)) {
 // NewManager returns a Manager with no open repositories.
 func NewManager(runner *git.Runner, store *settings.Store) *Manager {
 	return &Manager{runner: runner, settings: store, now: time.Now}
+}
+
+// SetReadAhead sets how many rows the graph reader loads past the furthest row requested
+// before pausing, for repositories opened after the call. n <= 0 restores the default.
+func (m *Manager) SetReadAhead(n int) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.readAhead = n
 }
 
 // Resolve returns the work tree root containing path.
@@ -161,11 +197,15 @@ func (m *Manager) Open(ctx context.Context, path string) (*Repo, error) {
 			Objects: git.NewObjectReader(m.runner, root),
 		}
 		onGraph := m.onGraph
-		r.graph = &graphLoader{repo: r.Git, onProgress: func(p GraphProgress) {
+		ahead := m.readAhead
+		if ahead <= 0 {
+			ahead = DefaultReadAhead
+		}
+		r.graph = newGraphLoader(r.Git, ahead, func(p GraphProgress) {
 			if onGraph != nil {
 				onGraph(root, p)
 			}
-		}}
+		})
 		r.graph.reload()
 		r.watcher = m.watchLocked(r)
 		m.repos = append(m.repos, r)

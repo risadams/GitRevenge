@@ -49,19 +49,7 @@ func (r *Repo) Log(ctx context.Context, opts LogOptions, fn func(LogCommit) erro
 	if opts.MaxCount > 0 {
 		args = append(args, "--max-count="+strconv.Itoa(opts.MaxCount))
 	}
-	if len(opts.Revs) == 0 {
-		args = append(args, "--branches", "--remotes", "--tags")
-		// HEAD is only valid once it points at a commit (not in an empty repo or on an
-		// orphan branch).
-		if _, err := r.Read(ctx, "rev-parse", "--verify", "-q", "HEAD"); err == nil {
-			args = append(args, "HEAD")
-		}
-	} else {
-		args = append(args, opts.Revs...)
-	}
-	args = append(args, opts.Extra...)
-	// "--" stops revs from being read as paths.
-	args = append(args, "--")
+	args = append(args, r.logRevs(ctx, opts)...)
 
 	err := r.Stream(ctx, func(rd io.Reader) error {
 		br, ok := rd.(*bufio.Reader)
@@ -102,6 +90,37 @@ func (r *Repo) Log(ctx context.Context, opts LogOptions, fn func(LogCommit) erro
 		return nil
 	}
 	return err
+}
+
+// logRevs returns the starting points and the trailing "--" for a log over opts.
+func (r *Repo) logRevs(ctx context.Context, opts LogOptions) []string {
+	var args []string
+	if len(opts.Revs) == 0 {
+		args = append(args, "--branches", "--remotes", "--tags")
+		// HEAD is only valid once it points at a commit (not in an empty repo or on an
+		// orphan branch).
+		if _, err := r.Read(ctx, "rev-parse", "--verify", "-q", "HEAD"); err == nil {
+			args = append(args, "HEAD")
+		}
+	} else {
+		args = append(args, opts.Revs...)
+	}
+	args = append(args, opts.Extra...)
+	// "--" stops revs from being read as paths.
+	return append(args, "--")
+}
+
+// CountCommits counts the commits Log would list for opts, ignoring MaxCount. It is cheap
+// with a commit-graph file, and gives the graph a size before the history has loaded.
+func (r *Repo) CountCommits(ctx context.Context, opts LogOptions) (int, error) {
+	out, err := r.ReadString(ctx, append([]string{"rev-list", "--count"}, r.logRevs(ctx, opts)...)...)
+	if isEmptyRepoLogError(err) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return strconv.Atoi(strings.TrimSpace(out))
 }
 
 func parseLogRecord(rec []byte) (LogCommit, error) {
