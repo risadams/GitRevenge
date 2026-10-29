@@ -4,15 +4,15 @@ import { describe, expect, it, vi } from 'vitest'
 // The Wails runtime only exists in the app; links don't need it to render.
 vi.mock('../../wailsjs/runtime/runtime.js', () => ({ BrowserOpenURL: vi.fn() }))
 
-const { default: MessageBody } = await import('./MessageBody.svelte')
+const { default: Markdown } = await import('./Markdown.svelte')
 
 /** Rendered HTML without hydration comments or scoped class names. */
-const html = (text: string, issueURL = '') =>
-  render(MessageBody, { props: { text, issueURL } })
+const html = (text: string, issueURL = '', extra: Record<string, unknown> = {}) =>
+  render(Markdown, { props: { text, issueURL, ...extra } })
     .body.replace(/<!--.*?-->/g, '')
     .replace(/ class="[^"]*"/g, '')
 
-describe('MessageBody', () => {
+describe('Markdown', () => {
   it('renders emphasis, code, lists and links', () => {
     const out = html('Some **bold**, *em* and `x < y`.\n\n- one\n- two\n\nSee [docs](https://example.com).')
     expect(out).toContain('<strong>bold</strong>')
@@ -36,5 +36,20 @@ describe('MessageBody', () => {
 
   it('keeps an indented block as code', () => {
     expect(html('Trace:\n\n    at foo (bar.go:12)')).toMatch(/<pre><code>at foo \(bar.go:12\)<\/code><\/pre>/)
+  })
+
+  it('keeps heading levels in a document, under the view heading', () => {
+    const out = html('# Title\n\n## Part', '', { document: true })
+    expect(out).toContain('<h2>Title</h2>')
+    expect(out).toContain('<h3>Part</h3>')
+    expect(html('# Title')).toContain('<h3>Title</h3>')
+  })
+
+  it('never loads a remote image, and waits on the resolver for a relative one', () => {
+    const resolveImage = vi.fn(() => new Promise<string>(() => {}))
+    const out = html('![logo](https://example.com/logo.png) ![dot](img/dot.png)', '', { document: true, resolveImage })
+    expect(out).not.toMatch(/<img[^>]*example\.com/)
+    expect(out).toContain('href="https://example.com/logo.png"')
+    expect(out).toContain('[dot]') // placeholder until the repository image loads
   })
 })
