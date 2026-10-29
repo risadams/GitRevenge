@@ -68,6 +68,13 @@
   </div>
   <div class="form-actions">
     <InkButton onclick={onClose}>Done</InkButton>
+    <InkButton
+      variant="ghost"
+      onclick={() => {
+        onClose()
+        commands.keybindingsOpen = true
+      }}>Customize…</InkButton
+    >
   </div>
 </Modal>
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isTyping, matchesShortcut, parseShortcut } from './shortcuts'
+import { eventToShortcut, isTyping, matchesShortcut, parseShortcut } from './shortcuts'
 
 const ev = (key: string, mods: Partial<Record<'ctrl' | 'meta' | 'shift' | 'alt', boolean>> = {}, code = '') => ({
   key,
@@ -55,5 +55,40 @@ describe('isTyping', () => {
     expect(isTyping({ closest: (s: string) => (s.includes('input') ? {} : null) } as unknown as EventTarget)).toBe(true)
     expect(isTyping({ closest: () => null } as unknown as EventTarget)).toBe(false)
     expect(isTyping(null)).toBe(false)
+  })
+})
+
+describe('eventToShortcut', () => {
+  it('records modifiers in a fixed order and upper-cases letters', () => {
+    expect(eventToShortcut(ev('k', { ctrl: true, shift: true }), false)).toBe('Mod+Shift+K')
+    expect(eventToShortcut(ev('k', { meta: true, alt: true }, 'KeyK'), true)).toBe('Mod+Alt+K')
+    expect(eventToShortcut(ev('F5'), false)).toBe('F5')
+  })
+
+  it('names the physical digit and Option letters', () => {
+    expect(eventToShortcut(ev('!', { ctrl: true, shift: true }, 'Digit1'), false)).toBe('Mod+Shift+1')
+    expect(eventToShortcut(ev('Ω', { alt: true }, 'KeyZ'), true)).toBe('Alt+Z')
+  })
+
+  it('writes plus as Plus, and waits while only modifiers are down', () => {
+    expect(eventToShortcut(ev('+', { ctrl: true }), false)).toBe('Mod+Plus')
+    expect(parseShortcut('Mod+Plus').key).toBe('+')
+    expect(eventToShortcut(ev('Shift', { shift: true }), false)).toBeNull()
+  })
+
+  it("refuses the other platform's command key", () => {
+    expect(eventToShortcut(ev('k', { ctrl: true }), true)).toBeNull()
+    expect(eventToShortcut(ev('k', { meta: true }), false)).toBeNull()
+  })
+
+  it('records what matchesShortcut then accepts', () => {
+    for (const [e, mac] of [
+      [ev('k', { ctrl: true, shift: true }, 'KeyK'), false],
+      [ev('Ω', { alt: true }, 'KeyZ'), true],
+      [ev('/', { meta: true }, 'Slash'), true],
+      [ev('+', { ctrl: true }, 'Equal'), false],
+    ] as const) {
+      expect(matchesShortcut(e, eventToShortcut(e, mac)!, mac)).toBe(true)
+    }
   })
 })

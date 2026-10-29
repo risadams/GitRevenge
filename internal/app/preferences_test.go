@@ -55,3 +55,23 @@ func TestPreferencesValidation(t *testing.T) {
 		t.Fatalf("defaults rejected: %v", err)
 	}
 }
+
+func TestKeybindings(t *testing.T) {
+	a := newTestApp(t)
+	if got, err := a.Keybindings(); err != nil || len(got) != 0 {
+		t.Fatalf("defaults = %v, %v", got, err)
+	}
+	want := map[string]string{"repo.fetch": "Mod+Alt+F", "app.palette": "", "view.plus": "Mod++"}
+	if err := a.SetKeybindings(want); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := a.Keybindings()
+	if len(got) != 3 || got["repo.fetch"] != "Mod+Alt+F" || got["app.palette"] != "" || got["view.plus"] != "Mod++" {
+		t.Fatalf("saved = %v", got)
+	}
+	for _, bad := range []string{"Hyper+K", "Mod+"} {
+		if err := a.SetKeybindings(map[string]string{"x": bad}); err == nil {
+			t.Errorf("%q accepted", bad)
+		}
+	}
+}
