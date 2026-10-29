@@ -18,10 +18,10 @@ type ReflogEntry struct {
 	Time int64 `json:"time"`
 }
 
-// Reflog lists ref's reflog, newest first, at most max entries. A ref without a reflog has
-// no entries.
-func (r *Repo) Reflog(ctx context.Context, ref string, max int) ([]ReflogEntry, error) {
-	out, err := r.ReadString(ctx, "reflog", "show", "--date=unix", "--format=%H%x1f%gd%x1f%gs%x1e", "-n", strconv.Itoa(max), ref, "--")
+// Reflog lists ref's reflog, newest first, at most limit entries. A ref without a reflog
+// has no entries.
+func (r *Repo) Reflog(ctx context.Context, ref string, limit int) ([]ReflogEntry, error) {
+	out, err := r.ReadString(ctx, "reflog", "show", "--date=unix", "--format=%H%x1f%gd%x1f%gs%x1e", "-n", strconv.Itoa(limit), ref, "--")
 	entries := []ReflogEntry{}
 	if err != nil {
 		var gerr *Error
@@ -38,8 +38,8 @@ func (r *Repo) Reflog(ctx context.Context, ref string, max int) ([]ReflogEntry, 
 		}
 		// With --date=unix the selector carries the entry's time: HEAD@{1700000000}.
 		var t int64
-		if open, close := strings.LastIndex(f[1], "@{"), strings.LastIndex(f[1], "}"); open >= 0 && close > open {
-			t, _ = strconv.ParseInt(f[1][open+2:close], 10, 64)
+		if from, to := strings.LastIndex(f[1], "@{"), strings.LastIndex(f[1], "}"); from >= 0 && to > from {
+			t, _ = strconv.ParseInt(f[1][from+2:to], 10, 64)
 		}
 		entries = append(entries, ReflogEntry{Selector: short + "@{" + strconv.Itoa(i) + "}", Commit: f[0], Action: f[2], Time: t})
 	}
