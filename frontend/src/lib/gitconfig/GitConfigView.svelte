@@ -5,6 +5,7 @@
   import Icon from '../ui/Icon.svelte'
   import InkButton from '../ui/InkButton.svelte'
   import Modal from '../ui/Modal.svelte'
+  import AliasList from './AliasList.svelte'
   import ConfigTable from './ConfigTable.svelte'
   import { gitConfig, problemText, VIEWS } from './config.svelte'
   import RawEditor from './RawEditor.svelte'
@@ -13,6 +14,8 @@
   let scope = $derived(gitConfig.scope)
   let doc = $derived(gitConfig.doc)
   let outside = $derived(scope ? gitConfig.outside[scope.path] : false)
+  /** Aliases set in the selected file, for the rail. */
+  let aliasCount = $derived(doc?.entries.filter((e) => /^alias\.[^.]+$/i.test(e.key)).length ?? 0)
 
   /** The handwritten note over the title, saying what the file applies to. */
   function eyebrow(s: Scope): string {
@@ -77,7 +80,9 @@
     <div class="group">
       <h2 class="meta">View</h2>
       {#each VIEWS as v (v.id)}
-        <button class="item" class:on={gitConfig.view === v.id} aria-current={gitConfig.view === v.id ? 'page' : undefined} onclick={() => (gitConfig.view = v.id)}>{v.label}</button>
+        <button class="item" class:on={gitConfig.view === v.id} aria-current={gitConfig.view === v.id ? 'page' : undefined} onclick={() => (gitConfig.view = v.id)}
+          >{v.label}{#if v.id === 'aliases' && aliasCount > 0}<span class="count">{aliasCount}</span>{/if}</button
+        >
       {/each}
     </div>
     <p class="aside">Saving backs up the file first, so a change is never lost for good.</p>
@@ -136,6 +141,8 @@
       {#key scope.path}
         {#if gitConfig.view === 'raw'}
           <RawEditor />
+        {:else if gitConfig.view === 'aliases'}
+          <AliasList />
         {:else}
           <ConfigTable />
         {/if}
@@ -246,6 +253,13 @@
   }
 
   .path {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-faint);
+  }
+
+  .count {
+    margin-left: auto;
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--ink-faint);
