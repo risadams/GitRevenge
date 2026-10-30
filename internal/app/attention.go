@@ -141,43 +141,69 @@ func (a *App) InsightsBranches(path string, in InsightsInputs) (AttentionResult,
 	if err != nil {
 		return AttentionResult{}, err
 	}
-	w, err := resolveInputs(ctx, g, in)
+	res, err := cachedInsight(ctx, a, g, root, "branches", in, func() (AttentionResult, error) {
+		w, err := resolveInputs(ctx, g, in)
+		if err != nil {
+			return AttentionResult{}, err
+		}
+		open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches)
+		if err != nil {
+			return AttentionResult{}, err
+		}
+		t := in.Thresholds.withDefaults()
+		res := AttentionResult{Window: w, Thresholds: t, Branches: make([]BranchSignal, 0, len(open))}
+		for _, b := range open {
+			res.Branches = append(res.Branches, signal(b, w.AsOf, t))
+		}
+		return res, nil
+	})
 	if err != nil {
 		return AttentionResult{}, err
 	}
-	open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches)
-	if err != nil {
-		return AttentionResult{}, err
-	}
-	t := in.Thresholds.withDefaults()
-	res := AttentionResult{Window: w, Thresholds: t, Branches: make([]BranchSignal, 0, len(open))}
-	for _, b := range open {
-		res.Branches = append(res.Branches, signal(b, w.AsOf, t))
-	}
-	a.checkConflicts(a.conflicts.start(root), g, root, w, open)
+	a.checkConflicts(a.conflicts.start(root), g, root, res)
 	return res, nil
 }
 
-// checkConflicts runs the dry-run merges in the background.
-func (a *App) checkConflicts(ctx context.Context, g *git.Repo, root string, w InsightsWindow, open []git.OpenBranch) {
+// checkConflicts reports each branch's dry-run merge in the background: at once for pairs
+// of commits checked before, otherwise as each check finishes.
+func (a *App) checkConflicts(ctx context.Context, g *git.Repo, root string, res AttentionResult) {
+	target := res.Window.TargetSHA
+	report := func(b git.OpenBranch, c git.Conflict) {
+		a.emit("insights:conflict", ConflictResult{Repo: root, TargetSHA: target, Branch: b.Name, SHA: b.SHA, Conflict: c})
+	}
+	var todo []git.OpenBranch
+	var known []git.OpenBranch
+	for _, s := range res.Branches {
+		if _, ok := a.insights.conflict(target, s.SHA); ok {
+			known = append(known, s.OpenBranch)
+		} else {
+			todo = append(todo, s.OpenBranch)
+		}
+	}
 	jobs := make(chan git.OpenBranch)
 	for range conflictWorkers {
 		go func() {
 			for b := range jobs {
-				c, err := g.WouldConflict(ctx, w.TargetSHA, b.SHA)
+				c, err := g.WouldConflict(ctx, target, b.SHA)
 				if ctx.Err() != nil {
 					return
 				}
 				if err != nil {
 					continue
 				}
-				a.emit("insights:conflict", ConflictResult{Repo: root, TargetSHA: w.TargetSHA, Branch: b.Name, SHA: b.SHA, Conflict: c})
+				a.insights.putConflict(target, b.SHA, c)
+				report(b, c)
 			}
 		}()
 	}
 	go func() {
 		defer close(jobs)
-		for _, b := range open {
+		for _, b := range known {
+			if c, ok := a.insights.conflict(target, b.SHA); ok && ctx.Err() == nil {
+				report(b, c)
+			}
+		}
+		for _, b := range todo {
 			select {
 			case jobs <- b:
 			case <-ctx.Done():
@@ -210,10 +236,14 @@ const maxHotFiles = 20
 // branches change too, and the window's rework.
 func (a *App) InsightsHotspots(path string, in InsightsInputs) (HotspotsResult, error) {
 	ctx := context.Background()
-	g, _, err := a.repoGit(ctx, path)
+	g, root, err := a.repoGit(ctx, path)
 	if err != nil {
 		return HotspotsResult{}, err
 	}
+	return cachedInsight(ctx, a, g, root, "hotspots", in, func() (HotspotsResult, error) { return hotspots(ctx, g, in) })
+}
+
+func hotspots(ctx context.Context, g *git.Repo, in InsightsInputs) (HotspotsResult, error) {
 	w, err := resolveInputs(ctx, g, in)
 	if err != nil {
 		return HotspotsResult{}, err

@@ -115,19 +115,21 @@ func resolveInputs(ctx context.Context, g *git.Repo, in InsightsInputs) (Insight
 // commits, with authors, sizes, ticket references and, for merges, cycle times.
 func (a *App) InsightsShipped(path string, in InsightsInputs) (ShippedResult, error) {
 	ctx := context.Background()
-	g, _, err := a.repoGit(ctx, path)
+	g, root, err := a.repoGit(ctx, path)
 	if err != nil {
 		return ShippedResult{}, err
 	}
-	w, err := resolveInputs(ctx, g, in)
-	if err != nil {
-		return ShippedResult{}, err
-	}
-	items, err := g.Shipped(ctx, git.ShippedQuery{Target: w.Target, Since: w.Since, Until: w.Until, Range: w.Range})
-	if err != nil {
-		return ShippedResult{}, err
-	}
-	return ShippedResult{Window: w, Items: items}, nil
+	return cachedInsight(ctx, a, g, root, "shipped", in, func() (ShippedResult, error) {
+		w, err := resolveInputs(ctx, g, in)
+		if err != nil {
+			return ShippedResult{}, err
+		}
+		items, err := g.Shipped(ctx, git.ShippedQuery{Target: w.Target, Since: w.Since, Until: w.Until, Range: w.Range})
+		if err != nil {
+			return ShippedResult{}, err
+		}
+		return ShippedResult{Window: w, Items: items}, nil
+	})
 }
 
 // InsightsTags lists a repository's tags newest first, for choosing a releases window.

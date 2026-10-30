@@ -4,7 +4,6 @@
   import ContextMenu, { type MenuItem } from './ContextMenu.svelte'
   import Dialog, { type DialogSpec } from './Dialog.svelte'
   import RebaseEditor from './RebaseEditor.svelte'
-  import InsightsView from './insights/InsightsView.svelte'
   import RemotesDialog from './RemotesDialog.svelte'
   import WorktreesDialog from './WorktreesDialog.svelte'
   import Toolbar from './Toolbar.svelte'
@@ -36,9 +35,6 @@
   let worktreesOpen = $state(false)
   /** Commit after which the interactive rebase editor rewrites history, or "" when closed. */
   let rebaseBase = $state('')
-  /** Insights is switched off while it's being rethought (#141); the view and backend stay in place. */
-  const insightsEnabled = false
-  let insightsOpen = $state(false)
   /** The ref whose reflog is open, or "" when closed. */
   let reflogRef = $state('')
   const ctx: MenuContext = {
@@ -62,20 +58,6 @@
     // The rebase editor is left out: Escape shouldn't throw away a plan being edited.
     ...(diff ? [{ id: 'view.close', group: 'View', title: 'Back to the graph', keywords: 'close diff', shortcut: 'Escape', run: () => (diff = null) }] : []),
     { id: 'repo.remotes', group: 'Repository', title: 'Manage remotes…', keywords: 'origin url', run: () => (remotesOpen = true) },
-    ...(insightsEnabled
-      ? [
-          {
-            id: 'repo.insights',
-            group: 'Repository',
-            title: 'Insights: activity, contributors and hotspots',
-            keywords: 'scrum master analytics report charts statistics churn cycle time',
-            run: () => {
-              diff = null
-              insightsOpen = true
-            },
-          },
-        ]
-      : []),
     { id: 'repo.reflog', group: 'Repository', title: 'Show the reflog…', keywords: 'history head moves recover lost commit', run: () => (reflogRef = 'HEAD') },
     { id: 'repo.worktrees', group: 'Repository', title: 'Manage worktrees…', keywords: 'worktree checkout folder parallel', run: () => (worktreesOpen = true) },
     {
@@ -170,7 +152,7 @@
     </button>
     <!-- The graph stays mounted while a diff is open, so scroll position and selection
          survive returning to it. -->
-    <div class="graph" class:hidden={diff || rebaseBase || insightsOpen}>
+    <div class="graph" class:hidden={diff || rebaseBase}>
       <GraphView bind:this={graph} {path} {onSelect} onContext={(row, refs, x, y) =>
           openMenu(groups(commitItems(row, refs, ctx), ...refs.map((r) => refItems(r, ctx))), x, y)}
         onDrop={(source, sourceRefs, target, targetRefs, x, y) => {
@@ -181,11 +163,7 @@
               'Drop onto the checked-out branch to merge, rebase or cherry-pick into it, or drag the checked-out branch onto another commit.'
         }} />
     </div>
-    {#if insightsOpen}
-      <div class="graph">
-        <InsightsView {path} onClose={() => (insightsOpen = false)} />
-      </div>
-    {:else if rebaseBase}
+    {#if rebaseBase}
       <div class="graph">
         <RebaseEditor {path} base={rebaseBase} onClose={() => (rebaseBase = '')} />
       </div>
