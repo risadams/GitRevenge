@@ -6,6 +6,7 @@ import {
   InsightsFetchedAt,
   InsightsHotspots,
   InsightsShipped,
+  SaveFile,
   InsightsTags,
   InsightsThresholds,
   SetInsightsTab,
@@ -16,7 +17,9 @@ import { EventsOn } from '../../../wailsjs/runtime/runtime.js'
 import { errorText } from '../errors'
 import { samePath } from '../gitconfig/rows'
 import { session } from '../session.svelte'
-import { sharedAsOf, type ConflictInfo, type Ranked, type Tagged } from './model'
+import { textToBase64 } from './export'
+import { attention, hotFiles, sharedAsOf, type ConflictInfo, type Ranked, type Tagged } from './model'
+import { attentionCSV, exportName, hotspotsCSV, shippedCSV, type ReportInputs } from './report'
 
 /** What the tab looks at: one repository, or a project group's repositories together. */
 export interface Scope {
@@ -121,6 +124,38 @@ class InsightsTab {
   private timer: ReturnType<typeof setTimeout> | undefined
   /** Bumped by each load, so an older one's late results are dropped. */
   private generation = 0
+
+  /** A repository's short name: its tab's, else its folder's. */
+  repoName = (path: string): string => session.tabs.find((t) => samePath(t.path, path))?.name ?? path.split(/[\\/]/).pop() ?? path
+
+  /** The hot files across the scope, as the Hotspots view lists them. */
+  hot = $derived(hotFiles(this.repos.flatMap((repo) => (this.data[repo]?.hotspots?.files ?? []).map((value) => ({ repo, value })))).slice(0, 20))
+
+  /** What every export prints first: the scope, each repository's target commit, the window,
+   * as-of point and thresholds. */
+  reportInputs(): ReportInputs {
+    return {
+      scope: this.label(),
+      thresholds: this.thresholds,
+      windows: this.repos.flatMap((repo) => {
+        const w = this.data[repo]?.shipped?.window
+        return w ? [{ ...w, repo, name: this.repoName(repo) }] : []
+      }),
+    }
+  }
+
+  /** Saves one list as CSV, with the inputs at the top. */
+  async exportCSV(what: 'shipped' | 'attention' | 'hotspots') {
+    const inp = this.reportInputs()
+    const text =
+      what === 'shipped' ? shippedCSV(inp, this.items, this.repoName) : what === 'attention' ? attentionCSV(inp, attention(this.branches), this.repoName) : hotspotsCSV(inp, this.hot, this.repoName)
+    const name = exportName(this.label(), what, inp.windows[0]?.asOf ?? 0, 'csv')
+    try {
+      await SaveFile('Export CSV', name, textToBase64(text))
+    } catch (e) {
+      this.error = errorText(e)
+    }
+  }
 
   label(s: Scope | null = this.scope): string {
     if (!s) return ''
