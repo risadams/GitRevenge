@@ -125,6 +125,16 @@ func (c *gitConfigs) close() {
 	}
 }
 
+// SetGitConfigTab remembers the Git Config tab's selected file for the next launch; an
+// empty path records that the tab is closed.
+func (a *App) SetGitConfigTab(path string) error {
+	m, err := a.sessions()
+	if err != nil {
+		return err
+	}
+	return m.Settings().Update(func(s *settings.Settings) { s.ConfigTab = path })
+}
+
 // GitConfigScopes returns the global config file and, with a repository path, its local one.
 func (a *App) GitConfigScopes(repoPath string) (ConfigScopes, error) {
 	c, err := a.gitConfig()
