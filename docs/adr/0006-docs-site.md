@@ -16,6 +16,7 @@ The owner's other projects (risadams/Janus, risadams/docker-registry.helm) publi
 - **Links that leave `docs/`** (the README, CONTRIBUTING, source files) are rewritten to GitHub by `src/remark/repo-links.js`, rather than edited in the Markdown.
 - **The sidebar is written by hand** in `sidebars.js`, every page under a short label in the order a reader meets it. `src/plugins/sidebar-complete.js` fails the build if a page is in no sidebar.
 - **Broken links and anchors fail the build.** The `docs` workflow builds the site on pull requests that touch it, and publishes it to the `gh-pages` branch on pushes to `main` and on release tags.
+- **It's served at gitrevenge.com.** `docs-site/static/CNAME` names the domain, so every publish carries it; the deploy replaces the whole `gh-pages` branch, and without the file each publish would drop the custom domain. *Added 2026-10-30.*
 - **Its npm dependencies are separate from the app's.** Nothing under `docs-site/` is imported by the app, and the Go and frontend builds don't need it.
 
 ## Consequences
