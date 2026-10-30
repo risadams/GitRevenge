@@ -10,7 +10,7 @@ There are no accounts, no cloud features and no AI. The only request the app mak
 2. Take [a tour of the window](tour.md), so you know what's where.
 3. Work through a [walkthrough](../walkthroughs/README.md) or two. They use a practice repository you can build yourself, so you can follow along without touching real work.
 
-After that, the guide covers each part of the app in turn: [repositories and tabs](repositories.md), [the commit graph](graph.md), [changes and commits](changes.md), [branches, merges and rebases](branches.md), [diffs and history](history.md), [remotes, LFS and submodules](remotes.md), and [settings and keyboard shortcuts](settings.md).
+After that, the guide covers each part of the app in turn: [repositories and tabs](repositories.md), [the commit graph](graph.md), [changes and commits](changes.md), [branches, merges and rebases](branches.md), [diffs and history](history.md), [remotes, LFS and submodules](remotes.md), [git config](git-config.md), [insights for sprint reviews](insights.md), and [settings and keyboard shortcuts](settings.md).
 
 ## The command palette
 
