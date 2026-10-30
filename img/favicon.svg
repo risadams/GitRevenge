@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- The merge flag drawn for 32 px and below: a full-bleed tile, a heavier mast and a
+       wider merge cut so it reads in a taskbar or title bar. -->
+  <rect x="1" y="1" width="62" height="62" rx="14" fill="#f4ecdd"/>
+  <path d="M11 8 H18 V58 H11 Z" fill="#1a5b6e"/>
+  <path d="M18 11 C28 6 39 16 56 10 V39 C39 45 28 35 18 41 Z" fill="#cb0162"/>
+  <path d="M24 19 C32 19 34 25.5 45 25.5 M24 32 C32 32 34 25.5 45 25.5" fill="none" stroke="#f4ecdd" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="46" cy="25.5" r="5.5" fill="#f4ecdd"/>
+</svg>
