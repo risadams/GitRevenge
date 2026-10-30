@@ -24,6 +24,7 @@
   let newKey = $state('')
   let newKeyValue = $state('')
   let known = $state<string[]>([])
+  let tableEl = $state<HTMLDivElement>()
 
   let scope = $derived(gitConfig.scope)
   let doc = $derived(gitConfig.doc)
@@ -50,6 +51,29 @@
     GitConfigKeys()
       .then((k) => (known = k ?? []))
       .catch(() => {})
+  })
+
+  // Point at a key another part of the app sent us to: scroll to its row and flash it, or
+  // start adding it when nothing sets it.
+  $effect(() => {
+    const key = gitConfig.focusKey
+    if (!key || !doc || !tableEl) return
+    filter = ''
+    showInherited = true
+    const id = canonicalKey(key)
+    void tick().then(() => {
+      gitConfig.focusKey = ''
+      const row = tableEl?.querySelector<HTMLElement>(`[data-key="${CSS.escape(id)}"]`)
+      if (!row) {
+        addOpen = true
+        newKey = key
+        return
+      }
+      row.scrollIntoView({ block: 'center' })
+      row.classList.add('flash')
+      row.querySelector<HTMLElement>('input, select, .segmented button, button')?.focus({ preventScroll: true })
+      setTimeout(() => row.classList.remove('flash'), 1600)
+    })
   })
 
   const edit = (fn: (path: string) => Promise<unknown>) => gitConfig.apply(fn as never)
@@ -131,7 +155,7 @@
   const last = (r: Row) => r.inherited[r.inherited.length - 1]
 </script>
 
-<div class="table">
+<div class="table" bind:this={tableEl}>
   <div class="toolbar">
     <label class="filter">
       <Icon name="search" size={15} />
@@ -197,7 +221,7 @@
           {@const own = r.values.length > 0}
           {@const hidden = r.values.some((v) => maskValue(r.key, v.value) !== v.value) && !revealed[id]}
           {@const changed = change(r)}
-          <div class="row" class:inherited={!own} class:changed>
+          <div class="row" class:inherited={!own} class:changed data-key={id}>
             <div class="key">
               <code>{name(r.key)}</code>
               {#if r.key.split('.').length > 2}<span class="full">{shownKey(r)}</span>{/if}
@@ -443,6 +467,17 @@
     color: var(--ink-mute);
   }
 
+  /* A row another part of the app sent us to. */
+  .row:global(.flash) {
+    animation: flash 1.6s var(--ease-ink);
+  }
+
+  @keyframes flash {
+    from {
+      background: color-mix(in srgb, var(--link) 18%, transparent);
+    }
+  }
+
   /* An edited row: a rose dot in the margin, like a pen mark. */
   .row.changed::before {
     content: '';
@@ -582,6 +617,11 @@
   @media (prefers-reduced-motion: reduce) {
     .row {
       transition: none;
+    }
+
+    .row:global(.flash) {
+      animation: none;
+      background: color-mix(in srgb, var(--link) 12%, transparent);
     }
   }
 </style>

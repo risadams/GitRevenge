@@ -163,6 +163,21 @@ func (r *Repo) CommitSigning(ctx context.Context) Signing {
 	return s
 }
 
+// Identity is who new commits are recorded as, per git config.
+type Identity struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+// CommitIdentity reads user.name and user.email.
+func (r *Repo) CommitIdentity(ctx context.Context) Identity {
+	get := func(key string) string {
+		v, _ := r.ReadString(ctx, "config", "--get", key)
+		return v
+	}
+	return Identity{Name: get("user.name"), Email: get("user.email")}
+}
+
 func parseBool(v string) (bool, error) {
 	switch strings.ToLower(v) {
 	case "true", "yes", "on", "1":

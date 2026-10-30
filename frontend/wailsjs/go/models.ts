@@ -465,6 +465,7 @@ export namespace app {
 	export class WorkingTree {
 	    status: git.Status;
 	    signing: git.Signing;
+	    identity: git.Identity;
 	
 	    static createFrom(source: any = {}) {
 	        return new WorkingTree(source);
@@ -474,6 +475,7 @@ export namespace app {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.status = this.convertValues(source["status"], git.Status);
 	        this.signing = this.convertValues(source["signing"], git.Signing);
+	        this.identity = this.convertValues(source["identity"], git.Identity);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -859,6 +861,20 @@ export namespace git {
 	        this.path = source["path"];
 	        this.commits = source["commits"];
 	        this.changed = source["changed"];
+	    }
+	}
+	export class Identity {
+	    name: string;
+	    email: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Identity(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.email = source["email"];
 	    }
 	}
 	export class LFSFile {
