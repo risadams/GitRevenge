@@ -3,11 +3,13 @@
   // the repositories alone (ADR-0008). The side panel holds every input a result depends on.
   import { session } from '../session.svelte'
   import Icon from '../ui/Icon.svelte'
+  import InkButton from '../ui/InkButton.svelte'
   import { insights, VIEWS, type WindowKind } from './insights.svelte'
   import { ago, attention, latest, perDay, tiles, utcDay, utcMoment } from './model'
   import AttentionView from './AttentionView.svelte'
   import HotspotsView from './HotspotsView.svelte'
   import ShippedView from './ShippedView.svelte'
+  import SummaryDialog from './SummaryDialog.svelte'
 
   const windows: { id: WindowKind; label: string }[] = [
     { id: '7d', label: '7 days' },
@@ -26,6 +28,7 @@
   let failed = $derived(insights.repos.filter((r) => insights.data[r]?.error))
   let multi = $derived(insights.repos.length > 1)
   let pickingDate = $state(false)
+  let summaryOpen = $state(false)
 
   const repoName = (path: string) => session.tabs.find((t) => t.path === path)?.name ?? path.split(/[\\/]/).pop() ?? path
   const scopeValue = $derived(scope ? `${scope.kind}:${scope.id}` : '')
@@ -143,6 +146,14 @@
         {#if multi}<span class="repos">{insights.repos.map(repoName).join(' · ')}</span>{/if}
       </div>
       {#if insights.loading}<span class="busy">Computing…</span>{/if}
+      {#if w}
+        <div class="exports">
+          {#if insights.view !== 'overview'}
+            <button class="pill" onclick={() => insights.exportCSV(insights.view === 'shipped' ? 'shipped' : insights.view === 'attention' ? 'attention' : 'hotspots')}>Export CSV</button>
+          {/if}
+          <InkButton arrow onclick={() => (summaryOpen = true)}>Copy summary</InkButton>
+        </div>
+      {/if}
     </header>
 
     {#if insights.error}<p class="banner" role="alert"><Icon name="warning" size={16} />{insights.error}</p>{/if}
@@ -236,6 +247,8 @@
     {/if}
   </section>
 </div>
+
+{#if summaryOpen}<SummaryDialog onClose={() => (summaryOpen = false)} />{/if}
 
 <style>
   .insights {
@@ -451,6 +464,16 @@
     font-family: var(--font-mono);
     font-size: 13px;
     color: var(--ink-mute);
+  }
+
+  .exports {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .exports .pill {
+    margin-top: 0;
   }
 
   .busy {
