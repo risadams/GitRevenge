@@ -33,6 +33,9 @@ type App struct {
 	updateURL string
 	searches  searches
 	sigs      sigCache
+	configs   gitConfigs
+	// configBackupDir overrides where config backups are kept; tests use it.
+	configBackupDir string
 }
 
 // Environment reports the git installation the app will use.
@@ -60,6 +63,7 @@ func (a *App) Shutdown(context.Context) {
 	if a.sess != nil {
 		a.sess.CloseAll()
 	}
+	a.configs.close()
 	if a.net.server != nil {
 		_ = a.net.server.Close()
 	}

@@ -50,6 +50,113 @@ export namespace app {
 		    return a;
 		}
 	}
+	export class ConfigProblem {
+	    line: number;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigProblem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.line = source["line"];
+	        this.message = source["message"];
+	    }
+	}
+	export class ConfigDoc {
+	    path: string;
+	    text: string;
+	    entries: git.ConfigEntry[];
+	    exists: boolean;
+	    dirty: boolean;
+	    changedOnDisk: boolean;
+	    problem?: ConfigProblem;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigDoc(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.text = source["text"];
+	        this.entries = this.convertValues(source["entries"], git.ConfigEntry);
+	        this.exists = source["exists"];
+	        this.dirty = source["dirty"];
+	        this.changedOnDisk = source["changedOnDisk"];
+	        this.problem = this.convertValues(source["problem"], ConfigProblem);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class ConfigSaveResult {
+	    saved: boolean;
+	    doc: ConfigDoc;
+	    diskText: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigSaveResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.saved = source["saved"];
+	        this.doc = this.convertValues(source["doc"], ConfigDoc);
+	        this.diskText = source["diskText"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ConfigScopes {
+	    global: string;
+	    globalAlt: string;
+	    local: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigScopes(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.global = source["global"];
+	        this.globalAlt = source["globalAlt"];
+	        this.local = source["local"];
+	    }
+	}
 	export class Environment {
 	    gitPath: string;
 	    gitVersion: string;
@@ -517,6 +624,26 @@ export namespace git {
 		    }
 		    return a;
 		}
+	}
+	export class ConfigEntry {
+	    scope: string;
+	    file: string;
+	    key: string;
+	    value: string;
+	    implicit: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConfigEntry(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.scope = source["scope"];
+	        this.file = source["file"];
+	        this.key = source["key"];
+	        this.value = source["value"];
+	        this.implicit = source["implicit"];
+	    }
 	}
 	export class Side {
 	    exists: boolean;
@@ -1076,6 +1203,46 @@ export namespace git {
 	        this.prunable = source["prunable"];
 	        this.current = source["current"];
 	    }
+	}
+
+}
+
+export namespace gitconfig {
+	
+	export class Backup {
+	    id: string;
+	    // Go type: time
+	    time: any;
+	    size: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Backup(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.time = this.convertValues(source["time"], null);
+	        this.size = source["size"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 
 }
