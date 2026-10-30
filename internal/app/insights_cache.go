@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/risadams/gitrevenge/internal/git"
+	"github.com/risadams/gitrevenge/internal/settings"
 )
 
 // Insights results are kept in memory for the session (ADR-0008: nothing is stored). Each
@@ -96,6 +97,16 @@ func cachedInsight[T any](ctx context.Context, a *App, g *git.Repo, root, view s
 	}
 	a.insights.put(key, v)
 	return v, nil
+}
+
+// SetInsightsTab remembers the Insights tab's scope ("repo:<path>" or "group:<name>") for
+// the next launch; "" records that the tab is closed.
+func (a *App) SetInsightsTab(scope string) error {
+	m, err := a.sessions()
+	if err != nil {
+		return err
+	}
+	return m.Settings().Update(func(s *settings.Settings) { s.InsightsTab = scope })
 }
 
 // InsightsFetchedAt returns when the repository last fetched (FETCH_HEAD's modification

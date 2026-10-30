@@ -186,6 +186,8 @@ export function SetGitConfigText(arg1:string,arg2:string):Promise<app.ConfigDoc>
 
 export function SetGraphDensity(arg1:string):Promise<void>;
 
+export function SetInsightsTab(arg1:string):Promise<void>;
+
 export function SetKeybindings(arg1:Record<string, string>):Promise<void>;
 
 export function SetPreferences(arg1:app.Preferences):Promise<void>;

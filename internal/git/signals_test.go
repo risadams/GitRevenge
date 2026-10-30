@@ -44,6 +44,8 @@ func branchesFixture(t *testing.T) *gittest.Repo {
 
 	fx := gittest.Clone(t, origin)
 	fx.Git("branch", "--track", "tracking", "origin/clean")
+	// The same name and commit as a remote branch, but no upstream: the same work.
+	fx.Git("branch", "--no-track", "clean", "origin/clean")
 	fx.Git("branch", "local-only", "origin/main~1")
 	fx.Checkout("local-only")
 	fx.CommitFile("d.txt", "d\n", "Local work")

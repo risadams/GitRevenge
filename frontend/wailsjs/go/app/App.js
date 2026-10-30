@@ -362,6 +362,10 @@ export function SetGraphDensity(arg1) {
   return window['go']['app']['App']['SetGraphDensity'](arg1);
 }
 
+export function SetInsightsTab(arg1) {
+  return window['go']['app']['App']['SetInsightsTab'](arg1);
+}
+
 export function SetKeybindings(arg1) {
   return window['go']['app']['App']['SetKeybindings'](arg1);
 }
