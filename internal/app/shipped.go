@@ -24,6 +24,8 @@ type InsightsInputs struct {
 	// AsOf is the point windows and ages are measured from, Unix seconds, or 0 for the
 	// target's tip commit.
 	AsOf int64 `json:"asOf"`
+	// Thresholds decide which branch signals are flags.
+	Thresholds Thresholds `json:"thresholds"`
 }
 
 // InsightsWindow is what inputs resolved to, printed with every result so it can be

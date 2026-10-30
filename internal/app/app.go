@@ -36,6 +36,7 @@ type App struct {
 	searches  searches
 	sigs      sigCache
 	configs   gitConfigs
+	conflicts conflictChecks
 	// configBackupDir overrides where config backups are kept; tests use it.
 	configBackupDir string
 }
@@ -66,6 +67,7 @@ func (a *App) Shutdown(context.Context) {
 		a.sess.CloseAll()
 	}
 	a.configs.close()
+	a.conflicts.stopAll()
 	if a.net.server != nil {
 		_ = a.net.server.Close()
 	}

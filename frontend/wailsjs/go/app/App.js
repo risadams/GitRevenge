@@ -174,6 +174,14 @@ export function Init(arg1, arg2) {
   return window['go']['app']['App']['Init'](arg1, arg2);
 }
 
+export function InsightsBranches(arg1, arg2) {
+  return window['go']['app']['App']['InsightsBranches'](arg1, arg2);
+}
+
+export function InsightsHotspots(arg1, arg2) {
+  return window['go']['app']['App']['InsightsHotspots'](arg1, arg2);
+}
+
 export function InsightsShipped(arg1, arg2) {
   return window['go']['app']['App']['InsightsShipped'](arg1, arg2);
 }
