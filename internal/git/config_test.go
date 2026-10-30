@@ -87,6 +87,11 @@ func TestEffectiveConfig(t *testing.T) {
 		t.Errorf("local entry = %+v", e)
 	}
 
+	// The runner's own -c settings aren't the user's config.
+	if slices.ContainsFunc(entries, func(e ConfigEntry) bool { return e.Scope == "command" }) {
+		t.Errorf("command-line config listed: %+v", entries)
+	}
+
 	// Outside a repository there is no local config.
 	entries, err = r.EffectiveConfig(context.Background(), "")
 	if err != nil {
