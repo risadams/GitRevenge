@@ -53,15 +53,27 @@ func (r *Repo) OpenBranches(ctx context.Context, target string, limit int) ([]Op
 	if err != nil {
 		return nil, err
 	}
-	var bs []OpenBranch
+	var rows [][]string
+	// Remote branches by name without the remote ("feature/x"), with their tips.
+	remote := map[string][]string{}
 	for line := range strings.SplitSeq(out, "\n") {
 		f := strings.Split(line, "\x00")
 		if len(f) != 5 || f[0] == targetRef || strings.HasSuffix(f[0], "/HEAD") {
 			continue
 		}
+		rows = append(rows, f)
+		if rest, ok := strings.CutPrefix(f[0], "refs/remotes/"); ok {
+			if _, name, ok := strings.Cut(rest, "/"); ok {
+				remote[name] = append(remote[name], f[2])
+			}
+		}
+	}
+	var bs []OpenBranch
+	for _, f := range rows {
 		local := strings.HasPrefix(f[0], "refs/heads/")
-		// A local branch that tracks a remote is the same work as its remote branch.
-		if local && f[4] != "" {
+		// A local branch that tracks a remote, or that matches a remote branch of the same
+		// name exactly, is the same work as that remote branch.
+		if local && (f[4] != "" || slices.Contains(remote[f[1]], f[2])) {
 			continue
 		}
 		at, _ := strconv.ParseInt(f[3], 10, 64)

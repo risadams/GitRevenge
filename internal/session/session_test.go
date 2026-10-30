@@ -198,6 +198,23 @@ func TestRestoreKeepsConfigTab(t *testing.T) {
 	}
 }
 
+func TestRestoreKeepsInsightsTab(t *testing.T) {
+	m, store := newManager(t)
+	if _, err := m.Open(context.Background(), gittest.New(t).Dir); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Update(func(s *settings.Settings) { s.InsightsTab = "group:Harbour" }); err != nil {
+		t.Fatal(err)
+	}
+	if err := m.SetActive(settings.InsightsTabID); err != nil {
+		t.Fatal(err)
+	}
+	m.CloseAll()
+	if active, _ := m.Restore(context.Background()); active != settings.InsightsTabID {
+		t.Fatalf("active = %q, want the Insights tab", active)
+	}
+}
+
 func TestOnChangeReportsRepoChanges(t *testing.T) {
 	m, _ := newManager(t)
 	changes := make(chan watch.Kind, 16)

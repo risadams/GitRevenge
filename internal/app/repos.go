@@ -35,6 +35,10 @@ type SessionState struct {
 	ConfigTab string `json:"configTab"`
 	// ConfigTabID is Active's value for the Git Config tab.
 	ConfigTabID string `json:"configTabId"`
+	// InsightsTab is the Insights tab's scope from last time, or "" if it was closed.
+	InsightsTab string `json:"insightsTab"`
+	// InsightsTabID is Active's value for the Insights tab.
+	InsightsTabID string `json:"insightsTabId"`
 }
 
 // FailedRepo is a saved tab that could not be reopened.
@@ -128,11 +132,13 @@ func (a *App) RestoreSession() (SessionState, error) {
 	_, _ = a.gitConfig()
 	active, failed := m.Restore(ctx)
 	st := SessionState{
-		Active:      active,
-		Tabs:        []RepoTab{},
-		Failed:      []FailedRepo{},
-		ConfigTab:   m.Settings().Get().ConfigTab,
-		ConfigTabID: settings.ConfigTabID,
+		Active:        active,
+		Tabs:          []RepoTab{},
+		Failed:        []FailedRepo{},
+		ConfigTab:     m.Settings().Get().ConfigTab,
+		ConfigTabID:   settings.ConfigTabID,
+		InsightsTab:   m.Settings().Get().InsightsTab,
+		InsightsTabID: settings.InsightsTabID,
 	}
 	for _, r := range m.List() {
 		st.Tabs = append(st.Tabs, tabFor(ctx, r))

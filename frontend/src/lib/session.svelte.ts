@@ -35,6 +35,10 @@ class Session {
   configTabId = $state('gitrevenge:gitconfig')
   /** The config file the Git Config tab had selected last session, or '' if it was closed. */
   savedConfigTab = ''
+  /** The active value for the Insights tab; never a repository path. */
+  insightsTabId = $state('gitrevenge:insights')
+  /** The Insights tab's scope last session ("repo:…" or "group:…"), or '' if it was closed. */
+  savedInsightsTab = ''
 
   activeTab = $derived(this.tabs.find((t) => t.path === this.active))
 
@@ -55,6 +59,8 @@ class Session {
     this.tabs = st.tabs
     this.configTabId = st.configTabId
     this.savedConfigTab = st.configTab
+    this.insightsTabId = st.insightsTabId
+    this.savedInsightsTab = st.insightsTab
     this.active = st.active
     if (st.failed.length > 0) {
       this.error = `Couldn't reopen: ${st.failed.map((f) => f.path).join(', ')}`
