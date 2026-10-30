@@ -3,6 +3,14 @@ import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
+import ThemedImage from '@theme/ThemedImage';
+
+// Screenshots live with the docs (docs/img/), in a light and a dark version; see
+// scripts/screenshots.mjs.
+const shot = (name) => ({
+  light: require(`../../../docs/img/${name}-light.webp`).default,
+  dark: require(`../../../docs/img/${name}-dark.webp`).default,
+});
 
 const features = [
   {
@@ -34,20 +42,20 @@ const features = [
 const docLinks = [
   {
     title: 'Install',
-    desc: 'Windows and macOS, what you need, and your first repository.',
+    desc: 'Windows and macOS, and what you need first.',
     to: '/docs/guide/install',
     accent: 'rose',
   },
   {
-    title: 'The graph',
-    desc: 'Scroll, search, jump and filter.',
-    to: '/docs/guide/graph',
+    title: 'Take the tour',
+    desc: 'Every part of the window, in one picture.',
+    to: '/docs/guide/tour',
     accent: 'navy',
   },
   {
-    title: 'Branches',
-    desc: 'Merge, rebase, cherry-pick, and the conflict tool.',
-    to: '/docs/guide/branches',
+    title: 'Walkthroughs',
+    desc: 'Commit, rebase, resolve, undo, step by step.',
+    to: '/docs/walkthroughs',
     accent: 'plum',
   },
   {
@@ -55,6 +63,27 @@ const docLinks = [
     desc: 'Settings, and every key you can press or rebind.',
     to: '/docs/guide/settings',
     accent: 'amber',
+  },
+];
+
+const demos = [
+  {
+    name: 'stage-and-commit',
+    title: 'Commit part of a file',
+    body: 'Stage a hunk or a few lines, write a message, Ctrl+Enter.',
+    to: '/docs/walkthroughs/first-commit',
+  },
+  {
+    name: 'rebase',
+    title: 'Tidy a branch',
+    body: 'Drop, squash and fixup in an editor, not a text file.',
+    to: '/docs/walkthroughs/tidy-a-branch',
+  },
+  {
+    name: 'conflict',
+    title: 'Resolve a conflict',
+    body: 'Ours, theirs and the result side by side, then Continue.',
+    to: '/docs/walkthroughs/resolve-a-conflict',
   },
 ];
 
@@ -79,6 +108,40 @@ function Hero() {
         <Link className="hero-button-secondary" to="https://github.com/risadams/GitRevenge/releases/latest">
           Download
         </Link>
+      </div>
+    </section>
+  );
+}
+
+function Showcase() {
+  return (
+    <section className="showcase-section">
+      <ThemedImage
+        className="showcase-shot"
+        alt="Git Revenge showing the history of a project: branches, a stash and uncommitted changes"
+        sources={shot('repository')}
+      />
+    </section>
+  );
+}
+
+function DemosSection() {
+  return (
+    <section className="demos-section">
+      <div className="features-header">
+        <div className="features-eyebrow">see it work</div>
+        <h2 className="features-heading">
+          The hard parts of git, <em className="features-heading-em">made visible.</em>
+        </h2>
+      </div>
+      <div className="demo-grid">
+        {demos.map(({ name, title, body, to }) => (
+          <Link key={name} className="demo-card" to={to}>
+            <ThemedImage className="demo-card-shot" alt={title} sources={shot(name)} />
+            <p className="feature-card-title">{title}</p>
+            <p className="feature-card-body">{body}</p>
+          </Link>
+        ))}
       </div>
     </section>
   );
@@ -157,8 +220,10 @@ export default function Home() {
     <Layout title="A fast, local-only git client" description={siteConfig.tagline}>
       <main>
         <Hero />
-        <QuickInstall />
+        <Showcase />
         <FeaturesSection />
+        <DemosSection />
+        <QuickInstall />
         <DocLinksSection />
       </main>
     </Layout>

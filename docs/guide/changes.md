@@ -8,7 +8,10 @@ Click **Uncommitted changes** at the top of the graph (or choose **Show uncommit
 - Each file has its own stage and discard buttons.
 - Open a file to stage part of it. In the **Unified** diff, each hunk has a **Stage hunk** button, and you can select individual lines and stage just those. Staged changes can be unstaged the same way.
 
-Discarding asks you to confirm first, since it throws your changes away.
+![A unified diff with Stage hunk and Discard hunk buttons](../img/diff-unified-light.webp#gh-light-mode-only)
+![A unified diff with Stage hunk and Discard hunk buttons](../img/diff-unified-dark.webp#gh-dark-mode-only)
+
+Discarding asks you to confirm first, since it throws your changes away. The walkthrough [Stage and commit](../walkthroughs/first-commit.md) goes through it from start to finish.
 
 ## Committing
 
