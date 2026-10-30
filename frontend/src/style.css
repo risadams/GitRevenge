@@ -363,6 +363,152 @@ textarea {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
+/* The pill form, for a value picked from a few: rounded track, the choice raised on paper. */
+.segmented.pills {
+  padding: 3px;
+  gap: 2px;
+  border-radius: 999px;
+  background: var(--paper-deep);
+}
+
+.segmented.pills button {
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.segmented.pills button[aria-pressed='true'] {
+  box-shadow: 0 0 0 1px var(--paper-edge);
+}
+
+/* An on/off switch: a real checkbox inside, the track drawn after it. */
+.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.switch .track {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  border: 1px solid var(--paper-edge);
+  border-radius: 999px;
+  background: var(--paper-deep);
+  transition: background-color 0.25s var(--ease-ink);
+}
+
+.switch .track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ink-mute);
+  transition: transform 0.25s var(--ease-ink);
+}
+
+.switch input:checked + .track {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.switch input:checked + .track::after {
+  transform: translateX(18px);
+  background: var(--on-accent);
+}
+
+.switch input:focus-visible + .track {
+  outline: 2px solid var(--link);
+  outline-offset: 3px;
+}
+
+.switch input:disabled + .track {
+  opacity: 0.5;
+}
+
+/* A mono text field for values: paths, URLs, commands. */
+.field {
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+
+.field:focus {
+  border-color: var(--link);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--selection);
+}
+
+/* An inline action in italic serif, set in the link colour. */
+.textbtn {
+  min-height: 30px;
+  padding: 4px 6px;
+  background: none;
+  border: none;
+  color: var(--link);
+  font-size: 14px;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.textbtn:hover:not(:disabled) {
+  background: none;
+  color: var(--link-hover);
+}
+
+/* A small uppercase mono label on an accent wash: a scope, a kind. */
+.tag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-a) 14%, transparent);
+  color: var(--accent-a);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tag.rose {
+  background: color-mix(in srgb, var(--link) 13%, transparent);
+  color: var(--link-hover);
+}
+
+.tag.sepia {
+  background: color-mix(in srgb, var(--accent-c) 15%, transparent);
+  color: var(--accent-c);
+}
+
+.tag.plum {
+  background: color-mix(in srgb, var(--accent-b) 14%, transparent);
+  color: var(--accent-b);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch .track,
+  .switch .track::after {
+    transition: none;
+  }
+}
+
 /* Dialog and panel forms. */
 .form-field {
   display: flex;
