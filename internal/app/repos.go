@@ -174,6 +174,7 @@ func (a *App) CloseRepo(path string) error {
 	if err != nil {
 		return err
 	}
+	a.undo.forget(path)
 	return m.Close(path)
 }
 
