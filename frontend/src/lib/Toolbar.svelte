@@ -26,9 +26,11 @@
     redoLabel = info?.redo ?? ''
   }
 
-  // Re-read after anything changes on disk (including our own operations).
+  // Re-read after anything changes on disk, and whenever the undo history itself changes:
+  // an operation can reach disk (and the watcher) before its undo entry is recorded.
   $effect(() => {
     void session.revision[path]
+    void session.undoRevision[path]
     void refreshUndo()
   })
 

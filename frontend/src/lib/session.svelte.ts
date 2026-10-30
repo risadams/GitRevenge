@@ -29,6 +29,8 @@ class Session {
   error = $state('')
   /** Per-repo counter bumped on every change on disk; views re-fetch when it moves. */
   revision = $state<Record<string, number>>({})
+  /** Per-repo counter bumped when its undo or redo history changes. */
+  undoRevision = $state<Record<string, number>>({})
   /** The active value for the Git Config tab; never a repository path. */
   configTabId = $state('gitrevenge:gitconfig')
   /** The config file the Git Config tab had selected last session, or '' if it was closed. */
@@ -38,6 +40,11 @@ class Session {
 
   async restore() {
     EventsOn('repo:changed', (c: RepoChange) => void this.onChange(c))
+    // The watcher can report an operation before its undo entry exists, so undo history
+    // has its own event.
+    EventsOn('undo:changed', (c: { path: string }) => {
+      this.undoRevision[c.path] = (this.undoRevision[c.path] ?? 0) + 1
+    })
     // Global and included config apply to every repository, so a change refreshes them all:
     // signing, identity, and pull and merge defaults are read again.
     EventsOn('gitconfig:changed', () => {
