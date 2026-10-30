@@ -1,4 +1,16 @@
-import { Fetch, GroupBatch, Groups, InsightsBranches, InsightsFetchedAt, InsightsShipped, InsightsTags, SetInsightsTab } from '../../../wailsjs/go/app/App.js'
+import {
+  Fetch,
+  GroupBatch,
+  Groups,
+  InsightsBranches,
+  InsightsFetchedAt,
+  InsightsHotspots,
+  InsightsShipped,
+  InsightsTags,
+  InsightsThresholds,
+  SetInsightsTab,
+  SetInsightsThresholds,
+} from '../../../wailsjs/go/app/App.js'
 import type { app, git, settings } from '../../../wailsjs/go/models'
 import { EventsOn } from '../../../wailsjs/runtime/runtime.js'
 import { errorText } from '../errors'
@@ -15,21 +27,26 @@ export interface Scope {
 
 export type WindowKind = '7d' | '14d' | 'month' | 'releases'
 
-export type View = 'overview' | 'shipped'
+export type View = 'overview' | 'shipped' | 'attention' | 'hotspots'
 
 export const VIEWS: { id: View; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'shipped', label: 'Shipped' },
+  { id: 'attention', label: 'Needs attention' },
+  { id: 'hotspots', label: 'Hotspots' },
 ]
+
+/** The defaults, until a scope's saved thresholds load. */
+const DEFAULT_THRESHOLDS = { stale: 7, longLived: 14, behind: 50, size: 500 }
 
 /** One repository's results. */
 interface RepoData {
   shipped?: app.ShippedResult
   branches?: app.AttentionResult
-  /** Conflict checks by branch name, for the branch tips in branches. */
-  conflicts: Record<string, ConflictInfo>
   /** When the repository last fetched, Unix seconds; 0 if never. Display only. */
   fetchedAt: number
+  /** Loaded when the Hotspots view is open. */
+  hotspots?: app.HotspotsResult
   error: string
 }
 
@@ -62,9 +79,13 @@ class InsightsTab {
   /** An explicit as-of point, Unix seconds, or 0 for each target's tip. */
   asOf = $state(0)
   view = $state<View>('overview')
+  thresholds = $state<app.Thresholds>({ ...DEFAULT_THRESHOLDS } as app.Thresholds)
   groups = $state<settings.Group[]>([])
   tags = $state<git.TagInfo[]>([])
   data = $state<Record<string, RepoData>>({})
+  /** Dry-run merge results by target and branch commit. They're kept apart from data
+   * because cached checks are reported at once, often before the branch list arrives. */
+  conflicts = $state<Record<string, ConflictInfo>>({})
   loading = $state(false)
   error = $state('')
   fetching = $state(false)
@@ -82,13 +103,11 @@ class InsightsTab {
   )
 
   /** Every measured branch in scope, with its conflict check once known. */
-  branches = $derived.by((): Ranked[] =>
+  branches = $derived.by((): Ranked<app.BranchSignal>[] =>
     this.repos.flatMap((repo) => {
       const d = this.data[repo]
-      return (d?.branches?.branches ?? []).map((value) => {
-        const c = d?.conflicts[value.name]
-        return { repo, value, conflict: c && c.sha === value.sha ? c : undefined }
-      })
+      const target = d?.branches?.window.targetSha ?? ''
+      return (d?.branches?.branches ?? []).map((value) => ({ repo, value, conflict: this.conflicts[`${target}:${value.sha}`] }))
     }),
   )
 
@@ -142,6 +161,7 @@ class InsightsTab {
     // Release windows go by tags, which only make sense for one repository.
     if (s.kind === 'group' && this.window === 'releases') this.window = '14d'
     this.tags = s.kind === 'repo' ? ((await InsightsTags(s.id).catch(() => null)) ?? []) : []
+    this.thresholds = (await InsightsThresholds(encode(s)).catch(() => null)) ?? ({ ...DEFAULT_THRESHOLDS } as app.Thresholds)
     await this.load()
   }
 
@@ -154,13 +174,31 @@ class InsightsTab {
     await this.load()
   }
 
+  async setView(v: View) {
+    this.view = v
+    if (v === 'hotspots') await this.loadHotspots()
+  }
+
+  /** Saves the scope's thresholds and measures the branches against them. */
+  async setThresholds(t: app.Thresholds) {
+    if (!this.scope) return
+    try {
+      await SetInsightsThresholds(encode(this.scope), t)
+    } catch (e) {
+      this.error = errorText(e)
+      return
+    }
+    this.thresholds = t
+    await this.load()
+  }
+
   async setAsOf(seconds: number) {
     this.asOf = seconds
     await this.load()
   }
 
   private inputs(asOf = this.asOf): app.InsightsInputs {
-    return { target: '', window: this.window, since: 0, until: 0, from: this.from, to: this.to, asOf, thresholds: { stale: 0, longLived: 0, behind: 0, size: 0 } } as app.InsightsInputs
+    return { target: '', window: this.window, since: 0, until: 0, from: this.from, to: this.to, asOf, thresholds: this.thresholds } as app.InsightsInputs
   }
 
   /** Computes every repository in scope, 4 at a time. A group shares one as-of point, the
@@ -181,10 +219,11 @@ class InsightsTab {
         asOf = sharedAsOf(own)
       }
       await each(repos, PARALLEL, async (repo) => {
-        const d: RepoData = { conflicts: this.data[repo]?.conflicts ?? {}, fetchedAt: 0, error: '' }
+        const d: RepoData = { fetchedAt: 0, error: '' }
         try {
           const inputs = this.inputs(asOf)
           ;[d.shipped, d.branches, d.fetchedAt] = await Promise.all([InsightsShipped(repo, inputs), InsightsBranches(repo, inputs), InsightsFetchedAt(repo)])
+          if (this.view === 'hotspots') d.hotspots = await InsightsHotspots(repo, inputs)
         } catch (e) {
           d.error = errorText(e)
         }
@@ -193,6 +232,21 @@ class InsightsTab {
     } finally {
       if (gen === this.generation) this.loading = false
     }
+  }
+
+  /** Loads hotspots for repositories that don't have them for the current results. */
+  async loadHotspots() {
+    const gen = this.generation
+    await each(this.repos, PARALLEL, async (repo) => {
+      const d = this.data[repo]
+      if (!d?.shipped || d.hotspots) return
+      // The same as-of point the other results used, so a group's windows still line up.
+      const h = await InsightsHotspots(repo, this.inputs(d.shipped.window.asOf)).catch((e) => {
+        d.error = errorText(e)
+        return undefined
+      })
+      if (gen === this.generation && h) d.hotspots = h
+    })
   }
 
   /** Fetches the scope's repositories, then recomputes. */
@@ -214,9 +268,7 @@ class InsightsTab {
     if (this.listening) return
     this.listening = true
     EventsOn('insights:conflict', (c: ConflictInfo) => {
-      const repo = this.repos.find((r) => samePath(r, c.repo))
-      const d = repo ? this.data[repo] : undefined
-      if (d && d.branches?.window.targetSha === c.targetSha) d.conflicts[c.branch] = c
+      this.conflicts[`${c.targetSha}:${c.sha}`] = c
     })
     // A repository's refs moved (a commit, merge or fetch): compute it again. The backend
     // cache makes repositories that didn't change free.

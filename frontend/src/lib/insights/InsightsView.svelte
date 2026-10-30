@@ -5,6 +5,8 @@
   import Icon from '../ui/Icon.svelte'
   import { insights, VIEWS, type WindowKind } from './insights.svelte'
   import { ago, attention, latest, perDay, tiles, utcDay, utcMoment } from './model'
+  import AttentionView from './AttentionView.svelte'
+  import HotspotsView from './HotspotsView.svelte'
   import ShippedView from './ShippedView.svelte'
 
   const windows: { id: WindowKind; label: string }[] = [
@@ -114,8 +116,10 @@
     <div class="group views">
       <h2 class="meta">View</h2>
       {#each VIEWS as v (v.id)}
-        <button class="item" class:on={insights.view === v.id} aria-current={insights.view === v.id ? 'page' : undefined} onclick={() => (insights.view = v.id)}
-          >{v.label}{#if v.id === 'shipped' && w}<span class="count">{insights.items.length}</span>{/if}</button
+        <button class="item" class:on={insights.view === v.id} aria-current={insights.view === v.id ? 'page' : undefined} onclick={() => insights.setView(v.id)}
+          >{v.label}{#if v.id === 'shipped' && w}<span class="count">{insights.items.length}</span>{:else if v.id === 'attention' && w}<span class="count"
+              >{t.attention}</span
+            >{/if}</button
         >
       {/each}
     </div>
@@ -151,6 +155,10 @@
 
     {#if w && insights.view === 'shipped'}
       <ShippedView />
+    {:else if w && insights.view === 'attention'}
+      <AttentionView />
+    {:else if w && insights.view === 'hotspots'}
+      <HotspotsView />
     {:else if w}
       <div class="tiles">
         <div class="tile teal">
@@ -187,7 +195,7 @@
 
       <div class="columns">
         <section class="list" aria-labelledby="attn">
-          <h2 id="attn">Needs attention</h2>
+          <h2 id="attn">Needs attention <button class="textbtn all" onclick={() => insights.setView('attention')}>all {t.attention} →</button></h2>
           {#each flagged.slice(0, 5) as b (b.repo + b.value.name)}
             <div class="row">
               <div class="who">
@@ -205,7 +213,7 @@
         </section>
 
         <section class="list" aria-labelledby="latest">
-          <h2 id="latest">Latest ships</h2>
+          <h2 id="latest">Latest ships <button class="textbtn all" onclick={() => insights.setView('shipped')}>all {t.shipped} →</button></h2>
           {#each ships.slice(0, 5) as s (s.repo + s.value.sha)}
             <div class="row">
               <div class="who">
@@ -362,6 +370,11 @@
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--ink-faint);
+  }
+
+  .all {
+    margin-left: auto;
+    font-weight: 400;
   }
 
   .fresh {
