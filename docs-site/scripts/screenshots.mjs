@@ -9,9 +9,11 @@
 //
 //   1. Map a drive to an empty folder, so paths in the shots read T:\tidewater:
 //        subst T: C:\some\empty\folder
-//   2. Point the app's settings at a scratch folder, so your own repositories stay out of
-//      the shots, and start it:
-//        $env:APPDATA = "C:\some\scratch\appdata"; wails dev -browser=false
+//   2. Point the app's settings at a scratch folder and its global git config at the demo's,
+//      so your own repositories and config stay out of the shots, and start it:
+//        $env:APPDATA = "C:\some\scratch\appdata"; $env:GIT_CONFIG_GLOBAL = "T:\gitconfig"
+//        wails dev -browser=false
+//      demo-repo.sh writes T:\gitconfig, and the Git Config scenes refuse to run without it.
 //   3. From docs-site/:
 //        node scripts/screenshots.mjs [scene ...]
 //
@@ -233,6 +235,9 @@ async function still(page, name, theme, clip) {
   await page.mouse.move(WIDTH - 2, HEIGHT - 2)
   await hideCursor(page)
   await sleep(150)
+  // Headless Chrome paints on demand, so a screenshot can reuse a frame from mid-transition
+  // (a row still fading from its hover). Two animation frames make it paint the page as it is.
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
   const png = path.join(work, `${name}-${theme}.png`)
   await page.screenshot({ path: png, clip })
   execFileSync('magick', [png, '-quality', '90', '-define', 'webp:method=6', path.join(out, `${name}-${theme}.webp`)])
@@ -541,6 +546,79 @@ scenes.searchAnim = (page) =>
       await keys(p, 'Enter', { hold: 1200 })
     },
   )
+
+// ── The Git Config tab ────────────────────────────────────────────────────────────────
+
+/** Opens the Git Config tab on tidewater's config (or global, with global set) in one view,
+ * after a reset. It refuses to run unless the app's global config is the demo's made-up one,
+ * so nobody's own config can end up in a screenshot. */
+async function gitConfigTab(p, view, { global = false } = {}) {
+  await reset(p, ['tidewater'], { clean: true })
+  const demo = path.win32.join(DEMO, 'gitconfig').toLowerCase()
+  const actual = await p.evaluate(() => window.go.app.App.GitConfigScopes('').then((s) => s.global))
+  if (path.win32.resolve(actual).toLowerCase() !== demo) {
+    throw new Error(`the app reads global config from ${actual}; start wails dev with GIT_CONFIG_GLOBAL=${demo}`)
+  }
+  // A tab left from an earlier scene holds that scene's edits: close it without saving.
+  await p.evaluate(async () => {
+    const close = document.querySelector('[aria-label="Close Git Config"]')
+    if (!close) return
+    close.click()
+    await new Promise((r) => setTimeout(r, 300))
+    ;[...document.querySelectorAll('[role=dialog] button')].find((b) => b.textContent.includes('Discard'))?.click()
+  })
+  await sleep(400)
+  await click(p, byText('tidewater', 'button'), { button: 'right', pause: 400 })
+  await click(p, byText('Edit git config…'), { pause: 900 })
+  if (global) await click(p, `::-p-xpath(//nav[contains(@class,"rail")]//button[contains(., "Global")])`, { pause: 700 })
+  await click(p, `::-p-xpath(//nav[contains(@class,"rail")]//button[normalize-space(text())="${view}"])`, { pause: 900 })
+  // Park the pointer in one jump: a glide would cross rows and leave one mid-fade from its
+  // hover in the still.
+  await p.mouse.move(WIDTH - 2, HEIGHT - 2)
+  mouse = { x: WIDTH - 2, y: HEIGHT - 2 }
+  await sleep(400)
+}
+
+scenes.gitconfig = (page) =>
+  stills(page, 'gitconfig-settings', async (p) => {
+    await gitConfigTab(p, 'Settings')
+    // Two edits, so changed rows show their marks.
+    await click(p, `::-p-xpath(//div[@data-key="core.autocrlf"]//button[normalize-space()="true"])`)
+    await click(p, `::-p-xpath(//div[@data-key="core.filemode"]//input)`)
+    await sleep(600)
+  })
+
+scenes.gitconfigAliases = (page) =>
+  stills(page, 'gitconfig-aliases', async (p) => {
+    await gitConfigTab(p, 'Aliases', { global: true })
+  })
+
+scenes.gitconfigRaw = (page) =>
+  stills(page, 'gitconfig-raw', async (p) => {
+    await gitConfigTab(p, 'Raw text')
+    // Break the first header, so the error shows on its line.
+    await click(p, `::-p-xpath(//div[contains(@class,"cm-line")][normalize-space()="[core]"])`)
+    await p.keyboard.press('End')
+    await p.keyboard.press('Backspace')
+    await sleep(1200)
+  })
+
+scenes.gitconfigHistory = (page) =>
+  stills(page, 'gitconfig-history', async (p) => {
+    await gitConfigTab(p, 'Settings')
+    // Two saves, so there are backups to compare. The file is named as the app knows it,
+    // which may differ from T:\ (git resolves a mapped drive), since backups go by path.
+    await p.evaluate(async (repo) => {
+      const A = window.go.app.App
+      const file = (await A.GitConfigScopes(repo)).local
+      await A.OpenGitConfig(file)
+      await A.SetGitConfig(file, 'fetch.prune', 'true')
+      await A.SaveGitConfig(file, true)
+      await A.SetGitConfig(file, 'pull.rebase', 'merges')
+      await A.SaveGitConfig(file, true)
+    }, REPO)
+    await click(p, `::-p-xpath(//nav[contains(@class,"rail")]//button[normalize-space(text())="History"])`, { pause: 1200 })
+  })
 
 // ── Main ──────────────────────────────────────────────────────────────────────────────
 
