@@ -1,14 +1,48 @@
 <script lang="ts">
-  // The Git Config tab (#195): pick a config file, edit its working copy, save or discard.
+  // The Git Config tab (#195): the config files and views down the side, the selected file's
+  // working copy beside them, saved or discarded from the header.
+  import { formatShortcut } from '../commands.svelte'
   import Icon from '../ui/Icon.svelte'
   import InkButton from '../ui/InkButton.svelte'
   import Modal from '../ui/Modal.svelte'
   import ConfigTable from './ConfigTable.svelte'
   import { gitConfig, problemText } from './config.svelte'
+  import { baseName, type Scope } from './scopes'
 
   let scope = $derived(gitConfig.scope)
   let doc = $derived(gitConfig.doc)
   let outside = $derived(scope ? gitConfig.outside[scope.path] : false)
+
+  /** The handwritten note over the title, saying what the file applies to. */
+  function eyebrow(s: Scope): string {
+    switch (s.kind) {
+      case 'global':
+        return 'every repository on this machine'
+      case 'local':
+        return `only in ${gitConfig.label(s).replace(/^Local · /, '')}`
+      case 'file':
+        return 'read in by an include'
+    }
+  }
+
+  function title(s: Scope): string {
+    switch (s.kind) {
+      case 'global':
+        return 'Global config'
+      case 'local':
+        return 'Repository config'
+      case 'file':
+        return baseName(s.path)
+    }
+  }
+
+  /** The file as the rail shows it under the scope's name. */
+  function shortPath(s: Scope): string {
+    if (s.kind === 'local') return '.git/config'
+    if (s.kind === 'file') return 'included file'
+    const parts = s.path.split(/[\\/]/)
+    return parts.at(-2) === 'git' ? 'git/config' : `~/${parts.at(-1)}`
+  }
 
   function onKey(e: KeyboardEvent) {
     // Mod+S saves, as in any editor.
@@ -21,125 +55,314 @@
 
 <svelte:window onkeydown={onKey} />
 
-<section class="config" aria-label="Git config">
-  <header class="view-head">
-    <label class="scope">
-      <span class="visually-hidden">Config file</span>
-      <select value={scope?.path ?? ''} onchange={(e) => gitConfig.select(e.currentTarget.value)}>
-        {#each gitConfig.scopes as s (s.path)}
-          <option value={s.path}>{gitConfig.docs[s.path]?.dirty ? '● ' : ''}{gitConfig.label(s)}</option>
-        {/each}
-      </select>
-    </label>
+<div class="config">
+  <nav class="rail" aria-label="Config files">
+    <span class="hand brand">git config</span>
+    <div class="group">
+      <h2 class="meta">Files</h2>
+      {#each gitConfig.scopes as s (s.path)}
+        {@const on = s.path === scope?.path}
+        <button class="item" class:on aria-current={on ? 'page' : undefined} title={s.path} onclick={() => gitConfig.select(s.path)}>
+          <span class="names">
+            <span>{gitConfig.label(s).replace(/^File · /, '')}</span>
+            <span class="path">{shortPath(s)}</span>
+          </span>
+          {#if gitConfig.docs[s.path]?.dirty}<span class="tag rose">edited</span>{/if}
+        </button>
+      {/each}
+    </div>
+    <div class="group">
+      <h2 class="meta">View</h2>
+      <button class="item on" aria-current="page">Settings</button>
+    </div>
+    <p class="aside">Saving backs up the file first, so a change is never lost for good.</p>
+  </nav>
+
+  <section class="main" aria-label="Git config">
     {#if scope}
-      <span class="view-file" title={scope.path}>{scope.path}</span>
-      {#if doc && !doc.exists}<span class="view-badge">new file</span>{/if}
+      <header class="head">
+        <div class="titles">
+          <span class="hand eyebrow">{eyebrow(scope)}</span>
+          <h1>{title(scope)}</h1>
+          <span class="path" title={scope.path}>{scope.path}{#if doc && !doc.exists}<span class="tag sepia">new file</span>{/if}</span>
+        </div>
+        <div class="actions">
+          {#if doc?.dirty}
+            <span class="unsaved">unsaved changes</span>
+            <InkButton variant="ghost" disabled={gitConfig.busy} onclick={() => gitConfig.reload()}>Discard</InkButton>
+          {/if}
+          <InkButton disabled={!doc?.dirty || gitConfig.busy || !!doc?.problem} onclick={() => gitConfig.save()}>
+            Save <kbd>{formatShortcut('Mod+S')}</kbd>
+          </InkButton>
+        </div>
+      </header>
     {/if}
-    <span class="spacer"></span>
-    {#if doc?.dirty}
-      <button class="tool" disabled={gitConfig.busy} onclick={() => gitConfig.reload()}><Icon name="undo" size={14} />Discard changes</button>
+
+    {#if scope?.kind === 'global' && gitConfig.globalAlt}
+      <p class="note"><Icon name="info" size={14} />Git also reads <code>{gitConfig.globalAlt}</code>. Changes are saved to the file above.</p>
     {/if}
-    <InkButton disabled={!doc?.dirty || gitConfig.busy} onclick={() => gitConfig.save()}>Save</InkButton>
-  </header>
+    {#if outside}
+      <div class="banner caution" role="alert">
+        <Icon name="warning" size={16} />
+        <span class="message"><strong>Something else changed this file</strong> while you were editing it. Keep your version and save it over theirs, or reload and lose your edits.</span>
+        <button class="pill" onclick={() => gitConfig.reload()}>Reload theirs</button>
+        <button class="pill" onclick={() => gitConfig.keepMine()}>Keep mine</button>
+      </div>
+    {/if}
+    {#if gitConfig.error}
+      <div class="banner danger" role="alert">
+        <Icon name="warning" size={16} />
+        <span class="message">{gitConfig.error}</span>
+        <button class="pill" onclick={() => (gitConfig.error = '')}>Dismiss</button>
+      </div>
+    {:else if doc?.problem}
+      <div class="banner danger" role="alert">
+        <Icon name="warning" size={16} />
+        <span class="message">Git can't read this file ({problemText(doc.problem)}). Fix it in the raw text before saving.</span>
+      </div>
+    {/if}
 
-  {#if scope?.kind === 'global' && gitConfig.globalAlt}
-    <p class="note" role="note">
-      <Icon name="info" size={14} />Git also reads <code>{gitConfig.globalAlt}</code>. Changes are saved to the file above.
-    </p>
-  {/if}
-  {#if outside}
-    <div class="banner" role="alert">
-      <Icon name="warning" size={14} />
-      <span class="message">This file changed outside Git Revenge while you were editing it.</span>
-      <button class="tool" onclick={() => gitConfig.reload()}>Reload (discard mine)</button>
-      <button class="tool" onclick={() => gitConfig.keepMine()}>Keep mine</button>
-    </div>
-  {/if}
-  {#if gitConfig.error}
-    <div class="banner" role="alert">
-      <Icon name="warning" size={14} />
-      <span class="message">{gitConfig.error}</span>
-      <button class="tool" onclick={() => (gitConfig.error = '')}>Dismiss</button>
-    </div>
-  {:else if doc?.problem}
-    <div class="banner" role="alert">
-      <Icon name="warning" size={14} />
-      <span class="message">Git can't read this file ({problemText(doc.problem)}). Fix it in the Raw view before saving.</span>
-    </div>
-  {/if}
-
-  <div class="body">
     {#if doc && scope}
       {#key scope.path}
         <ConfigTable />
       {/key}
     {/if}
-  </div>
-</section>
+  </section>
+</div>
 
 {#if gitConfig.conflict}
-  <Modal title="Overwrite the changed file?" onClose={() => (gitConfig.conflict = null)} width={640}>
-    <p>
-      <code>{gitConfig.conflict.path}</code> changed on disk since you opened it. Saving replaces it with your version. The current file is backed up first.
+  <Modal title="Save over the changed file?" onClose={() => (gitConfig.conflict = null)} width={640}>
+    <p class="form-note">
+      <code>{gitConfig.conflict.path}</code> changed on disk since you opened it. Saving replaces it with your version, and the file as it is now is backed up first.
     </p>
     <pre class="disk" aria-label="The file on disk now">{gitConfig.conflict.disk}</pre>
     <div class="form-actions">
-      <button class="tool" onclick={() => gitConfig.reload()}>Discard mine and reload</button>
-      <InkButton onclick={() => gitConfig.save(true)}>Overwrite</InkButton>
+      <button class="textbtn" onclick={() => gitConfig.reload()}>Discard mine and reload</button>
+      <InkButton onclick={() => gitConfig.save(true)}>Save mine</InkButton>
     </div>
   </Modal>
 {/if}
 
 <style>
+  /* The rail stays put while the file scrolls beside it. */
   .config {
     display: flex;
-    flex-direction: column;
     height: 100%;
-    min-height: 0;
   }
 
-  .scope select {
-    min-width: 200px;
+  .rail {
+    flex: 0 0 248px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 26px 14px 22px;
+    background: var(--paper-warm);
+    border-right: 1px solid var(--paper-edge);
   }
 
-  .spacer {
+  .brand {
+    margin-left: 12px;
+    font-size: 26px;
+    line-height: 1;
+    transform-origin: left;
+  }
+
+  .group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .group h2 {
+    margin: 0;
+    padding: 0 12px 6px;
+    font-weight: 400;
+  }
+
+  .item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    color: var(--ink-soft);
+    font-size: 15px;
+    text-align: left;
+  }
+
+  .item:hover:not(:disabled) {
+    background: var(--wash-hover);
+    color: var(--ink);
+  }
+
+  .item.on {
+    color: var(--ink);
+  }
+
+  /* The active item wears the tab bar's torn rose mark, upright. */
+  .item.on::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 4px;
+    background: var(--link);
+    filter: url(#wc-edge);
+    border-radius: 45% 55% 50% 50% / 55% 45%;
+    opacity: 0.9;
+  }
+
+  .names {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .names > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .path {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-faint);
+  }
+
+  .aside {
+    margin: auto 12px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-mute);
+  }
+
+  .main {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 30px 40px 48px;
+  }
+
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px 24px;
+  }
+
+  .titles {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .eyebrow {
+    margin-bottom: 6px;
+    color: var(--link);
+    transform: rotate(-1.5deg);
+    transform-origin: left;
+    align-self: flex-start;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 34px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    font-variation-settings:
+      'SOFT' 50,
+      'WONK' 1;
+  }
+
+  .titles .path {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--ink-mute);
+    overflow-wrap: anywhere;
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .unsaved {
+    font-style: italic;
+    color: var(--ink-mute);
+  }
+
+  kbd {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    opacity: 0.8;
   }
 
   .note,
   .banner {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
+    gap: 10px 14px;
     margin: 0;
-    padding: 6px 14px;
-    border-bottom: 1px solid var(--paper-edge);
+    padding: 10px 16px;
+    border-radius: 8px;
   }
 
   .note {
+    padding: 0;
     color: var(--ink-mute);
   }
 
-  .banner {
+  .caution {
+    background: color-mix(in srgb, var(--ink-ochre) 20%, transparent);
+  }
+
+  .caution > :global(svg) {
+    color: var(--warning);
+  }
+
+  .danger {
     background: var(--danger-wash);
   }
 
-  .banner > :global(svg) {
+  .danger > :global(svg) {
     color: var(--danger);
   }
 
   .message {
-    flex: 1;
+    flex: 1 1 320px;
     min-width: 0;
   }
 
-  .body {
-    flex: 1;
-    min-height: 0;
-    overflow: auto;
-    padding: 12px 14px;
+  .message strong {
+    font-weight: 600;
   }
 
+  .pill {
+    min-height: 34px;
+    padding: 0 16px;
+    background: var(--paper);
+    border: 1px solid var(--paper-edge);
+    border-radius: 999px;
+    font-size: 14px;
+  }
 
   code,
   .disk {
@@ -147,14 +370,14 @@
     font-size: 12px;
   }
 
-
   .disk {
     max-height: 40vh;
     overflow: auto;
-    padding: 10px;
-    background: var(--paper-warm);
-    border: 1px solid var(--paper-edge);
-    border-radius: 6px;
+    margin: 12px 0;
+    padding: 12px 14px;
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 4px;
     white-space: pre;
   }
 </style>
