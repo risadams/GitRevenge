@@ -10,11 +10,12 @@ import (
 
 // WorkingTree is what the changes panel shows.
 type WorkingTree struct {
-	Status  git.Status  `json:"status"`
-	Signing git.Signing `json:"signing"`
+	Status   git.Status   `json:"status"`
+	Signing  git.Signing  `json:"signing"`
+	Identity git.Identity `json:"identity"`
 }
 
-// WorkingTree returns the current status and commit signing setup.
+// WorkingTree returns the current status, commit signing setup and commit identity.
 func (a *App) WorkingTree(path string) (WorkingTree, error) {
 	r, err := a.openRepo(path)
 	if err != nil {
@@ -25,7 +26,7 @@ func (a *App) WorkingTree(path string) (WorkingTree, error) {
 	if err != nil {
 		return WorkingTree{}, err
 	}
-	return WorkingTree{Status: st, Signing: r.Git.CommitSigning(ctx)}, nil
+	return WorkingTree{Status: st, Signing: r.Git.CommitSigning(ctx), Identity: r.Git.CommitIdentity(ctx)}, nil
 }
 
 // StageFiles stages the given paths; with no paths it stages everything.

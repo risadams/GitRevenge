@@ -38,6 +38,11 @@ class Session {
 
   async restore() {
     EventsOn('repo:changed', (c: RepoChange) => void this.onChange(c))
+    // Global and included config apply to every repository, so a change refreshes them all:
+    // signing, identity, and pull and merge defaults are read again.
+    EventsOn('gitconfig:changed', () => {
+      for (const t of this.tabs) this.revision[t.path] = (this.revision[t.path] ?? 0) + 1
+    })
     const st = await this.run(() => RestoreSession())
     if (!st) return
     this.tabs = st.tabs

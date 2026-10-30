@@ -269,6 +269,14 @@ func TestCommitSignedWithSSH(t *testing.T) {
 	}
 }
 
+func TestCommitIdentity(t *testing.T) {
+	fx := gittest.New(t)
+	repo := OpenRepo(newTestRunner(t), fx.Dir)
+	if got := repo.CommitIdentity(context.Background()); got != (Identity{Name: "Test User", Email: "test@example.com"}) {
+		t.Fatalf("identity = %+v", got)
+	}
+}
+
 func TestCommitNothingStaged(t *testing.T) {
 	fx := gittest.New(t)
 	fx.Linear(1)

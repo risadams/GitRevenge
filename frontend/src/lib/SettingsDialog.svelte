@@ -5,6 +5,8 @@
   import { commands } from './commands.svelte'
   import type { app } from '../../wailsjs/go/models'
   import { errorText } from './errors'
+  import { gitConfig } from './gitconfig/config.svelte'
+  import { session } from './session.svelte'
   import { prefs } from './prefs.svelte'
   import { theme } from './theme.svelte'
   import Icon from './ui/Icon.svelte'
@@ -107,6 +109,16 @@
           </span>
         </label>
         <p class="hint">In use now: <code>{p.gitInUse || 'none found'}</code>. A change takes effect after restarting Git Revenge.</p>
+        <span>
+          <button
+            type="button"
+            class="tool"
+            onclick={() => {
+              onClose()
+              void gitConfig.show(session.activeTab?.path ?? '')
+            }}><Icon name="gear" size={14} />Edit git config…</button
+          >
+        </span>
       </fieldset>
 
       <fieldset>

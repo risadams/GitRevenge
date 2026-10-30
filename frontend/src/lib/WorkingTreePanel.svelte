@@ -18,6 +18,7 @@
   } from '../../wailsjs/go/app/App.js'
   import type { app, git } from '../../wailsjs/go/models'
   import type { DiffTarget } from './diff/DiffView.svelte'
+  import { gitConfig } from './gitconfig/config.svelte'
   import { session } from './session.svelte'
   import Icon, { type IconName } from './ui/Icon.svelte'
   import InkButton from './ui/InkButton.svelte'
@@ -305,9 +306,23 @@
     <div class="row">
       <label class="form-check"><input type="checkbox" bind:checked={amend} onchange={toggleAmend} /> Amend last commit</label>
       {#if wt?.signing.enabled}
-        <span class="signed meta" title="commit.gpgsign is set; key: {wt.signing.key || 'default'}">Signed · {wt.signing.format}</span>
+        <button type="button" class="signed meta" title="commit.gpgsign is set; key: {wt.signing.key || 'default'}. Change in Git Config." onclick={() => gitConfig.showKey(path, 'commit.gpgSign')}
+          >Signed · {wt.signing.format}</button
+        >
       {/if}
     </div>
+    {#if wt}
+      <p class="identity">
+        {#if wt.identity.name || wt.identity.email}
+          as <span class="who">{wt.identity.name || 'no name'}{#if wt.identity.email}&nbsp;&lt;{wt.identity.email}&gt;{/if}</span>
+        {:else}
+          <span class="missing">Git doesn't know who you are yet.</span>
+        {/if}
+        <button type="button" class="textbtn" onclick={() => gitConfig.showKey(path, wt?.identity.email || !wt?.identity.name ? 'user.email' : 'user.name')}
+          >{wt.identity.name || wt.identity.email ? 'change' : 'set it in Git Config'}</button
+        >
+      </p>
+    {/if}
     <div class="commit-row">
       <span class="hint meta">Ctrl+Enter</span>
       <InkButton type="submit" arrow disabled={!canCommit}>
@@ -582,7 +597,41 @@
   }
 
   .signed {
+    padding: 0;
+    background: none;
+    border: none;
     color: var(--success);
+  }
+
+  .signed:hover:not(:disabled) {
+    background: none;
+    text-decoration: underline;
+  }
+
+  .identity {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 6px;
+    margin: 0;
+    font-size: 13px;
+    color: var(--ink-mute);
+  }
+
+  .who {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--ink-soft);
+  }
+
+  .missing {
+    color: var(--warning);
+  }
+
+  .identity .textbtn {
+    min-height: 0;
+    padding: 0 2px;
+    font-size: 13px;
   }
 
   .commit-row {
