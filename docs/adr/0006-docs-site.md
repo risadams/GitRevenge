@@ -1,0 +1,25 @@
+# 0006 — A documentation website built with Docusaurus
+
+- Status: Accepted
+- Date: 2026-10-30
+
+## Context
+
+Git Revenge's documentation was the README and the project's own papers in `docs/`: the plan, the release process and these decisions. There was no user guide, and Markdown on GitHub has no navigation between pages, no search and no front page.
+
+The owner's other projects (risadams/Janus, risadams/docker-registry.helm) publish their docs as a Docusaurus site on GitHub Pages, in the Ris Ink look of risadams.com. Doing the same here keeps one way of working and one theme across them.
+
+## Decision
+
+- **`docs-site/` holds a Docusaurus 3 site**, copied in structure and theme from Janus's: the same `custom.css` and code palette, a homepage, a navbar logo and a 404 page. The classic preset reads `../docs` directly, so the Markdown in `docs/` stays the only copy and still reads correctly on GitHub.
+- **`.md` files are read as CommonMark, not MDX**, so the docs need nothing Docusaurus-specific.
+- **Links that leave `docs/`** (the README, CONTRIBUTING, source files) are rewritten to GitHub by `src/remark/repo-links.js`, rather than edited in the Markdown.
+- **The sidebar is written by hand** in `sidebars.js`, every page under a short label in the order a reader meets it. `src/plugins/sidebar-complete.js` fails the build if a page is in no sidebar.
+- **Broken links and anchors fail the build.** The `docs` workflow builds the site on pull requests that touch it, and publishes it to the `gh-pages` branch on pushes to `main` and on release tags.
+- **Its npm dependencies are separate from the app's.** Nothing under `docs-site/` is imported by the app, and the Go and frontend builds don't need it.
+
+## Consequences
+
+- Easier: reading the docs, linking to a page, and finding what a page is for. A broken link in `docs/` is caught by CI.
+- Harder: a second Node toolchain to keep current, and a page that renders on GitHub can fail the site's stricter link check. The theme is shared with other repositories, so a change to it is best made in all of them.
+- The site shows `main`'s docs, which can describe features the newest release doesn't have yet. Janus solved this with a stable version built from a `docs/vX.Y` branch (its ADR-002); that can be added here when it matters.

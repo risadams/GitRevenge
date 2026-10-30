@@ -1,0 +1,42 @@
+# Branches, merges and rebases
+
+## Branches and tags
+
+- **New branch** (<kbd>Ctrl</kbd>+<kbd>B</kbd>, or the **+** next to Branches in the sidebar) creates a branch from HEAD and can check it out.
+- Right-click any commit for **Create branch here…** or **Create tag here…**. Give a tag a message to make it an annotated tag.
+- Double-click a branch in the sidebar to check it out. Checking out a remote branch offers to create a local branch that tracks it.
+- Right-click a branch to rename it, delete it, set its upstream, push it, or delete it from the remote. Deleting a branch with unmerged commits asks you to confirm first.
+
+## Merging, rebasing and cherry-picking
+
+Right-click a branch or commit, and the menu offers what makes sense for it against the branch you have checked out:
+
+- **Merge** *it* **into** *your branch*, with or without a fast-forward.
+- **Rebase** *your branch* **onto** *it*.
+- **Cherry-pick** *it* **onto** *your branch*.
+- **Revert** a commit. Reverting a merge asks which parent to keep.
+
+You can also drag. Drop a branch or commit onto the checked-out branch to merge, rebase or cherry-pick it in, or drag the checked-out branch onto another commit. A menu asks which you meant.
+
+## Resetting
+
+Right-click a commit and choose **Reset** to move your branch there. You pick the mode:
+
+- **Soft:** keep changes staged.
+- **Mixed:** keep changes, unstaged.
+- **Hard:** discard all changes.
+
+## Interactive rebase
+
+Right-click a commit and choose **Interactive rebase … from here…**. The editor lists every commit after it, and for each you can **pick**, **reword**, **squash**, **fixup** or **drop** it, and move it up or down. Squashing starts from both messages, as git does. **Start rebase** runs it; **Cancel** goes back to the graph with nothing changed.
+
+## Conflicts
+
+When a merge, rebase or cherry-pick stops on conflicts, the conflicted files are listed with your uncommitted changes. For each one you can:
+
+- resolve it with **ours** or **theirs** in one click, or
+- open the **conflict tool**, which shows ours, theirs and an editable result side by side. Take either side for each conflict, or edit the result by hand, then choose **Mark resolved**.
+
+A banner at the top offers **Continue**, **Abort** and **Skip** until the operation is finished.
+
+Any of these can be undone afterwards; see [Undo and redo](changes.md#undo-and-redo).

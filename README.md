@@ -66,6 +66,7 @@ Performance checks run against a large repository of your choice; see [Performan
 
 ## Docs
 
+- [The documentation site](https://risadams.github.io/GitRevenge/), with the user guide. Its source is `docs/`, and `docs-site/` builds it: `cd docs-site && npm ci && npm start`.
 - [Plan](docs/PLAN.md): scope, architecture, performance targets, milestones and workflow.
 - [Architecture decision records](docs/adr/).
 - [Releasing](docs/RELEASING.md).
