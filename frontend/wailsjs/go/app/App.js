@@ -22,10 +22,6 @@ export function BranchAction(arg1, arg2, arg3) {
   return window['go']['app']['App']['BranchAction'](arg1, arg2, arg3);
 }
 
-export function BranchAges(arg1) {
-  return window['go']['app']['App']['BranchAges'](arg1);
-}
-
 export function CancelClone() {
   return window['go']['app']['App']['CancelClone']();
 }
@@ -178,6 +174,10 @@ export function InsightsBranches(arg1, arg2) {
   return window['go']['app']['App']['InsightsBranches'](arg1, arg2);
 }
 
+export function InsightsFetchedAt(arg1) {
+  return window['go']['app']['App']['InsightsFetchedAt'](arg1);
+}
+
 export function InsightsHotspots(arg1, arg2) {
   return window['go']['app']['App']['InsightsHotspots'](arg1, arg2);
 }
@@ -308,10 +308,6 @@ export function RepoInfo(arg1) {
 
 export function RepoState(arg1) {
   return window['go']['app']['App']['RepoState'](arg1);
-}
-
-export function RepoStats(arg1, arg2, arg3, arg4) {
-  return window['go']['app']['App']['RepoStats'](arg1, arg2, arg3, arg4);
 }
 
 export function ResolveConflict(arg1, arg2, arg3) {

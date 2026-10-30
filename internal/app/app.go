@@ -37,6 +37,7 @@ type App struct {
 	sigs      sigCache
 	configs   gitConfigs
 	conflicts conflictChecks
+	insights  insightsCache
 	// configBackupDir overrides where config backups are kept; tests use it.
 	configBackupDir string
 }
