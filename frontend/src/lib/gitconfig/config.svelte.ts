@@ -3,6 +3,8 @@ import type { app, git } from '../../../wailsjs/go/models'
 import { EventsOn } from '../../../wailsjs/runtime/runtime.js'
 import { errorText } from '../errors'
 import { session } from '../session.svelte'
+import { canonicalKey } from './catalog'
+import { samePath } from './rows'
 import { scopeLabel, type Scope } from './scopes'
 
 /** Payload of the "gitconfig:changed" event (ConfigChange in Go). */
@@ -55,6 +57,8 @@ class GitConfigTab {
   flush: (() => Promise<void>) | undefined = undefined
   /** Drops edits a view is still holding back, before a reload discards the rest. */
   cancel: (() => void) | undefined = undefined
+  /** A key the Settings view should scroll to and highlight once, then clear. */
+  focusKey = $state('')
   /** Set while asking whether closing the tab may discard unsaved edits. */
   confirmClose = $state(false)
 
@@ -94,6 +98,22 @@ class GitConfigTab {
     if (repo && !this.locals[repo]) await this.addLocal(repo)
     await this.select(repo ? (this.locals[repo] ?? this.global) : this.selected || this.global)
     await session.select(session.configTabId)
+  }
+
+  /** Opens the tab at the file that sets key for a repository (or global config with no
+   * repository) and points the Settings view at it. Where nothing sets it, the repository's
+   * own file opens, ready to add it. */
+  async showKey(repo: string, key: string) {
+    await this.show(repo)
+    const id = canonicalKey(key)
+    const source = this.effective.findLast((e) => canonicalKey(e.key) === id && e.scope !== 'system' && e.file)
+    if (source && !samePath(source.file, this.selected)) {
+      const known = this.scopes.find((s) => samePath(s.path, source.file))
+      if (known) await this.select(known.path)
+      else await this.showFile(source.file, repo)
+    }
+    this.view = 'settings'
+    this.focusKey = key
   }
 
   /** Opens an included config file in the scope switcher and selects it. */

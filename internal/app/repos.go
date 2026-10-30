@@ -120,6 +120,9 @@ func (a *App) RestoreSession() (SessionState, error) {
 		return SessionState{}, err
 	}
 	ctx := context.Background()
+	// Start watching global config now, so repositories refresh when it changes even if the
+	// Git Config tab is never opened.
+	_, _ = a.gitConfig()
 	active, failed := m.Restore(ctx)
 	st := SessionState{
 		Active:      active,
