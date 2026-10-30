@@ -9,6 +9,8 @@
   import SettingsDialog from './lib/SettingsDialog.svelte'
   import ShortcutsDialog from './lib/ShortcutsDialog.svelte'
   import { commands, provideCommands, type Command } from './lib/commands.svelte'
+  import { gitConfig } from './lib/gitconfig/config.svelte'
+  import GitConfigView from './lib/gitconfig/GitConfigView.svelte'
   import OperationBanner from './lib/OperationBanner.svelte'
   import PromptDialog from './lib/PromptDialog.svelte'
   import RepoView from './lib/RepoView.svelte'
@@ -22,6 +24,7 @@
   import InkButton from './lib/ui/InkButton.svelte'
   import InkFilters from './lib/ui/InkFilters.svelte'
   import Mark from './lib/ui/Mark.svelte'
+  import Modal from './lib/ui/Modal.svelte'
 
   let version = $state('')
   let env = $state<app.Environment | null>(null)
@@ -66,6 +69,11 @@
         run: () => session.run(() => theme.toggleDensity()),
       },
     ]
+    list.push({ id: 'gitconfig.global', group: 'Git config', title: 'Edit global git config', keywords: 'gitconfig settings user name email alias', run: () => gitConfig.show() })
+    if (session.activeTab) {
+      const repo = session.activeTab.path
+      list.push({ id: 'gitconfig.local', group: 'Git config', title: "Edit this repository's git config", keywords: 'gitconfig local settings alias', run: () => gitConfig.show(repo) })
+    }
     if (session.active)
       list.push({ id: 'tabs.home', group: 'Tabs', title: 'Go to the start page', keywords: 'home groups recent', shortcut: 'Mod+Shift+H', run: () => session.select('') })
     session.tabs.forEach((t, i) => {
@@ -75,9 +83,11 @@
       // Mod+1 … Mod+9 jump straight to a tab, as in browsers.
       if (i < 9) list.push({ id: `tabs.n${i + 1}`, group: 'Tabs', title: `Tab ${i + 1}`, shortcut: `Mod+${i + 1}`, hidden: true, whenTyping: true, run: () => session.select(t.path) })
     })
-    if (session.tabs.length > 0) {
+    if (session.active === session.configTabId)
+      list.push({ id: 'tabs.close', group: 'Tabs', title: 'Close Git Config', keywords: 'tab', shortcut: 'Mod+W', whenTyping: true, run: () => gitConfig.requestClose() })
+    if (session.tabs.length > 0 || gitConfig.open) {
       // Cycle through the start page and every tab.
-      const order = ['', ...session.tabs.map((t) => t.path)]
+      const order = ['', ...session.tabs.map((t) => t.path), ...(gitConfig.open ? [session.configTabId] : [])]
       const step = (d: number) => () => session.select(order[(order.indexOf(session.active) + d + order.length) % order.length])
       list.push(
         { id: 'tabs.next', group: 'Tabs', title: 'Next tab', shortcut: 'Mod+Tab', hidden: true, whenTyping: true, run: step(1) },
@@ -103,6 +113,7 @@
     void commands.loadBindings()
     if (!env.problem) {
       await session.restore()
+      await gitConfig.restore(session.savedConfigTab)
       void update.startup()
     }
   })
@@ -122,6 +133,19 @@
 
 {#if commands.settingsOpen}
   <SettingsDialog onClose={() => (commands.settingsOpen = false)} />
+{/if}
+
+{#if gitConfig.confirmClose}
+  <Modal title="Discard unsaved config changes?" onClose={() => (gitConfig.confirmClose = false)}>
+    <p>Closing Git Config discards your unsaved changes to:</p>
+    <ul class="paths">
+      {#each gitConfig.dirtyPaths as p (p)}<li><code>{p}</code></li>{/each}
+    </ul>
+    <div class="form-actions">
+      <button class="tool" onclick={() => (gitConfig.confirmClose = false)}>Keep editing</button>
+      <InkButton variant="danger" onclick={() => gitConfig.close()}>Discard and close</InkButton>
+    </div>
+  </Modal>
 {/if}
 
 {#if commands.cloneOpen}
@@ -174,6 +198,8 @@
         {#key session.activeTab.path}
           <RepoView path={session.activeTab.path} />
         {/key}
+      {:else if session.active === session.configTabId && gitConfig.open}
+        <GitConfigView />
       {:else}
         <StartPage />
       {/if}
@@ -277,6 +303,10 @@
 
   .muted {
     color: var(--ink-mute);
+  }
+
+  .paths {
+    padding-left: 18px;
   }
 
   code {

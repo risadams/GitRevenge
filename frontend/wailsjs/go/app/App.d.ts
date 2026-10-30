@@ -172,6 +172,8 @@ export function SetCommitNote(arg1:string,arg2:string,arg3:string):Promise<void>
 
 export function SetGitConfig(arg1:string,arg2:string,arg3:string):Promise<app.ConfigDoc>;
 
+export function SetGitConfigTab(arg1:string):Promise<void>;
+
 export function SetGitConfigText(arg1:string,arg2:string):Promise<app.ConfigDoc>;
 
 export function SetGraphDensity(arg1:string):Promise<void>;
