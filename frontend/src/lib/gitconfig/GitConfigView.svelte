@@ -6,7 +6,8 @@
   import InkButton from '../ui/InkButton.svelte'
   import Modal from '../ui/Modal.svelte'
   import ConfigTable from './ConfigTable.svelte'
-  import { gitConfig, problemText } from './config.svelte'
+  import { gitConfig, problemText, VIEWS } from './config.svelte'
+  import RawEditor from './RawEditor.svelte'
   import { baseName, type Scope } from './scopes'
 
   let scope = $derived(gitConfig.scope)
@@ -48,7 +49,9 @@
     // Mod+S saves, as in any editor.
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's') {
       e.preventDefault()
-      if (doc?.dirty) void gitConfig.save()
+      // The raw editor may still hold keystrokes, so this saves whenever there's a file; a
+      // clean one saves as a no-op.
+      if (doc) void gitConfig.save()
     }
   }
 </script>
@@ -73,7 +76,9 @@
     </div>
     <div class="group">
       <h2 class="meta">View</h2>
-      <button class="item on" aria-current="page">Settings</button>
+      {#each VIEWS as v (v.id)}
+        <button class="item" class:on={gitConfig.view === v.id} aria-current={gitConfig.view === v.id ? 'page' : undefined} onclick={() => (gitConfig.view = v.id)}>{v.label}</button>
+      {/each}
     </div>
     <p class="aside">Saving backs up the file first, so a change is never lost for good.</p>
   </nav>
@@ -87,8 +92,12 @@
           <span class="path" title={scope.path}>{scope.path}{#if doc && !doc.exists}<span class="tag sepia">new file</span>{/if}</span>
         </div>
         <div class="actions">
-          {#if doc?.dirty}
+          {#if doc?.problem}
+            <span class="unsaved bad">{doc.problem.line ? `fix line ${doc.problem.line} to save` : 'fix the file to save'}</span>
+          {:else if doc?.dirty}
             <span class="unsaved">unsaved changes</span>
+          {/if}
+          {#if doc?.dirty}
             <InkButton variant="ghost" disabled={gitConfig.busy} onclick={() => gitConfig.reload()}>Discard</InkButton>
           {/if}
           <InkButton disabled={!doc?.dirty || gitConfig.busy || !!doc?.problem} onclick={() => gitConfig.save()}>
@@ -115,16 +124,21 @@
         <span class="message">{gitConfig.error}</span>
         <button class="pill" onclick={() => (gitConfig.error = '')}>Dismiss</button>
       </div>
-    {:else if doc?.problem}
+    {:else if doc?.problem && gitConfig.view !== 'raw'}
       <div class="banner danger" role="alert">
         <Icon name="warning" size={16} />
-        <span class="message">Git can't read this file ({problemText(doc.problem)}). Fix it in the raw text before saving.</span>
+        <span class="message">Git can't read this file ({problemText(doc.problem)}), so its settings can't be shown or saved.</span>
+        <button class="pill" onclick={() => (gitConfig.view = 'raw')}>Fix it in raw text</button>
       </div>
     {/if}
 
     {#if doc && scope}
       {#key scope.path}
-        <ConfigTable />
+        {#if gitConfig.view === 'raw'}
+          <RawEditor />
+        {:else}
+          <ConfigTable />
+        {/if}
       {/key}
     {/if}
   </section>
@@ -306,6 +320,10 @@
   .unsaved {
     font-style: italic;
     color: var(--ink-mute);
+  }
+
+  .unsaved.bad {
+    color: var(--danger);
   }
 
   kbd {
