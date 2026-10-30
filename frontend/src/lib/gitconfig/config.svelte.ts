@@ -10,6 +10,14 @@ interface ConfigChange {
   path: string
 }
 
+/** The views of a config file, in the order the rail lists them. */
+export type View = 'settings' | 'raw'
+
+export const VIEWS: { id: View; label: string }[] = [
+  { id: 'settings', label: 'Settings' },
+  { id: 'raw', label: 'Raw text' },
+]
+
 /** A save that stopped because the file changed on disk, waiting for the user's choice. */
 export interface SaveConflict {
   path: string
@@ -24,6 +32,8 @@ class GitConfigTab {
   open = $state(false)
   /** Path of the selected config file. */
   selected = $state('')
+  /** How the selected file is shown. */
+  view = $state<View>('settings')
   global = $state('')
   /** The XDG global file when git reads it alongside the global one. */
   globalAlt = $state('')
@@ -39,6 +49,10 @@ class GitConfigTab {
   conflict = $state<SaveConflict | null>(null)
   error = $state('')
   busy = $state(false)
+  /** Sends edits a view is still holding back, such as the raw editor's last keystrokes. */
+  flush: (() => Promise<void>) | undefined = undefined
+  /** Drops edits a view is still holding back, before a reload discards the rest. */
+  cancel: (() => void) | undefined = undefined
   /** Set while asking whether closing the tab may discard unsaved edits. */
   confirmClose = $state(false)
 
@@ -129,6 +143,7 @@ class GitConfigTab {
   async save(force = false) {
     const path = this.scope?.path
     if (!path) return
+    await this.flush?.()
     const res = await this.call(() => SaveGitConfig(path, force))
     if (!res) return
     this.docs[path] = res.doc
@@ -147,6 +162,7 @@ class GitConfigTab {
   async reload() {
     const path = this.scope?.path
     if (!path) return
+    this.cancel?.()
     const doc = await this.call(() => ReloadGitConfig(path))
     if (doc) this.docs[path] = doc
     delete this.outside[path]
