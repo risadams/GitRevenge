@@ -92,13 +92,27 @@ func (a *App) record(r *session.Repo, label string, kind undoKind, mode git.Rese
 		return nil
 	}
 	a.undo.push(r.Path, undoEntry{Label: label, Kind: kind, Before: before, After: after, Mode: mode})
+	a.undoChanged(r.Path)
 	return nil
+}
+
+// UndoChange is the payload of the "undo:changed" event.
+type UndoChange struct {
+	Path string `json:"path"`
+}
+
+// undoChanged tells the UI a repository's undo or redo history changed. The file watcher
+// can report an operation's effects before record has pushed its entry, so the toolbar
+// can't rely on that alone to refresh its labels.
+func (a *App) undoChanged(path string) {
+	a.emit("undo:changed", UndoChange{Path: path})
 }
 
 // recordBranch remembers creating or deleting a branch at commit.
 func (a *App) recordBranch(r *session.Repo, label string, kind undoKind, branch, commit string) {
 	h := r.Git.Head(context.Background())
 	a.undo.push(r.Path, undoEntry{Label: label, Kind: kind, Ref: branch, Commit: commit, Before: h, After: h})
+	a.undoChanged(r.Path)
 }
 
 // UndoInfo describes what Undo and Redo would do, for the toolbar.
@@ -159,9 +173,10 @@ func (a *App) step(path string, undo bool) error {
 		return err
 	}
 	u.mu.Lock()
-	defer u.mu.Unlock()
 	from[r.Path] = from[r.Path][:len(from[r.Path])-1]
 	to[r.Path] = append(to[r.Path], e)
+	u.mu.Unlock()
+	a.undoChanged(r.Path)
 	return nil
 }
 

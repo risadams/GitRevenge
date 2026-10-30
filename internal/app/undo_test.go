@@ -2,6 +2,7 @@ package app
 
 import (
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/risadams/gitrevenge/internal/gittest"
@@ -190,5 +191,51 @@ func TestClosingRepoDropsUndoHistory(t *testing.T) {
 	}
 	if err := a.Redo(tab.Path); err == nil {
 		t.Fatal("Redo after reopening should have nothing to redo")
+	}
+}
+
+func TestUndoHistoryChangesAreAnnounced(t *testing.T) {
+	a := newTestApp(t)
+	var mu sync.Mutex
+	var got []string
+	a.emitHook = func(name string, data any) {
+		if c, ok := data.(UndoChange); ok && name == "undo:changed" {
+			mu.Lock()
+			got = append(got, c.Path)
+			mu.Unlock()
+		}
+	}
+	fx := gittest.New(t)
+	fx.Linear(1)
+	tab, _ := a.OpenRepo(fx.Dir)
+	count := func() int {
+		mu.Lock()
+		defer mu.Unlock()
+		return len(got)
+	}
+
+	// The event follows the recorded entry, so a UI refreshing on it sees the new label.
+	_ = a.BranchAction(tab.Path, "create", []string{"one"})
+	if count() != 1 || undoLabel(t, a, tab.Path).Undo == "" {
+		t.Fatalf("after an operation: %d events, %+v", count(), undoLabel(t, a, tab.Path))
+	}
+	fx.WriteFile("b.txt", "b")
+	fx.Git("add", "b.txt")
+	if _, err := a.CommitChanges(tab.Path, "Add b", false); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Undo(tab.Path); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Redo(tab.Path); err != nil {
+		t.Fatal(err)
+	}
+	if count() != 4 {
+		t.Fatalf("events = %v, want one per change", got)
+	}
+	for _, p := range got {
+		if p != tab.Path {
+			t.Fatalf("event for %q, want %q", p, tab.Path)
+		}
 	}
 }

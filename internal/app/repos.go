@@ -94,6 +94,9 @@ type RepoChange struct {
 // emit sends an event to the frontend. It is a no-op until Wails has started (and in
 // tests), because the Wails runtime aborts the process when called without its context.
 func (a *App) emit(name string, data any) {
+	if a.emitHook != nil {
+		a.emitHook(name, data)
+	}
 	if a.ctx == nil {
 		return
 	}

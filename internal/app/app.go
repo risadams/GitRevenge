@@ -29,6 +29,8 @@ type App struct {
 	undo undoStacks
 	// promptHook answers credential prompts in tests instead of the UI.
 	promptHook func(text string, kind askpass.Kind) (string, bool)
+	// emitHook receives events in tests, where there is no Wails runtime to send them to.
+	emitHook func(name string, data any)
 	// updateURL overrides the GitHub releases endpoint; tests use it.
 	updateURL string
 	searches  searches
