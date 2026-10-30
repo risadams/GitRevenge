@@ -36,6 +36,8 @@
   let worktreesOpen = $state(false)
   /** Commit after which the interactive rebase editor rewrites history, or "" when closed. */
   let rebaseBase = $state('')
+  /** Insights is switched off while it's being rethought (#141); the view and backend stay in place. */
+  const insightsEnabled = false
   let insightsOpen = $state(false)
   /** The ref whose reflog is open, or "" when closed. */
   let reflogRef = $state('')
@@ -60,16 +62,20 @@
     // The rebase editor is left out: Escape shouldn't throw away a plan being edited.
     ...(diff ? [{ id: 'view.close', group: 'View', title: 'Back to the graph', keywords: 'close diff', shortcut: 'Escape', run: () => (diff = null) }] : []),
     { id: 'repo.remotes', group: 'Repository', title: 'Manage remotes…', keywords: 'origin url', run: () => (remotesOpen = true) },
-    {
-      id: 'repo.insights',
-      group: 'Repository',
-      title: 'Insights: activity, contributors and hotspots',
-      keywords: 'scrum master analytics report charts statistics churn cycle time',
-      run: () => {
-        diff = null
-        insightsOpen = true
-      },
-    },
+    ...(insightsEnabled
+      ? [
+          {
+            id: 'repo.insights',
+            group: 'Repository',
+            title: 'Insights: activity, contributors and hotspots',
+            keywords: 'scrum master analytics report charts statistics churn cycle time',
+            run: () => {
+              diff = null
+              insightsOpen = true
+            },
+          },
+        ]
+      : []),
     { id: 'repo.reflog', group: 'Repository', title: 'Show the reflog…', keywords: 'history head moves recover lost commit', run: () => (reflogRef = 'HEAD') },
     { id: 'repo.worktrees', group: 'Repository', title: 'Manage worktrees…', keywords: 'worktree checkout folder parallel', run: () => (worktreesOpen = true) },
     {
