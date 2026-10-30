@@ -620,6 +620,68 @@ scenes.gitconfigHistory = (page) =>
     await click(p, `::-p-xpath(//nav[contains(@class,"rail")]//button[normalize-space(text())="History"])`, { pause: 1200 })
   })
 
+// ── The Insights tab ──────────────────────────────────────────────────────────────────
+
+/** Opens Insights on tidewater, or on the "Harbour team" group of all three demo
+ * repositories, in one view. Results come from the demo's fixed history, measured from its
+ * own branch tip, so the shots come out the same every run. */
+async function insightsTab(p, view, { group = false } = {}) {
+  await reset(p, ['tidewater'], { clean: true })
+  await p.evaluate(async (demo) => {
+    const A = window.go.app.App
+    await A.GroupAction('create', ['Harbour team']).catch(() => {})
+    for (const name of ['tidewater', 'harbour-api', 'tide-tables']) await A.GroupAction('add', ['Harbour team', `${demo}${name}`]).catch(() => {})
+    // Default thresholds, whatever an earlier run left saved. Scopes go by the path the app
+    // knows the repository by, which may not be T:\ (git resolves a mapped drive).
+    const defaults = { stale: 7, longLived: 14, behind: 50, size: 500 }
+    const tidewater = (await A.OpenRepo(`${demo}tidewater`))?.path
+    if (tidewater) await A.SetInsightsThresholds(`repo:${tidewater}`, defaults)
+    await A.SetInsightsThresholds('group:Harbour team', defaults)
+  }, DEMO)
+  // Only tidewater's tabs belong in these shots: close Insights and Git Config from earlier
+  // scenes, discarding any config edits.
+  await p.evaluate(async () => {
+    document.querySelector('[aria-label="Close Insights"]')?.click()
+    const config = document.querySelector('[aria-label="Close Git Config"]')
+    if (!config) return
+    config.click()
+    await new Promise((r) => setTimeout(r, 300))
+    ;[...document.querySelectorAll('[role=dialog] button')].find((b) => b.textContent.includes('Discard'))?.click()
+  })
+  await sleep(400)
+  await click(p, byText('tidewater', 'button'), { button: 'right', pause: 400 })
+  await click(p, `::-p-xpath(//*[@role="menuitem" and contains(., "Insights")])`, { pause: 2500 })
+  if (group) {
+    await p.evaluate(() => {
+      const sel = document.querySelector('.insights .rail select')
+      sel.value = 'group:Harbour team'
+      sel.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await sleep(4000)
+  }
+  if (view !== 'Overview') await click(p, `::-p-xpath(//nav[contains(@class,"rail")]//button[starts-with(normalize-space(.), "${view}")])`, { pause: 1500 })
+  // Conflict checks finish in the background; give them time to land.
+  await sleep(1500)
+  await p.mouse.move(WIDTH - 2, HEIGHT - 2)
+  mouse = { x: WIDTH - 2, y: HEIGHT - 2 }
+  await sleep(400)
+}
+
+scenes.insights = (page) => stills(page, 'insights-overview', (p) => insightsTab(p, 'Overview', { group: true }))
+
+scenes.insightsShipped = (page) => stills(page, 'insights-shipped', (p) => insightsTab(p, 'Shipped'))
+
+scenes.insightsAttention = (page) => stills(page, 'insights-attention', (p) => insightsTab(p, 'Needs attention'))
+
+scenes.insightsSummary = (page) =>
+  stills(page, 'insights-summary', async (p) => {
+    await insightsTab(p, 'Overview', { group: true })
+    await click(p, byText('Copy summary', 'button'), { pause: 1200 })
+    await p.mouse.move(WIDTH - 2, HEIGHT - 2)
+    mouse = { x: WIDTH - 2, y: HEIGHT - 2 }
+    await sleep(400)
+  })
+
 // ── Main ──────────────────────────────────────────────────────────────────────────────
 
 mkdirSync(out, { recursive: true })
