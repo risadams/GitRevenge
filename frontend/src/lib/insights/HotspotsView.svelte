@@ -3,11 +3,11 @@
   // flagged where open branches change them too, and the window's rework.
   import { session } from '../session.svelte'
   import { insights } from './insights.svelte'
-  import { hotFiles, latest, utcDay } from './model'
+  import { latest, utcDay } from './model'
 
   let multi = $derived(insights.repos.length > 1)
   let loaded = $derived(insights.repos.every((r) => insights.data[r]?.hotspots || insights.data[r]?.error))
-  let files = $derived(hotFiles(insights.repos.flatMap((repo) => (insights.data[repo]?.hotspots?.files ?? []).map((value) => ({ repo, value })))).slice(0, 20))
+  let files = $derived(insights.hot)
   let peak = $derived(Math.max(1, ...files.map((f) => f.value.lines)))
   let rework = $derived(latest(insights.items.filter((i) => i.value.revert || i.value.fixup)))
 
