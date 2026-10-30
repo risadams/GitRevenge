@@ -11,10 +11,11 @@ interface ConfigChange {
 }
 
 /** The views of a config file, in the order the rail lists them. */
-export type View = 'settings' | 'raw'
+export type View = 'settings' | 'aliases' | 'raw'
 
 export const VIEWS: { id: View; label: string }[] = [
   { id: 'settings', label: 'Settings' },
+  { id: 'aliases', label: 'Aliases' },
   { id: 'raw', label: 'Raw text' },
 ]
 
