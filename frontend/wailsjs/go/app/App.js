@@ -334,6 +334,10 @@ export function SetGitConfig(arg1, arg2, arg3) {
   return window['go']['app']['App']['SetGitConfig'](arg1, arg2, arg3);
 }
 
+export function SetGitConfigTab(arg1) {
+  return window['go']['app']['App']['SetGitConfigTab'](arg1);
+}
+
 export function SetGitConfigText(arg1, arg2) {
   return window['go']['app']['App']['SetGitConfigText'](arg1, arg2);
 }

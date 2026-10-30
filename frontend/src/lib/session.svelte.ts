@@ -29,6 +29,10 @@ class Session {
   error = $state('')
   /** Per-repo counter bumped on every change on disk; views re-fetch when it moves. */
   revision = $state<Record<string, number>>({})
+  /** The active value for the Git Config tab; never a repository path. */
+  configTabId = $state('gitrevenge:gitconfig')
+  /** The config file the Git Config tab had selected last session, or '' if it was closed. */
+  savedConfigTab = ''
 
   activeTab = $derived(this.tabs.find((t) => t.path === this.active))
 
@@ -37,6 +41,8 @@ class Session {
     const st = await this.run(() => RestoreSession())
     if (!st) return
     this.tabs = st.tabs
+    this.configTabId = st.configTabId
+    this.savedConfigTab = st.configTab
     this.active = st.active
     if (st.failed.length > 0) {
       this.error = `Couldn't reopen: ${st.failed.map((f) => f.path).join(', ')}`

@@ -273,6 +273,8 @@ func (m *Manager) Restore(ctx context.Context) (active string, failed map[string
 	defer m.mu.Unlock()
 	switch r := m.findLocked(saved.ActiveTab); {
 	case saved.ActiveTab == "":
+	case saved.ActiveTab == settings.ConfigTabID && saved.ConfigTab != "":
+		active = settings.ConfigTabID
 	case r != nil:
 		active = r.Path
 	case len(m.repos) > 0:

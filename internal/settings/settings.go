@@ -18,6 +18,10 @@ import (
 // schemaVersion is bumped when the file format changes incompatibly.
 const schemaVersion = 1
 
+// ConfigTabID is ActiveTab's value when the Git Config tab is selected. It can't be a
+// repository path.
+const ConfigTabID = "gitrevenge:gitconfig"
+
 // maxRecent caps the recently opened repositories list.
 const maxRecent = 20
 
@@ -28,8 +32,11 @@ type Settings struct {
 	Recent []RecentRepo `json:"recent"`
 	// OpenTabs holds the repository paths open as tabs, in tab order.
 	OpenTabs []string `json:"openTabs"`
-	// ActiveTab is the path of the selected tab, or empty.
+	// ActiveTab is the path of the selected tab, ConfigTabID for the Git Config tab, or empty.
 	ActiveTab string `json:"activeTab"`
+	// ConfigTab is the config file selected in the Git Config tab, or empty when that tab
+	// is closed.
+	ConfigTab string `json:"configTab,omitempty"`
 	// Groups are user-defined collections of repositories. A repo may be in several.
 	Groups []Group `json:"groups"`
 	// Theme is "light" or "dark", or empty to follow the operating system.

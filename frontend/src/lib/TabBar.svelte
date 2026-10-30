@@ -1,5 +1,7 @@
 <script lang="ts">
   import { commands, formatShortcut } from './commands.svelte'
+  import ContextMenu, { type MenuItem } from './ContextMenu.svelte'
+  import { gitConfig } from './gitconfig/config.svelte'
   import { session } from './session.svelte'
   import { theme } from './theme.svelte'
   import Icon from './ui/Icon.svelte'
@@ -8,6 +10,20 @@
   function onAuxClick(e: MouseEvent, path: string) {
     // Middle-click closes a tab, as in browsers.
     if (e.button === 1) void session.close(path)
+  }
+
+  let menu = $state<{ x: number; y: number; items: MenuItem[] } | null>(null)
+
+  function tabMenu(e: MouseEvent, path: string) {
+    e.preventDefault()
+    menu = {
+      x: e.clientX,
+      y: e.clientY,
+      items: [
+        { label: 'Edit git config…', icon: 'gear', run: () => gitConfig.show(path) },
+        { label: 'Close tab', icon: 'close', separator: true, run: () => session.close(path) },
+      ],
+    }
   }
 
   let toggleLabel = $derived(theme.resolved === 'dark' ? 'Switch to the light theme' : 'Switch to the dark theme')
@@ -19,7 +35,8 @@
       <Mark size={18} />
     </button>
     {#each session.tabs as tab (tab.path)}
-      <div class="tab" class:active={session.active === tab.path} title={tab.path}>
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="tab" class:active={session.active === tab.path} title={tab.path} oncontextmenu={(e) => tabMenu(e, tab.path)}>
         <button class="label" onclick={() => session.select(tab.path)} onauxclick={(e) => onAuxClick(e, tab.path)}>
           {tab.name}
           {#if tab.head}<span class="head">{tab.head}</span>{/if}
@@ -29,6 +46,22 @@
         </button>
       </div>
     {/each}
+    {#if gitConfig.open}
+      <div class="tab" class:active={session.active === session.configTabId} title="Git config">
+        <button
+          class="label"
+          onclick={() => session.select(session.configTabId)}
+          onauxclick={(e) => e.button === 1 && gitConfig.requestClose()}
+        >
+          <Icon name="gear" size={14} />
+          Git Config
+          {#if gitConfig.dirtyPaths.length > 0}<span class="dot" aria-label="unsaved changes" title="Unsaved changes">●</span>{/if}
+        </button>
+        <button class="close" aria-label="Close Git Config" title="Close (middle-click)" onclick={() => gitConfig.requestClose()}>
+          <Icon name="close" size={12} />
+        </button>
+      </div>
+    {/if}
     <button class="tab add" onclick={() => session.choose()} title="Open repository" aria-label="Open repository">
       <Icon name="plus" />
     </button>
@@ -45,6 +78,10 @@
     <Icon name={theme.resolved === 'dark' ? 'sun' : 'moon'} size={17} />
   </button>
 </nav>
+
+{#if menu}
+  <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => (menu = null)} />
+{/if}
 
 <style>
   .tabs {
@@ -118,8 +155,16 @@
   }
 
   .label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     height: 100%;
     padding-right: 4px;
+  }
+
+  .dot {
+    color: var(--link);
+    font-size: 10px;
   }
 
   .home,

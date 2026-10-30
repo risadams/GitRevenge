@@ -27,9 +27,14 @@ type RepoTab struct {
 
 // SessionState is what the UI needs to rebuild its tabs on launch.
 type SessionState struct {
-	Tabs   []RepoTab    `json:"tabs"`
+	Tabs []RepoTab `json:"tabs"`
+	// Active is a repository path, ConfigTabID for the Git Config tab, or "" for the start page.
 	Active string       `json:"active"`
 	Failed []FailedRepo `json:"failed"`
+	// ConfigTab is the config file the Git Config tab had selected, or "" if it was closed.
+	ConfigTab string `json:"configTab"`
+	// ConfigTabID is Active's value for the Git Config tab.
+	ConfigTabID string `json:"configTabId"`
 }
 
 // FailedRepo is a saved tab that could not be reopened.
@@ -116,7 +121,13 @@ func (a *App) RestoreSession() (SessionState, error) {
 	}
 	ctx := context.Background()
 	active, failed := m.Restore(ctx)
-	st := SessionState{Active: active, Tabs: []RepoTab{}, Failed: []FailedRepo{}}
+	st := SessionState{
+		Active:      active,
+		Tabs:        []RepoTab{},
+		Failed:      []FailedRepo{},
+		ConfigTab:   m.Settings().Get().ConfigTab,
+		ConfigTabID: settings.ConfigTabID,
+	}
 	for _, r := range m.List() {
 		st.Tabs = append(st.Tabs, tabFor(ctx, r))
 	}
