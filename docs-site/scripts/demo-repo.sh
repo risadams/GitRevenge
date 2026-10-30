@@ -407,6 +407,11 @@ export const knots = (kmh) => Math.round(kmh / 1.852)
 EOF
 git add src/units.js
 
+# A few local settings, for the Git Config tab.
+git config pull.rebase true
+git config core.autocrlf input
+git config alias.ship "push --follow-tags"
+
 # ── Two sibling projects, for a group on the start page ────────────────────────────────
 for name in harbour-api tide-tables; do
   rm -rf "$out/$name" "$out/$name.git"
@@ -426,5 +431,38 @@ for name in harbour-api tide-tables; do
   )
 done
 printf 'export const version = 2\n' > "$out/tide-tables/index.js"
+
+# ── A made-up global config, for the Git Config tab ────────────────────────────────────
+# Start the app with GIT_CONFIG_GLOBAL pointing here, so your own config never appears in a
+# screenshot. The token is fake; it shows the masking.
+win() { cygpath -m "$1" 2>/dev/null || echo "$1"; }
+cat > "$out/work.gitconfig" <<EOF
+[user]
+	email = maya@harbour-works.example
+EOF
+cat > "$out/gitconfig" <<EOF
+[user]
+	name = Maya Okafor
+	email = maya@tidewater.example
+[init]
+	defaultBranch = main
+[core]
+	editor = code --wait
+[push]
+	autoSetupRemote = true
+[fetch]
+	prune = true
+[alias]
+	co = checkout
+	st = status -sb
+	lg = log --graph --oneline --decorate
+	undo = reset --soft HEAD~1
+	wip = "!git add -A && git commit -m \"wip: \${1:-save point}\""
+	log = log --oneline -20
+[url "https://maya:not-a-real-token@git.tidewater.example/"]
+	insteadOf = https://git.tidewater.example/
+[includeIf "gitdir:$(win "$out")/harbour-api/"]
+	path = $(win "$out")/work.gitconfig
+EOF
 
 echo "Built $repo"

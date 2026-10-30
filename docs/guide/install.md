@@ -39,4 +39,4 @@ Settings, project groups, recent repositories and open tabs are kept in one file
 - **Windows:** `%APPDATA%\GitRevenge\settings.json`
 - **macOS:** `~/Library/Application Support/GitRevenge/settings.json`
 
-Nothing about your repositories is stored anywhere else. If the file is ever damaged, the app moves it aside as `settings.json.corrupt-<timestamp>` and starts with defaults.
+Backups of git config files you save in the [Git Config tab](git-config.md) go in a `config-backups` folder beside it. Nothing about your repositories is stored anywhere else. If the file is ever damaged, the app moves it aside as `settings.json.corrupt-<timestamp>` and starts with defaults.

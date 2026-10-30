@@ -14,7 +14,7 @@ Open **Settings** with <kbd>Ctrl</kbd>+<kbd>,</kbd> or from the command palette.
 | **Clone into** | Where new clones go. Empty means the folder of the last repository you opened. |
 | **Updates** | Whether to check GitHub for a newer version at startup. This is the only request the app makes on its own. |
 
-Settings are saved to `settings.json`; see [where your data lives](install.md#where-your-data-lives).
+Settings are saved to `settings.json`; see [where your data lives](install.md#where-your-data-lives). Git's own settings, such as your name, email and aliases, are edited in the [Git Config tab](git-config.md): choose **Edit git config…** under Git.
 
 ## The command palette
 
