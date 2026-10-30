@@ -1,0 +1,29 @@
+# Changes and commits
+
+Click **Uncommitted changes** at the top of the graph (or choose **Show uncommitted changes** in the command palette) to see what's changed in your working tree.
+
+## Staging
+
+- **Stage all** and **Unstage all** move everything at once.
+- Each file has its own stage and discard buttons.
+- Open a file to stage part of it. In the **Unified** diff, each hunk has a **Stage hunk** button, and you can select individual lines and stage just those. Staged changes can be unstaged the same way.
+
+Discarding asks you to confirm first, since it throws your changes away.
+
+## Committing
+
+Write a **Summary** (required) and, if you like, a longer **Description**. Keep the summary under about 72 characters; the app warns you when it's longer. Press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to commit.
+
+You can also amend the last commit.
+
+If your git config signs commits (`commit.gpgsign`), commits made in Git Revenge are signed too, with GPG or SSH as your config says.
+
+## Stashing
+
+**Stash** sets your uncommitted changes aside; **Stash…** lets you give the stash a message first. Stashes are listed in the sidebar. Right-click one to **Apply**, **Pop** or **Drop** it.
+
+## Undo and redo
+
+Commits, checkouts, merges, cherry-picks, rebases, resets, reverts and pulls can be undone. Press <kbd>Ctrl</kbd>+<kbd>Z</kbd> to undo and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> to redo. The command palette names what the next undo will reverse, such as *Undo: Commit "Fix the login form"*.
+
+Undo is only offered while the repository is exactly where that operation left it. If anything has moved since, whether in the app or in a terminal, it refuses rather than guess. Nothing is lost either way: the [reflog](history.md#the-reflog) keeps every earlier state.
