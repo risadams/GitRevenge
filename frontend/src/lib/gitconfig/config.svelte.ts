@@ -116,9 +116,14 @@ class GitConfigTab {
     void SetGitConfigTab('').catch(() => {})
   }
 
-  /** Applies an edited working copy returned by the backend. */
-  update(doc: app.ConfigDoc) {
-    this.docs[doc.path] = doc
+  /** Runs an edit against the selected file's working copy; false if it failed. */
+  async apply(fn: (path: string) => Promise<app.ConfigDoc>): Promise<boolean> {
+    const path = this.scope?.path
+    if (!path) return false
+    this.error = ''
+    const doc = await this.call(() => fn(path))
+    if (doc) this.docs[path] = doc
+    return doc !== undefined
   }
 
   async save(force = false) {

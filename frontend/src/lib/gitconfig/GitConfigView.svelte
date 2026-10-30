@@ -3,6 +3,7 @@
   import Icon from '../ui/Icon.svelte'
   import InkButton from '../ui/InkButton.svelte'
   import Modal from '../ui/Modal.svelte'
+  import ConfigTable from './ConfigTable.svelte'
   import { gitConfig, problemText } from './config.svelte'
 
   let scope = $derived(gitConfig.scope)
@@ -68,14 +69,10 @@
   {/if}
 
   <div class="body">
-    {#if doc}
-      <ul class="entries">
-        {#each doc.entries as e, i (i)}
-          <li><code class="key">{e.key}</code> <span class="value">{e.implicit ? '(true)' : e.value}</span></li>
-        {:else}
-          <li class="meta">This file has no settings yet.</li>
-        {/each}
-      </ul>
+    {#if doc && scope}
+      {#key scope.path}
+        <ConfigTable />
+      {/key}
     {/if}
   </div>
 </section>
@@ -143,15 +140,6 @@
     padding: 12px 14px;
   }
 
-  .entries {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .entries li {
-    padding: 3px 0;
-  }
 
   code,
   .disk {
@@ -159,9 +147,6 @@
     font-size: 12px;
   }
 
-  .key {
-    color: var(--accent-b);
-  }
 
   .disk {
     max-height: 40vh;
