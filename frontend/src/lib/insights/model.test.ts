@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ago, attention, byDay, byReference, duration, latest, median, perDay, sharedAsOf, tiles, utcDay, utcMoment, type Item, type Ranked, type Tagged } from './model'
+import { ago, attention, byDay, byReference, duration, hotFiles, latest, median, perDay, sharedAsOf, tiles, utcDay, utcMoment, type Item, type Ranked, type Tagged } from './model'
 
 const DAY = 86400
 const item = (repo: string, sha: string, committed: number, extra: Partial<Item> = {}): Tagged<Item> => ({
@@ -109,5 +109,17 @@ describe('shipped grouping', () => {
     expect(median([0, 4, 2])).toBe(3)
     expect(median([0])).toBe(0)
     expect([30 * 60, 5.5 * 3600, 30 * 3600, 100 * 3600].map(duration)).toEqual(['30 min', '5.5 h', '30 h', '4.2 days'])
+  })
+})
+
+describe('hotFiles', () => {
+  it('orders across repositories with full tie-breaks', () => {
+    const f = (repo: string, path: string, lines: number, items: number) => ({ repo, value: { path, lines, items, openBranches: 0 } })
+    expect(hotFiles([f('r2', 'a', 10, 1), f('r1', 'b', 30, 1), f('r1', 'c', 10, 2), f('r1', 'a', 10, 1)]).map((h) => `${h.repo}:${h.value.path}`)).toEqual([
+      'r1:b',
+      'r1:c',
+      'r1:a',
+      'r2:a',
+    ])
   })
 })

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -44,6 +45,10 @@ type Settings struct {
 	// InsightsTab is the Insights tab's scope, "repo:<path>" or "group:<name>", or empty
 	// when that tab is closed.
 	InsightsTab string `json:"insightsTab,omitempty"`
+	// InsightsThresholds are the Insights tab's branch thresholds by scope ("repo:<path>" or
+	// "group:<name>"): days stale, days long-lived, commits behind, lines changed. A view
+	// preference; every export prints the values it used.
+	InsightsThresholds map[string][4]int `json:"insightsThresholds,omitempty"`
 	// Groups are user-defined collections of repositories. A repo may be in several.
 	Groups []Group `json:"groups"`
 	// Theme is "light" or "dark", or empty to follow the operating system.
@@ -90,6 +95,7 @@ func (s Settings) clone() Settings {
 		groups[i] = Group{Name: g.Name, Paths: slices.Clone(g.Paths)}
 	}
 	s.Groups = groups
+	s.InsightsThresholds = maps.Clone(s.InsightsThresholds)
 	return s
 }
 

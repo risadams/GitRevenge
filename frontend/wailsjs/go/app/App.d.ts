@@ -100,6 +100,8 @@ export function InsightsShipped(arg1:string,arg2:app.InsightsInputs):Promise<app
 
 export function InsightsTags(arg1:string):Promise<Array<git.TagInfo>>;
 
+export function InsightsThresholds(arg1:string):Promise<app.Thresholds>;
+
 export function Integrate(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
 
 export function InteractiveRebase(arg1:string,arg2:string,arg3:Array<git.RebaseItem>):Promise<void>;
@@ -187,6 +189,8 @@ export function SetGitConfigText(arg1:string,arg2:string):Promise<app.ConfigDoc>
 export function SetGraphDensity(arg1:string):Promise<void>;
 
 export function SetInsightsTab(arg1:string):Promise<void>;
+
+export function SetInsightsThresholds(arg1:string,arg2:app.Thresholds):Promise<void>;
 
 export function SetKeybindings(arg1:Record<string, string>):Promise<void>;
 
