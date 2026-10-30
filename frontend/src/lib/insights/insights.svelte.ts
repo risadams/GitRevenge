@@ -15,9 +15,12 @@ export interface Scope {
 
 export type WindowKind = '7d' | '14d' | 'month' | 'releases'
 
-export type View = 'overview'
+export type View = 'overview' | 'shipped'
 
-export const VIEWS: { id: View; label: string }[] = [{ id: 'overview', label: 'Overview' }]
+export const VIEWS: { id: View; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'shipped', label: 'Shipped' },
+]
 
 /** One repository's results. */
 interface RepoData {
