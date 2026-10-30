@@ -111,3 +111,23 @@ func TestInsightsHotspots(t *testing.T) {
 		t.Errorf("rework = %+v", res.Rework)
 	}
 }
+
+func TestInsightsThresholdsSavedPerScope(t *testing.T) {
+	a := newTestApp(t)
+	if got, err := a.InsightsThresholds("repo:x"); err != nil || got != (Thresholds{Stale: 7, LongLived: 14, Behind: 50, Size: 500}) {
+		t.Fatalf("defaults = %+v, %v", got, err)
+	}
+	want := Thresholds{Stale: 3, LongLived: 10, Behind: 20, Size: 200}
+	if err := a.SetInsightsThresholds("group:Harbour", want); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := a.InsightsThresholds("group:Harbour"); got != want {
+		t.Errorf("saved = %+v, want %+v", got, want)
+	}
+	if got, _ := a.InsightsThresholds("repo:x"); got.Stale != 7 {
+		t.Errorf("another scope changed: %+v", got)
+	}
+	if err := a.SetInsightsThresholds("repo:x", Thresholds{Stale: 0, LongLived: 1, Behind: 1, Size: 1}); err == nil {
+		t.Error("a zero threshold was accepted")
+	}
+}

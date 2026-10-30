@@ -41,7 +41,7 @@ export interface Tagged<T> {
 }
 
 /** A branch with its conflict check, once known. */
-export interface Ranked extends Tagged<Branch> {
+export interface Ranked<T extends Branch = Branch> extends Tagged<T> {
   conflict?: ConflictInfo
 }
 
@@ -49,7 +49,7 @@ const DAY = 24 * 60 * 60
 
 /** Branches that need attention: a flag, or a conflict. Conflicts first, then the most
  * flags, then the most recent tip, then repository and name. */
-export function attention(branches: Ranked[]): Ranked[] {
+export function attention<T extends Branch>(branches: Ranked<T>[]): Ranked<T>[] {
   return branches
     .filter((b) => b.value.flags.length > 0 || b.conflict?.conflicts)
     .sort((a, b) => {
@@ -188,4 +188,23 @@ export function duration(seconds: number): string {
   if (h < 1) return `${Math.round(seconds / 60)} min`
   if (h < 48) return `${h.toFixed(h < 10 ? 1 : 0)} h`
   return `${(h / 24).toFixed(1)} days`
+}
+
+/** The fields of a hot file the model reads (app.HotFile). */
+export interface Hot {
+  path: string
+  lines: number
+  items: number
+  openBranches: number
+}
+
+/** Hot files from every repository, most lines first, then most items, repository and path. */
+export function hotFiles<T extends Hot>(files: Tagged<T>[]): Tagged<T>[] {
+  return [...files].sort(
+    (a, b) =>
+      b.value.lines - a.value.lines ||
+      b.value.items - a.value.items ||
+      a.repo.localeCompare(b.repo, 'en') ||
+      a.value.path.localeCompare(b.value.path, 'en'),
+  )
 }

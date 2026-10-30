@@ -109,6 +109,33 @@ func (a *App) SetInsightsTab(scope string) error {
 	return m.Settings().Update(func(s *settings.Settings) { s.InsightsTab = scope })
 }
 
+// InsightsThresholds returns the thresholds saved for a scope, with defaults for any not set.
+func (a *App) InsightsThresholds(scope string) (Thresholds, error) {
+	m, err := a.sessions()
+	if err != nil {
+		return Thresholds{}, err
+	}
+	v := m.Settings().Get().InsightsThresholds[scope]
+	return Thresholds{Stale: v[0], LongLived: v[1], Behind: v[2], Size: v[3]}.withDefaults(), nil
+}
+
+// SetInsightsThresholds saves a scope's thresholds. Values below 1 are rejected.
+func (a *App) SetInsightsThresholds(scope string, t Thresholds) error {
+	if t.Stale < 1 || t.LongLived < 1 || t.Behind < 1 || t.Size < 1 {
+		return userError("Thresholds must be 1 or more.")
+	}
+	m, err := a.sessions()
+	if err != nil {
+		return err
+	}
+	return m.Settings().Update(func(s *settings.Settings) {
+		if s.InsightsThresholds == nil {
+			s.InsightsThresholds = map[string][4]int{}
+		}
+		s.InsightsThresholds[scope] = [4]int{t.Stale, t.LongLived, t.Behind, t.Size}
+	})
+}
+
 // InsightsFetchedAt returns when the repository last fetched (FETCH_HEAD's modification
 // time, Unix seconds), or 0 if it never has. It's for display only: file times aren't
 // repository state, so they never enter a result.
