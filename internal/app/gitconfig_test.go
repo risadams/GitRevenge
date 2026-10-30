@@ -162,6 +162,19 @@ func TestEffectiveGitConfig(t *testing.T) {
 	}
 }
 
+func TestGitConfigFileText(t *testing.T) {
+	a, global := newConfigTestApp(t)
+	if err := os.WriteFile(global, []byte("[user]\r\n\tname = A\r\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := a.GitConfigFileText(global); err != nil || got != "[user]\n\tname = A\n" {
+		t.Errorf("text = %q, %v; want LF line endings", got, err)
+	}
+	if got, err := a.GitConfigFileText(filepath.Join(t.TempDir(), "missing")); err != nil || got != "" {
+		t.Errorf("missing file = %q, %v", got, err)
+	}
+}
+
 func hasEntry(d ConfigDoc, key, value string) bool {
 	return slices.ContainsFunc(d.Entries, func(e git.ConfigEntry) bool { return e.Key == key && e.Value == value })
 }

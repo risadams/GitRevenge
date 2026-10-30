@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/risadams/gitrevenge/internal/git"
@@ -476,6 +477,19 @@ func (a *App) GitConfigBackupText(path, id string) (string, error) {
 		return "", userError("That backup no longer exists.")
 	}
 	return string(b), err
+}
+
+// GitConfigFileText returns a config file as it is on disk now, with "\n" line endings, or
+// "" if it doesn't exist. History compares backups with it.
+func (a *App) GitConfigFileText(path string) (string, error) {
+	if _, err := a.gitConfig(); err != nil {
+		return "", err
+	}
+	b, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return "", nil
+	}
+	return strings.ReplaceAll(string(b), "\r\n", "\n"), err
 }
 
 // RestoreGitConfig replaces a config file with one of its backups, backing up the current

@@ -7,6 +7,7 @@
   import Modal from '../ui/Modal.svelte'
   import AliasList from './AliasList.svelte'
   import ConfigTable from './ConfigTable.svelte'
+  import HistoryView from './HistoryView.svelte'
   import { gitConfig, problemText, VIEWS } from './config.svelte'
   import RawEditor from './RawEditor.svelte'
   import { baseName, type Scope } from './scopes'
@@ -143,6 +144,8 @@
           <RawEditor />
         {:else if gitConfig.view === 'aliases'}
           <AliasList />
+        {:else if gitConfig.view === 'history'}
+          <HistoryView />
         {:else}
           <ConfigTable />
         {/if}

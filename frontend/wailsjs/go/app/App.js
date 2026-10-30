@@ -134,6 +134,10 @@ export function GitConfigBackups(arg1) {
   return window['go']['app']['App']['GitConfigBackups'](arg1);
 }
 
+export function GitConfigFileText(arg1) {
+  return window['go']['app']['App']['GitConfigFileText'](arg1);
+}
+
 export function GitConfigKeys() {
   return window['go']['app']['App']['GitConfigKeys']();
 }
