@@ -20,11 +20,9 @@ function latestStableTag() {
 }
 const version = latestStableTag();
 
-// GitHub Pages serves the site at /GitRevenge/, so a build uses that base. The development
-// server (docusaurus start) serves at /, so the site is at http://localhost:3000/. BASE_URL
-// overrides either.
-const isDevServer = process.argv.includes('start');
-const baseUrl = process.env.BASE_URL || (isDevServer ? '/' : '/GitRevenge/');
+// The site is served at the root of gitrevenge.com (GitHub Pages, with static/CNAME naming
+// the domain), so every build uses /. BASE_URL overrides it.
+const baseUrl = process.env.BASE_URL || '/';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -32,7 +30,7 @@ const config = {
   tagline: 'A fast, local-only desktop git client for Windows and macOS, built for very large repositories.',
   favicon: 'img/favicon.svg',
 
-  url: 'https://risadams.github.io',
+  url: 'https://gitrevenge.com',
   baseUrl,
 
   organizationName: 'risadams',
