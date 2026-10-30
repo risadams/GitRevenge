@@ -606,6 +606,8 @@ export namespace app {
 	    failed: FailedRepo[];
 	    configTab: string;
 	    configTabId: string;
+	    insightsTab: string;
+	    insightsTabId: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new SessionState(source);
@@ -618,6 +620,8 @@ export namespace app {
 	        this.failed = this.convertValues(source["failed"], FailedRepo);
 	        this.configTab = source["configTab"];
 	        this.configTabId = source["configTabId"];
+	        this.insightsTab = source["insightsTab"];
+	        this.insightsTabId = source["insightsTabId"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

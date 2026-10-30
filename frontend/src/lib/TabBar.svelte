@@ -2,6 +2,7 @@
   import { commands, formatShortcut } from './commands.svelte'
   import ContextMenu, { type MenuItem } from './ContextMenu.svelte'
   import { gitConfig } from './gitconfig/config.svelte'
+  import { insights } from './insights/insights.svelte'
   import { session } from './session.svelte'
   import { theme } from './theme.svelte'
   import Icon from './ui/Icon.svelte'
@@ -21,6 +22,7 @@
       y: e.clientY,
       items: [
         { label: 'Edit git config…', icon: 'gear', run: () => gitConfig.show(path) },
+        { label: 'Insights', icon: 'timeline', run: () => insights.show({ kind: 'repo', id: path }) },
         { label: 'Close tab', icon: 'close', separator: true, run: () => session.close(path) },
       ],
     }
@@ -58,6 +60,17 @@
           {#if gitConfig.dirtyPaths.length > 0}<span class="dot" aria-label="unsaved changes" title="Unsaved changes">●</span>{/if}
         </button>
         <button class="close" aria-label="Close Git Config" title="Close (middle-click)" onclick={() => gitConfig.requestClose()}>
+          <Icon name="close" size={12} />
+        </button>
+      </div>
+    {/if}
+    {#if insights.open}
+      <div class="tab" class:active={session.active === session.insightsTabId} title="Insights">
+        <button class="label" onclick={() => session.select(session.insightsTabId)} onauxclick={(e) => e.button === 1 && insights.close()}>
+          <Icon name="timeline" size={14} />
+          Insights
+        </button>
+        <button class="close" aria-label="Close Insights" title="Close (middle-click)" onclick={() => insights.close()}>
           <Icon name="close" size={12} />
         </button>
       </div>
