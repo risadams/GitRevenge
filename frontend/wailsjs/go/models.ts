@@ -1,5 +1,115 @@
 export namespace app {
 	
+	export class BranchSignal {
+	    name: string;
+	    sha: string;
+	    local: boolean;
+	    author: string;
+	    lastCommit: number;
+	    firstCommit: number;
+	    behind: number;
+	    added: number;
+	    removed: number;
+	    paths: string[];
+	    staleDays: number;
+	    ageDays: number;
+	    flags: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new BranchSignal(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.sha = source["sha"];
+	        this.local = source["local"];
+	        this.author = source["author"];
+	        this.lastCommit = source["lastCommit"];
+	        this.firstCommit = source["firstCommit"];
+	        this.behind = source["behind"];
+	        this.added = source["added"];
+	        this.removed = source["removed"];
+	        this.paths = source["paths"];
+	        this.staleDays = source["staleDays"];
+	        this.ageDays = source["ageDays"];
+	        this.flags = source["flags"];
+	    }
+	}
+	export class Thresholds {
+	    stale: number;
+	    longLived: number;
+	    behind: number;
+	    size: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Thresholds(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.stale = source["stale"];
+	        this.longLived = source["longLived"];
+	        this.behind = source["behind"];
+	        this.size = source["size"];
+	    }
+	}
+	export class InsightsWindow {
+	    target: string;
+	    targetSha: string;
+	    asOf: number;
+	    since: number;
+	    until: number;
+	    range: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new InsightsWindow(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.target = source["target"];
+	        this.targetSha = source["targetSha"];
+	        this.asOf = source["asOf"];
+	        this.since = source["since"];
+	        this.until = source["until"];
+	        this.range = source["range"];
+	    }
+	}
+	export class AttentionResult {
+	    window: InsightsWindow;
+	    thresholds: Thresholds;
+	    branches: BranchSignal[];
+	
+	    static createFrom(source: any = {}) {
+	        return new AttentionResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.window = this.convertValues(source["window"], InsightsWindow);
+	        this.thresholds = this.convertValues(source["thresholds"], Thresholds);
+	        this.branches = this.convertValues(source["branches"], BranchSignal);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class BatchResult {
 	    path: string;
 	    ok: boolean;
@@ -18,6 +128,7 @@ export namespace app {
 	        this.skipped = source["skipped"];
 	    }
 	}
+	
 	export class CommitInfo {
 	    commit: git.CommitDetail;
 	    files: git.FileChange[];
@@ -263,6 +374,58 @@ export namespace app {
 	        this.error = source["error"];
 	    }
 	}
+	export class HotFile {
+	    path: string;
+	    lines: number;
+	    items: number;
+	    openBranches: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new HotFile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.lines = source["lines"];
+	        this.items = source["items"];
+	        this.openBranches = source["openBranches"];
+	    }
+	}
+	export class HotspotsResult {
+	    window: InsightsWindow;
+	    files: HotFile[];
+	    rework: git.ShippedItem[];
+	
+	    static createFrom(source: any = {}) {
+	        return new HotspotsResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.window = this.convertValues(source["window"], InsightsWindow);
+	        this.files = this.convertValues(source["files"], HotFile);
+	        this.rework = this.convertValues(source["rework"], git.ShippedItem);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class InsightsInputs {
 	    target: string;
 	    window: string;
@@ -271,6 +434,7 @@ export namespace app {
 	    from: string;
 	    to: string;
 	    asOf: number;
+	    thresholds: Thresholds;
 	
 	    static createFrom(source: any = {}) {
 	        return new InsightsInputs(source);
@@ -285,30 +449,28 @@ export namespace app {
 	        this.from = source["from"];
 	        this.to = source["to"];
 	        this.asOf = source["asOf"];
-	    }
-	}
-	export class InsightsWindow {
-	    target: string;
-	    targetSha: string;
-	    asOf: number;
-	    since: number;
-	    until: number;
-	    range: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new InsightsWindow(source);
+	        this.thresholds = this.convertValues(source["thresholds"], Thresholds);
 	    }
 	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.target = source["target"];
-	        this.targetSha = source["targetSha"];
-	        this.asOf = source["asOf"];
-	        this.since = source["since"];
-	        this.until = source["until"];
-	        this.range = source["range"];
-	    }
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
+	
 	export class LFSInfo {
 	    available: boolean;
 	    status: git.LFSStatus;
@@ -508,6 +670,7 @@ export namespace app {
 		    return a;
 		}
 	}
+	
 	export class UndoInfo {
 	    undo: string;
 	    redo: string;

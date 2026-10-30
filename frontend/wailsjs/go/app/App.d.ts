@@ -92,6 +92,10 @@ export function Groups():Promise<Array<settings.Group>>;
 
 export function Init(arg1:string,arg2:string):Promise<string>;
 
+export function InsightsBranches(arg1:string,arg2:app.InsightsInputs):Promise<app.AttentionResult>;
+
+export function InsightsHotspots(arg1:string,arg2:app.InsightsInputs):Promise<app.HotspotsResult>;
+
 export function InsightsShipped(arg1:string,arg2:app.InsightsInputs):Promise<app.ShippedResult>;
 
 export function InsightsTags(arg1:string):Promise<Array<git.TagInfo>>;
