@@ -166,3 +166,29 @@ func TestNewOperationClearsRedo(t *testing.T) {
 		t.Fatal("Redo with nothing to redo should fail")
 	}
 }
+
+func TestClosingRepoDropsUndoHistory(t *testing.T) {
+	a := newTestApp(t)
+	fx := gittest.New(t)
+	fx.Linear(1)
+	tab, _ := a.OpenRepo(fx.Dir)
+	_ = a.BranchAction(tab.Path, "create", []string{"one"})
+	_ = a.BranchAction(tab.Path, "create", []string{"two"})
+	if err := a.Undo(tab.Path); err != nil {
+		t.Fatal(err)
+	}
+	if got := undoLabel(t, a, tab.Path); got.Undo == "" || got.Redo == "" {
+		t.Fatalf("before closing: %+v", got)
+	}
+
+	if err := a.CloseRepo(tab.Path); err != nil {
+		t.Fatal(err)
+	}
+	tab, _ = a.OpenRepo(fx.Dir)
+	if got := undoLabel(t, a, tab.Path); got != (UndoInfo{}) {
+		t.Fatalf("after reopening: %+v, want no undo or redo", got)
+	}
+	if err := a.Redo(tab.Path); err == nil {
+		t.Fatal("Redo after reopening should have nothing to redo")
+	}
+}

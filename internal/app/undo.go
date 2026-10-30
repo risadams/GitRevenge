@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/risadams/gitrevenge/internal/fsutil"
 	"github.com/risadams/gitrevenge/internal/git"
 	"github.com/risadams/gitrevenge/internal/session"
 )
@@ -63,6 +64,20 @@ func (u *undoStacks) push(path string, e undoEntry) {
 	}
 	// A new operation makes anything previously undone unreachable by redo.
 	delete(u.redo, path)
+}
+
+// forget drops a repository's undo and redo history, as when its tab closes: the entries
+// describe a session with it that has ended, and offering them later would only mislead.
+func (u *undoStacks) forget(path string) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	for _, m := range []map[string][]undoEntry{u.undo, u.redo} {
+		for p := range m {
+			if fsutil.SamePath(p, path) {
+				delete(m, p)
+			}
+		}
+	}
 }
 
 // record runs op and, if it succeeded and changed HEAD, remembers how to undo it.
