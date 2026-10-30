@@ -39,12 +39,17 @@ func (r *Runner) EffectiveConfig(ctx context.Context, dir string) ([]ConfigEntry
 	if err != nil {
 		return nil, configErr(err)
 	}
-	entries := parseConfigList(out, true)
-	for i, e := range entries {
+	var entries []ConfigEntry
+	for _, e := range parseConfigList(out, true) {
+		// Command-line config is the app's own (baseArgs), not the user's.
+		if e.Scope == "command" {
+			continue
+		}
 		// Local config is reported relative to the repository.
 		if e.File != "" && !filepath.IsAbs(e.File) {
-			entries[i].File = filepath.Join(dir, e.File)
+			e.File = filepath.Join(dir, e.File)
 		}
+		entries = append(entries, e)
 	}
 	return entries, nil
 }
