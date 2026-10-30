@@ -1,8 +1,8 @@
 // @ts-check
 
-// The docs in the order a newcomer reads them: install, then the guide from opening a
-// repository through to settings. The project's own papers (plan, releasing, decisions) come
-// last, collapsed.
+// The docs in the order a newcomer reads them: install, a tour of the window, walkthroughs of
+// common jobs, then the guide to each part of the app. The project's own papers (plan,
+// releasing, decisions) come last, collapsed.
 //
 // Every page is listed by hand, under a short label, so the order is the one written here
 // and never a file name's. src/plugins/sidebar-complete.js fails the build if a page under
@@ -11,12 +11,26 @@
 /** @type {import('@docusaurus/plugin-content-docs').SidebarsConfig} */
 const sidebars = {
   mainSidebar: [
+    { type: 'doc', id: 'guide/README', label: 'Introduction' },
+    { type: 'doc', id: 'guide/install', label: 'Installing' },
+    { type: 'doc', id: 'guide/tour', label: 'A tour of the window' },
+    {
+      type: 'category',
+      label: 'Walkthroughs',
+      link: { type: 'doc', id: 'walkthroughs/README' },
+      items: [
+        { type: 'doc', id: 'walkthroughs/first-commit', label: 'Stage and commit' },
+        { type: 'doc', id: 'walkthroughs/tidy-a-branch', label: 'Tidy a branch' },
+        { type: 'doc', id: 'walkthroughs/resolve-a-conflict', label: 'Resolve a conflict' },
+        { type: 'doc', id: 'walkthroughs/undo-a-mistake', label: 'Undo a mistake' },
+        { type: 'doc', id: 'walkthroughs/find-a-commit', label: 'Find a commit' },
+        { type: 'doc', id: 'walkthroughs/several-repositories', label: 'Several repositories' },
+      ],
+    },
     {
       type: 'category',
       label: 'User guide',
-      link: { type: 'doc', id: 'guide/README' },
       items: [
-        { type: 'doc', id: 'guide/install', label: 'Installing' },
         { type: 'doc', id: 'guide/repositories', label: 'Repositories and tabs' },
         { type: 'doc', id: 'guide/graph', label: 'The commit graph' },
         { type: 'doc', id: 'guide/changes', label: 'Changes and commits' },

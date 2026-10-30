@@ -8,8 +8,8 @@ import { PageMetadata } from '@docusaurus/theme-common';
 // places people were most likely looking for. It sets its own title, since a missing page
 // under /docs is drawn by the docs layout, which gives it none.
 const places = [
-  { title: 'Get started', desc: 'Install Git Revenge and open your first repository.', to: '/docs/guide/install', accent: 'rose' },
-  { title: 'The commit graph', desc: 'Scroll, search and filter a big history.', to: '/docs/guide/graph', accent: 'navy' },
+  { title: 'Get started', desc: 'Install Git Revenge and take the tour.', to: '/docs/guide/install', accent: 'rose' },
+  { title: 'Walkthroughs', desc: 'Commit, rebase, resolve and undo, step by step.', to: '/docs/walkthroughs', accent: 'navy' },
   { title: 'Settings and shortcuts', desc: 'Every setting, and every key.', to: '/docs/guide/settings', accent: 'amber' },
 ];
 

@@ -23,13 +23,31 @@ Some files read better rendered than as text. In the **File** layout, these get 
 | Mermaid (`.mmd`, `.mermaid`) | the diagram |
 | PDF | the document |
 
+![A README shown rendered](../img/preview-markdown-light.webp#gh-light-mode-only)
+![A README shown rendered](../img/preview-markdown-dark.webp#gh-dark-mode-only)
+![A CSV file shown as a table](../img/preview-csv-light.webp#gh-light-mode-only)
+![A CSV file shown as a table](../img/preview-csv-dark.webp#gh-dark-mode-only)
+![A JSON file shown as a tree you can search](../img/preview-json-light.webp#gh-light-mode-only)
+![A JSON file shown as a tree you can search](../img/preview-json-dark.webp#gh-dark-mode-only)
+![A Mermaid diagram, drawn](../img/preview-mermaid-light.webp#gh-light-mode-only)
+![A Mermaid diagram, drawn](../img/preview-mermaid-dark.webp#gh-dark-mode-only)
+
 ## File history and blame
 
 From a file's diff, **History** lists every commit that changed it, and **Blame** shows who last changed each line and in which commit.
 
+![Blame: each line with the commit and author that last changed it](../img/blame-light.webp#gh-light-mode-only)
+![Blame: each line with the commit and author that last changed it](../img/blame-dark.webp#gh-dark-mode-only)
+
+
 ## The reflog
 
 The reflog is git's record of where HEAD and each branch have been. It's how you find a commit you thought you'd lost to a reset or a rebase. Choose **Show the reflog…** in the command palette for HEAD's, or right-click a branch for its own.
+
+![The reflog](../img/reflog-light.webp#gh-light-mode-only)
+![The reflog](../img/reflog-dark.webp#gh-dark-mode-only)
+
+[Undo a mistake](../walkthroughs/undo-a-mistake.md) walks through recovering a commit with it.
 
 ## Notes
 
