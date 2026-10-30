@@ -2,6 +2,9 @@
 
 Open **Settings** with <kbd>Ctrl</kbd>+<kbd>,</kbd> or from the command palette.
 
+![The Settings panel](../img/settings-light.webp#gh-light-mode-only)
+![The Settings panel](../img/settings-dark.webp#gh-dark-mode-only)
+
 | Setting | What it does |
 |---|---|
 | **Theme** | Light, dark, or follow the system. |
@@ -12,6 +15,13 @@ Open **Settings** with <kbd>Ctrl</kbd>+<kbd>,</kbd> or from the command palette.
 | **Updates** | Whether to check GitHub for a newer version at startup. This is the only request the app makes on its own. |
 
 Settings are saved to `settings.json`; see [where your data lives](install.md#where-your-data-lives).
+
+## The command palette
+
+<kbd>Ctrl</kbd>+<kbd>K</kbd> opens the command palette: every command in the app, searchable, with its shortcut if it has one. Type a few letters of what you want and press <kbd>Enter</kbd>.
+
+![The command palette, filtered to pull commands](../img/command-palette-light.webp#gh-light-mode-only)
+![The command palette, filtered to pull commands](../img/command-palette-dark.webp#gh-dark-mode-only)
 
 ## Keyboard shortcuts
 

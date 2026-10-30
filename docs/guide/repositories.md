@@ -2,6 +2,9 @@
 
 ## Opening a repository
 
+![The start page: Open, Clone and New repository, recent repositories, and a group](../img/start-page-light.webp#gh-light-mode-only)
+![The start page: Open, Clone and New repository, recent repositories, and a group](../img/start-page-dark.webp#gh-dark-mode-only)
+
 The start page has three ways in:
 
 - **Open repository** picks a folder that's already a git repository (<kbd>Ctrl</kbd>+<kbd>O</kbd>).
@@ -25,7 +28,10 @@ Every repository opens in its own tab, and the tabs come back when you restart t
 
 If you work across several related repositories, put them in a group. On the start page, choose **New group**, then **Add…** to add repositories to it.
 
-A group's **Dashboard** shows each repository's branch, how many uncommitted changes it has, and when it was last fetched. From there you can fetch or pull them all at once. Pulls here are fast-forward only: a repository whose branch has diverged is reported, never merged. **Open all as tabs** opens every repository in the group.
+![A group's dashboard](../img/group-dashboard-light.webp#gh-light-mode-only)
+![A group's dashboard](../img/group-dashboard-dark.webp#gh-dark-mode-only)
+
+A group's **Dashboard** shows each repository's branch, how many uncommitted changes it has, and when it was last fetched. From there you can fetch or pull them all at once. Pulls here are fast-forward only: a repository whose branch has diverged is reported, never merged. **Open all as tabs** opens every repository in the group. The walkthrough [Look after several repositories](../walkthroughs/several-repositories.md) goes through it step by step.
 
 ## Worktrees
 

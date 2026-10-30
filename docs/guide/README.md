@@ -7,11 +7,10 @@ There are no accounts, no cloud features and no AI. The only request the app mak
 ## Where to start
 
 1. [Install it](install.md) and check you have a recent enough git.
-2. [Open or clone a repository](repositories.md).
-3. Find your way around [the commit graph](graph.md).
-4. [Stage and commit](changes.md), then [branch, merge and rebase](branches.md).
+2. Take [a tour of the window](tour.md), so you know what's where.
+3. Work through a [walkthrough](../walkthroughs/README.md) or two. They use a practice repository you can build yourself, so you can follow along without touching real work.
 
-The rest of the guide covers [diffs and history](history.md), [remotes, LFS and submodules](remotes.md), and [settings and keyboard shortcuts](settings.md).
+After that, the guide covers each part of the app in turn: [repositories and tabs](repositories.md), [the commit graph](graph.md), [changes and commits](changes.md), [branches, merges and rebases](branches.md), [diffs and history](history.md), [remotes, LFS and submodules](remotes.md), and [settings and keyboard shortcuts](settings.md).
 
 ## The command palette
 

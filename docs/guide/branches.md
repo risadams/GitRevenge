@@ -30,6 +30,11 @@ Right-click a commit and choose **Reset** to move your branch there. You pick th
 
 Right-click a commit and choose **Interactive rebase … from here…**. The editor lists every commit after it, and for each you can **pick**, **reword**, **squash**, **fixup** or **drop** it, and move it up or down. Squashing starts from both messages, as git does. **Start rebase** runs it; **Cancel** goes back to the graph with nothing changed.
 
+![The interactive rebase editor](../img/rebase-editor-light.webp#gh-light-mode-only)
+![The interactive rebase editor](../img/rebase-editor-dark.webp#gh-dark-mode-only)
+
+The walkthrough [Tidy a branch before you share it](../walkthroughs/tidy-a-branch.md) shows a full clean-up.
+
 ## Conflicts
 
 When a merge, rebase or cherry-pick stops on conflicts, the conflicted files are listed with your uncommitted changes. For each one you can:
@@ -37,6 +42,9 @@ When a merge, rebase or cherry-pick stops on conflicts, the conflicted files are
 - resolve it with **ours** or **theirs** in one click, or
 - open the **conflict tool**, which shows ours, theirs and an editable result side by side. Take either side for each conflict, or edit the result by hand, then choose **Mark resolved**.
 
-A banner at the top offers **Continue**, **Abort** and **Skip** until the operation is finished.
+![The conflict tool: ours and theirs side by side, and the editable result](../img/conflict-tool-light.webp#gh-light-mode-only)
+![The conflict tool: ours and theirs side by side, and the editable result](../img/conflict-tool-dark.webp#gh-dark-mode-only)
+
+A banner at the top offers **Continue**, **Abort** and **Skip** until the operation is finished. See [Resolve a merge conflict](../walkthroughs/resolve-a-conflict.md) for the whole thing, step by step.
 
 Any of these can be undone afterwards; see [Undo and redo](changes.md#undo-and-redo).
