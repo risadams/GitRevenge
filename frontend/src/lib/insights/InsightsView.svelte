@@ -5,6 +5,7 @@
   import Icon from '../ui/Icon.svelte'
   import { insights, VIEWS, type WindowKind } from './insights.svelte'
   import { ago, attention, latest, perDay, tiles, utcDay, utcMoment } from './model'
+  import ShippedView from './ShippedView.svelte'
 
   const windows: { id: WindowKind; label: string }[] = [
     { id: '7d', label: '7 days' },
@@ -113,7 +114,9 @@
     <div class="group views">
       <h2 class="meta">View</h2>
       {#each VIEWS as v (v.id)}
-        <button class="item" class:on={insights.view === v.id} aria-current={insights.view === v.id ? 'page' : undefined} onclick={() => (insights.view = v.id)}>{v.label}</button>
+        <button class="item" class:on={insights.view === v.id} aria-current={insights.view === v.id ? 'page' : undefined} onclick={() => (insights.view = v.id)}
+          >{v.label}{#if v.id === 'shipped' && w}<span class="count">{insights.items.length}</span>{/if}</button
+        >
       {/each}
     </div>
 
@@ -146,7 +149,9 @@
       <p class="empty"><span class="hand">nothing to measure</span> Open a repository or make a project group to see its insights.</p>
     {/if}
 
-    {#if w}
+    {#if w && insights.view === 'shipped'}
+      <ShippedView />
+    {:else if w}
       <div class="tiles">
         <div class="tile teal">
           <span class="meta">Shipped</span><span class="num">{t.shipped}</span>
@@ -350,6 +355,13 @@
     filter: url(#wc-edge);
     border-radius: 45% 55% 50% 50% / 55% 45%;
     opacity: 0.9;
+  }
+
+  .count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-faint);
   }
 
   .fresh {

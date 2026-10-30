@@ -66,7 +66,7 @@ export function attention(branches: Ranked[]): Ranked[] {
 }
 
 /** The newest shipped items first, ties by repository and SHA. */
-export function latest(items: Tagged<Item>[]): Tagged<Item>[] {
+export function latest<T extends Item>(items: Tagged<T>[]): Tagged<T>[] {
   return [...items].sort((a, b) => b.value.committed - a.value.committed || a.repo.localeCompare(b.repo, 'en') || a.value.sha.localeCompare(b.value.sha, 'en'))
 }
 
@@ -134,4 +134,58 @@ export function ago(seconds: number, now = Date.now() / 1000): string {
 /** The group scope's shared as-of point: the latest of its repositories' own. */
 export function sharedAsOf(asOfs: number[]): number {
   return asOfs.reduce((m, v) => Math.max(m, v), 0)
+}
+
+/** Shipped items that share a ticket reference. */
+export interface RefGroup<T extends Item = Item> {
+  /** The reference, or '' for items without one. */
+  ref: string
+  items: Tagged<T>[]
+  /** The median cycle time of the merges among them, seconds; 0 when none is known. */
+  cycle: number
+}
+
+/** The median of the known (non-zero) values, or 0. */
+export function median(values: number[]): number {
+  const known = values.filter((v) => v > 0).sort((a, b) => a - b)
+  if (known.length === 0) return 0
+  const mid = Math.floor(known.length / 2)
+  return known.length % 2 ? known[mid] : (known[mid - 1] + known[mid]) / 2
+}
+
+/** Groups items by their first reference: the biggest groups first, then the most recent,
+ * then by reference; items without one come last. Items keep latest() order inside. */
+export function byReference<T extends Item & { cycle: number }>(items: Tagged<T>[]): RefGroup<T>[] {
+  const groups = new Map<string, Tagged<T>[]>()
+  for (const i of latest(items)) {
+    const ref = i.value.refs[0] ?? ''
+    groups.set(ref, [...(groups.get(ref) ?? []), i])
+  }
+  return [...groups.entries()]
+    .map(([ref, list]) => ({ ref, items: list, cycle: median(list.map((i) => i.value.cycle)) }))
+    .sort(
+      (a, b) =>
+        Number(a.ref === '') - Number(b.ref === '') ||
+        b.items.length - a.items.length ||
+        b.items[0].value.committed - a.items[0].value.committed ||
+        a.ref.localeCompare(b.ref, 'en'),
+    )
+}
+
+/** Items by the UTC day they landed, newest day first. */
+export function byDay<T extends Item>(items: Tagged<T>[]): { day: number; items: Tagged<T>[] }[] {
+  const days = new Map<number, Tagged<T>[]>()
+  for (const i of latest(items)) {
+    const day = Math.floor(i.value.committed / DAY) * DAY
+    days.set(day, [...(days.get(day) ?? []), i])
+  }
+  return [...days.entries()].map(([day, list]) => ({ day, items: list }))
+}
+
+/** Seconds as a short duration: "40 min", "5.5 h", "3.2 days". */
+export function duration(seconds: number): string {
+  const h = seconds / 3600
+  if (h < 1) return `${Math.round(seconds / 60)} min`
+  if (h < 48) return `${h.toFixed(h < 10 ? 1 : 0)} h`
+  return `${(h / 24).toFixed(1)} days`
 }
