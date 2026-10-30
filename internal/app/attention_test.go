@@ -11,7 +11,7 @@ import (
 )
 
 func TestSignalFlags(t *testing.T) {
-	asOf := int64(100 * day)
+	asOf := 100 * day
 	b := git.OpenBranch{Name: "x", LastCommit: asOf - 9*day - 1, FirstCommit: asOf - 20*day, Behind: 60, Added: 400, Removed: 101}
 	s := signal(b, asOf, Thresholds{}.withDefaults())
 	if s.StaleDays != 9 || s.AgeDays != 20 {

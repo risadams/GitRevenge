@@ -41,8 +41,8 @@ type OpenBranch struct {
 }
 
 // OpenBranches lists remote branches, and local branches with no upstream, that aren't
-// merged into target, most recently active first (ties by name), up to max.
-func (r *Repo) OpenBranches(ctx context.Context, target string, max int) ([]OpenBranch, error) {
+// merged into target, most recently active first (ties by name), up to limit.
+func (r *Repo) OpenBranches(ctx context.Context, target string, limit int) ([]OpenBranch, error) {
 	targetRef, err := r.ReadString(ctx, "rev-parse", "--symbolic-full-name", target)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (r *Repo) OpenBranches(ctx context.Context, target string, max int) ([]Open
 		}
 		return strings.Compare(a.Name, b.Name)
 	})
-	bs = bs[:min(len(bs), max)]
+	bs = bs[:min(len(bs), limit)]
 	for i := range bs {
 		if err := r.measure(ctx, target, &bs[i]); err != nil {
 			return nil, err
