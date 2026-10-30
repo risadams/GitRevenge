@@ -263,6 +263,52 @@ export namespace app {
 	        this.error = source["error"];
 	    }
 	}
+	export class InsightsInputs {
+	    target: string;
+	    window: string;
+	    since: number;
+	    until: number;
+	    from: string;
+	    to: string;
+	    asOf: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new InsightsInputs(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.target = source["target"];
+	        this.window = source["window"];
+	        this.since = source["since"];
+	        this.until = source["until"];
+	        this.from = source["from"];
+	        this.to = source["to"];
+	        this.asOf = source["asOf"];
+	    }
+	}
+	export class InsightsWindow {
+	    target: string;
+	    targetSha: string;
+	    asOf: number;
+	    since: number;
+	    until: number;
+	    range: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new InsightsWindow(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.target = source["target"];
+	        this.targetSha = source["targetSha"];
+	        this.asOf = source["asOf"];
+	        this.since = source["since"];
+	        this.until = source["until"];
+	        this.range = source["range"];
+	    }
+	}
 	export class LFSInfo {
 	    available: boolean;
 	    status: git.LFSStatus;
@@ -410,6 +456,38 @@ export namespace app {
 	        this.failed = this.convertValues(source["failed"], FailedRepo);
 	        this.configTab = source["configTab"];
 	        this.configTabId = source["configTabId"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ShippedResult {
+	    window: InsightsWindow;
+	    items: git.ShippedItem[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ShippedResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.window = this.convertValues(source["window"], InsightsWindow);
+	        this.items = this.convertValues(source["items"], git.ShippedItem);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1061,6 +1139,42 @@ export namespace git {
 	        this.pushUrl = source["pushUrl"];
 	    }
 	}
+	export class ShippedItem {
+	    sha: string;
+	    title: string;
+	    author: string;
+	    email: string;
+	    committed: number;
+	    merge: boolean;
+	    files: number;
+	    added: number;
+	    removed: number;
+	    refs: string[];
+	    cycle: number;
+	    revert: boolean;
+	    fixup: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ShippedItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sha = source["sha"];
+	        this.title = source["title"];
+	        this.author = source["author"];
+	        this.email = source["email"];
+	        this.committed = source["committed"];
+	        this.merge = source["merge"];
+	        this.files = source["files"];
+	        this.added = source["added"];
+	        this.removed = source["removed"];
+	        this.refs = source["refs"];
+	        this.cycle = source["cycle"];
+	        this.revert = source["revert"];
+	        this.fixup = source["fixup"];
+	    }
+	}
 	
 	
 	export class SignatureCheck {
@@ -1197,6 +1311,20 @@ export namespace git {
 	        this.commit = source["commit"];
 	        this.state = source["state"];
 	        this.describe = source["describe"];
+	    }
+	}
+	export class TagInfo {
+	    name: string;
+	    time: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new TagInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.time = source["time"];
 	    }
 	}
 	

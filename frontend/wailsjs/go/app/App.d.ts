@@ -92,6 +92,10 @@ export function Groups():Promise<Array<settings.Group>>;
 
 export function Init(arg1:string,arg2:string):Promise<string>;
 
+export function InsightsShipped(arg1:string,arg2:app.InsightsInputs):Promise<app.ShippedResult>;
+
+export function InsightsTags(arg1:string):Promise<Array<git.TagInfo>>;
+
 export function Integrate(arg1:string,arg2:string,arg3:Array<string>):Promise<void>;
 
 export function InteractiveRebase(arg1:string,arg2:string,arg3:Array<git.RebaseItem>):Promise<void>;
