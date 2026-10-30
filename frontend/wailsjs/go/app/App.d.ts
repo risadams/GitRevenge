@@ -72,6 +72,8 @@ export function GitConfigBackupText(arg1:string,arg2:string):Promise<string>;
 
 export function GitConfigBackups(arg1:string):Promise<Array<gitconfig.Backup>>;
 
+export function GitConfigFileText(arg1:string):Promise<string>;
+
 export function GitConfigKeys():Promise<Array<string>>;
 
 export function GitConfigScopes(arg1:string):Promise<app.ConfigScopes>;
