@@ -58,6 +58,7 @@ const sidebars = {
             { type: 'doc', id: 'adr/askpass-bridge', label: 'ADR-0004 The askpass bridge' },
             { type: 'doc', id: 'adr/local-state-and-external-changes', label: 'ADR-0005 Local state' },
             { type: 'doc', id: 'adr/docs-site', label: 'ADR-0006 The docs site' },
+            { type: 'doc', id: 'adr/git-config-editing', label: 'ADR-0007 Editing git config' },
           ],
         },
       ],

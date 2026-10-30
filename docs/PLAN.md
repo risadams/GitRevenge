@@ -31,6 +31,7 @@ This document records the decisions from the initial requirements session (2026-
 | Frontend | Svelte 5 + TypeScript + Vite; canvas commit graph; CodeMirror 6 for diffs | [0003](adr/0003-svelte-canvas-graph.md) |
 | Credentials | Existing helpers first; askpass bridge into the UI | [0004](adr/0004-askpass-bridge.md) |
 | State | Local JSON settings in the OS config dir | [0005](adr/0005-local-state-and-external-changes.md) |
+| Git config editing | Working copy edited through `git config --file`; validated saves with backups | [0007](adr/0007-git-config-editing.md) |
 
 ### Backend
 
