@@ -30,12 +30,12 @@
 
 <div class="history">
   <header class="view-head">
-    <button class="tool" onclick={onClose} title="Back"><Icon name="back" />Back</button>
+    <button class="btn quiet" onclick={onClose} title="Back"><Icon name="back" />Back</button>
     <span class="view-badge">History</span>
     <span class="view-file" title={file}>{file}</span>
     {#if commits}<span class="meta">{commits.length} {commits.length === 1 ? 'commit' : 'commits'}</span>{/if}
     <span class="spacer"></span>
-    <button class="tool" onclick={() => onOpen({ mode: 'blame', file })}>Blame</button>
+    <button class="btn quiet" onclick={() => onOpen({ mode: 'blame', file })}>Blame</button>
   </header>
   <ul class="list">
     {#if !commits}

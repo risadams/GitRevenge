@@ -77,11 +77,11 @@
             {#if r.pushUrl && r.pushUrl !== r.fetchUrl}<span class="url" title={r.pushUrl}>push: {r.pushUrl}</span>{/if}
           </div>
           {#if confirmRemove === r.name}
-            <button class="tool confirm" onclick={() => remove(r.name)}>Remove {r.name}</button>
-            <button class="tool" onclick={() => (confirmRemove = null)}>Keep</button>
+            <button class="btn sm danger" onclick={() => remove(r.name)}>Remove {r.name}</button>
+            <button class="btn quiet" onclick={() => (confirmRemove = null)}>Keep</button>
           {:else}
-            <button class="tool" onclick={() => startEdit(r)}>Edit</button>
-            <button class="tool" onclick={() => (confirmRemove = r.name)}>Remove</button>
+            <button class="btn quiet" onclick={() => startEdit(r)}>Edit</button>
+            <button class="btn quiet" onclick={() => (confirmRemove = r.name)}>Remove</button>
           {/if}
         </li>
       {/each}
@@ -142,11 +142,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .confirm {
-    background: var(--danger-wash);
-    color: var(--danger);
   }
 
   form {

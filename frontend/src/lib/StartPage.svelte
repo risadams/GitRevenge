@@ -200,7 +200,7 @@
         <section class="groups" aria-labelledby="groups-h">
           <div class="groups-head">
             <h2 id="groups-h">Groups</h2>
-            <button class="tool" onclick={newGroup}><Icon name="plus" />New group</button>
+            <button class="btn quiet" onclick={newGroup}><Icon name="plus" />New group</button>
           </div>
           {#if groups.length === 0}
             <p class="empty">
@@ -230,7 +230,7 @@
                     <button class="link" onclick={() => (dashboard = g.name)}>Dashboard</button>
                     <button class="link" disabled={!g.paths.length} onclick={() => openAll(g)}>Open all</button>
                     <button class="link" onclick={() => addRepo(g)}>Add…</button>
-                    <button class="tool more" aria-label="More actions for {g.name}" title="More" onclick={(e) => more(e, g)}><Icon name="more" /></button>
+                    <button class="btn quiet more" aria-label="More actions for {g.name}" title="More" onclick={(e) => more(e, g)}><Icon name="more" /></button>
                   </div>
                 </div>
               </article>

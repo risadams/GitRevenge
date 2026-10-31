@@ -44,7 +44,7 @@
       <label><span class="meta">Long-lived after</span><span class="in"><input type="number" min="1" value={longLived} oninput={(e) => (longLived = num(e))} /> days</span></label>
       <label><span class="meta">Drifting past</span><span class="in"><input type="number" min="1" value={behind} oninput={(e) => (behind = num(e))} /> behind</span></label>
       <label><span class="meta">Big batch over</span><span class="in"><input type="number" min="1" value={size} oninput={(e) => (size = num(e))} /> lines</span></label>
-      {#if changed}<button class="pill" type="submit" disabled={!valid}>Apply</button>{/if}
+      {#if changed}<button class="btn secondary" type="submit" disabled={!valid}>Apply</button>{/if}
     </form>
   </details>
 
@@ -158,15 +158,6 @@
     border-radius: 6px;
     font-family: var(--font-mono);
     font-size: 13px;
-  }
-
-  .pill {
-    min-height: 34px;
-    padding: 0 16px;
-    background: none;
-    border: 1px solid var(--paper-edge);
-    border-radius: 999px;
-    font-size: 14px;
   }
 
   .scroll {

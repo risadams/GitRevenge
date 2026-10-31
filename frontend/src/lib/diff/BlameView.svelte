@@ -57,15 +57,15 @@
 
 <div class="blame">
   <header class="view-head">
-    <button class="tool" onclick={onClose} title="Back"><Icon name="back" />Back</button>
+    <button class="btn quiet" onclick={onClose} title="Back"><Icon name="back" />Back</button>
     <span class="view-badge">Blame</span>
     <span class="view-file" title={file}>{file}</span>
     {#if rev}<span class="meta">at {rev.slice(0, 7)}</span>{/if}
     <span class="spacer"></span>
-    <button class="tool" aria-pressed={wrap.on} onclick={toggleWrap} title="Wrap long lines ({formatShortcut('Alt+Z')})"
+    <button class="btn quiet" aria-pressed={wrap.on} onclick={toggleWrap} title="Wrap long lines ({formatShortcut('Alt+Z')})"
       ><Icon name="wrap" />Wrap</button
     >
-    <button class="tool" onclick={() => onOpen({ mode: 'history', file })}>History</button>
+    <button class="btn quiet" onclick={() => onOpen({ mode: 'history', file })}>History</button>
   </header>
   <div class="body code-ground">
     {#if !lines}

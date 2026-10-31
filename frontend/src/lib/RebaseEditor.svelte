@@ -89,7 +89,7 @@
 
 <div class="rebase">
   <header>
-    <button class="tool back" onclick={onClose} title="Cancel and return to the graph"><Icon name="back" />Back</button>
+    <button class="btn quiet back" onclick={onClose} title="Cancel and return to the graph"><Icon name="back" />Back</button>
     <div class="title">
       <h2>Interactive rebase</h2>
       <span class="meta">Onto {base.slice(0, 7)} · {items.length} {items.length === 1 ? 'commit' : 'commits'} · newest first</span>
@@ -104,8 +104,8 @@
     {#each items as it, i (it.commit)}
       <li class={it.action}>
         <span class="move">
-          <button class="tool" disabled={i === 0} onclick={() => move(i, -1)} aria-label="Move {it.subject} up" title="Move up"><Icon name="chevron" size={14} /></button>
-          <button class="tool down" disabled={i === items.length - 1} onclick={() => move(i, 1)} aria-label="Move {it.subject} down" title="Move down"
+          <button class="btn sm quiet icon up" disabled={i === 0} onclick={() => move(i, -1)} aria-label="Move {it.subject} up" title="Move up"><Icon name="chevron" size={14} /></button>
+          <button class="btn sm quiet icon" disabled={i === items.length - 1} onclick={() => move(i, 1)} aria-label="Move {it.subject} down" title="Move down"
             ><Icon name="chevron" size={14} /></button
           >
         </span>
@@ -211,22 +211,13 @@
     display: flex;
   }
 
-  .move .tool {
-    height: 28px;
-    padding: 0 5px;
+  /* Up is the down arrow turned over. */
+  .move .up {
     transform: rotate(180deg);
   }
 
-  .move .tool.down {
-    transform: none;
-  }
-
-  .move .tool:hover:not(:disabled) {
+  .move .up:hover:not(:disabled) {
     transform: rotate(180deg) translateY(1px);
-  }
-
-  .move .tool.down:hover:not(:disabled) {
-    transform: translateY(1px);
   }
 
   .action {

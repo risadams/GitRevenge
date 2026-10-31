@@ -161,7 +161,7 @@
       <Icon name="search" size={15} />
       <input type="search" placeholder="Filter keys and values" aria-label="Filter keys and values" bind:value={filter} spellcheck="false" />
     </label>
-    <span class="segmented pills" role="group" aria-label="Which keys to show">
+    <span class="segmented" role="group" aria-label="Which keys to show">
       <button aria-pressed={showInherited} onclick={() => (showInherited = true)}>everything git reads</button>
       <button aria-pressed={!showInherited} onclick={() => (showInherited = false)}>only this file</button>
     </span>
@@ -190,7 +190,7 @@
         {/if}
       </label>
       <div class="add-actions">
-        <button class="textbtn" type="button" onclick={() => (addOpen = false)}>Cancel</button>
+        <button class="btn text" type="button" onclick={() => (addOpen = false)}>Cancel</button>
         <InkButton type="submit" disabled={!newKey.trim() || gitConfig.busy}>Add</InkButton>
       </div>
       {#if newInfo}<p class="hint">{newInfo.description}</p>{/if}
@@ -209,7 +209,7 @@
         <span class="meta">{own === 0 ? 'inherited' : own === 1 ? '1 key' : `${own} keys`}</span>
         <span class="spacer"></span>
         {#if scope?.kind === 'local' && s.name.startsWith('remote "')}
-          <button class="textbtn" onclick={() => manageRemotes(scope.repo)}>also in Remotes →</button>
+          <button class="btn text" onclick={() => manageRemotes(scope.repo)}>also in Remotes →</button>
         {:else if scope?.kind === 'local' && s.name.startsWith('branch "')}
           <span class="sub">Upstreams are also set from the branch menu.</span>
         {/if}
@@ -246,11 +246,11 @@
                   {#if adding === id}
                     <form class="value" onsubmit={(e) => (e.preventDefault(), addValue(r))}>
                       <input class="field grow" aria-label="Another value for {r.key}" bind:value={newValue} spellcheck="false" autocomplete="off" />
-                      <button class="textbtn" type="button" onclick={() => (adding = '')}>Cancel</button>
-                      <button class="textbtn" type="submit" disabled={!newValue}>Add</button>
+                      <button class="btn text" type="button" onclick={() => (adding = '')}>Cancel</button>
+                      <button class="btn text" type="submit" disabled={!newValue}>Add</button>
                     </form>
                   {:else}
-                    <button class="textbtn start" onclick={() => ((adding = id), (newValue = ''))}>+ add a value</button>
+                    <button class="btn text start" onclick={() => ((adding = id), (newValue = ''))}>+ add a value</button>
                   {/if}
                 {/if}
                 {#if changed || r.inherited.length > 0}
@@ -273,7 +273,7 @@
                     <code>{i.implicit ? 'true' : shownValue(r, i.value)}</code>
                     <span class="tag {source(i).tone}" title={i.file || 'set on the command line'}>{source(i).text}</span>
                     {#if editableSource(i)}
-                      <button class="textbtn" title={i.file} onclick={() => gitConfig.showFile(i.file, scope?.repo ?? '')}>edit that file</button>
+                      <button class="btn text" title={i.file} onclick={() => gitConfig.showFile(i.file, scope?.repo ?? '')}>edit that file</button>
                     {/if}
                   </div>
                 {/each}
@@ -281,16 +281,16 @@
             </div>
             <div class="actions">
               {#if secret(r)}
-                <button class="textbtn" aria-pressed={!!revealed[id]} aria-label="{revealed[id] ? 'Hide' : 'Show'} the value of {r.key}" onclick={() => (revealed[id] = !revealed[id])}>
+                <button class="btn text" aria-pressed={!!revealed[id]} aria-label="{revealed[id] ? 'Hide' : 'Show'} the value of {r.key}" onclick={() => (revealed[id] = !revealed[id])}>
                   {revealed[id] ? 'Hide' : 'Show'}
                 </button>
               {/if}
               {#if own}
-                <button class="textbtn" onclick={() => remove(r)} title={r.inherited.length ? 'Remove from this file, so the inherited value applies again' : 'Remove from this file'}>
+                <button class="btn text" onclick={() => remove(r)} title={r.inherited.length ? 'Remove from this file, so the inherited value applies again' : 'Remove from this file'}>
                   {r.inherited.length ? `Use ${source(last(r)).text}` : r.multi ? 'Remove all' : 'Remove'}
                 </button>
               {:else}
-                <button class="textbtn" onclick={() => override(r)}>{r.multi ? 'Add here' : 'Override here'}</button>
+                <button class="btn text" onclick={() => override(r)}>{r.multi ? 'Add here' : 'Override here'}</button>
               {/if}
             </div>
           </div>
@@ -574,7 +574,6 @@
 
   .start {
     align-self: flex-start;
-    padding-left: 0;
   }
 
   .round {

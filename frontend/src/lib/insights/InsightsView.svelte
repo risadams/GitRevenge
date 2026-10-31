@@ -73,7 +73,7 @@
 
     <div class="group">
       <span class="meta">Window</span>
-      <span class="segmented pills" role="group" aria-label="Window">
+      <span class="segmented" role="group" aria-label="Window">
         {#each windows as win (win.id)}
           {#if win.id !== 'releases' || (scope?.kind === 'repo' && insights.tags.length >= 2)}
             <button aria-pressed={insights.window === win.id} onclick={() => insights.setWindow(win.id)}>{win.label}</button>
@@ -110,9 +110,9 @@
         <input class="field" type="date" aria-label="As of date" onchange={onDate} />
       {/if}
       {#if insights.asOf}
-        <button class="textbtn start" onclick={() => ((pickingDate = false), insights.setAsOf(0))}>use the branch tip</button>
+        <button class="btn text start" onclick={() => ((pickingDate = false), insights.setAsOf(0))}>use the branch tip</button>
       {:else}
-        <button class="textbtn start" onclick={() => (pickingDate = !pickingDate)}>pick a date instead</button>
+        <button class="btn text start" onclick={() => (pickingDate = !pickingDate)}>pick a date instead</button>
       {/if}
     </div>
 
@@ -134,7 +134,7 @@
         {@const old = !at || Date.now() / 1000 - at > 86400}
         <span class="fresh-line" class:old>{multi ? `${repoName(repo)}: ` : ''}{at ? `fetched ${ago(at)}` : 'never fetched'}</span>
       {/each}
-      <button class="pill" disabled={insights.fetching} onclick={() => insights.fetch()}>{insights.fetching ? 'Fetching…' : multi ? 'Fetch all' : 'Fetch'}</button>
+      <button class="btn secondary fetch" disabled={insights.fetching} onclick={() => insights.fetch()}>{insights.fetching ? 'Fetching…' : multi ? 'Fetch all' : 'Fetch'}</button>
     </div>
   </nav>
 
@@ -149,7 +149,7 @@
       {#if w}
         <div class="exports">
           {#if insights.view !== 'overview'}
-            <button class="pill" onclick={() => insights.exportCSV(insights.view === 'shipped' ? 'shipped' : insights.view === 'attention' ? 'attention' : 'hotspots')}>Export CSV</button>
+            <button class="btn secondary" onclick={() => insights.exportCSV(insights.view === 'shipped' ? 'shipped' : insights.view === 'attention' ? 'attention' : 'hotspots')}>Export CSV</button>
           {/if}
           <InkButton onclick={() => (summaryOpen = true)}>Copy summary</InkButton>
         </div>
@@ -206,7 +206,7 @@
 
       <div class="columns">
         <section class="list" aria-labelledby="attn">
-          <h2 id="attn">Needs attention <button class="textbtn all" onclick={() => insights.setView('attention')}>all {t.attention} →</button></h2>
+          <h2 id="attn">Needs attention <button class="btn text all" onclick={() => insights.setView('attention')}>all {t.attention} →</button></h2>
           {#each flagged.slice(0, 5) as b (b.repo + b.value.name)}
             <div class="row">
               <div class="who">
@@ -224,7 +224,7 @@
         </section>
 
         <section class="list" aria-labelledby="latest">
-          <h2 id="latest">Latest ships <button class="textbtn all" onclick={() => insights.setView('shipped')}>all {t.shipped} →</button></h2>
+          <h2 id="latest">Latest ships <button class="btn text all" onclick={() => insights.setView('shipped')}>all {t.shipped} →</button></h2>
           {#each ships.slice(0, 5) as s (s.repo + s.value.sha)}
             <div class="row">
               <div class="who">
@@ -286,7 +286,7 @@
     font-weight: 400;
   }
 
-  /* The window pills wrap as a row, never inside a label. */
+  /* The window options wrap as a row, never inside a label. */
   .group .segmented {
     flex-wrap: wrap;
     align-self: flex-start;
@@ -339,7 +339,6 @@
 
   .start {
     align-self: flex-start;
-    padding-left: 0;
   }
 
   .item {
@@ -405,15 +404,9 @@
     color: var(--warning);
   }
 
-  .pill {
+  .fetch {
     align-self: flex-start;
-    min-height: 34px;
     margin-top: 6px;
-    padding: 0 16px;
-    background: none;
-    border: 1px solid var(--paper-edge);
-    border-radius: 999px;
-    font-size: 14px;
   }
 
   .main {
@@ -470,10 +463,6 @@
     display: flex;
     align-items: center;
     gap: 12px;
-  }
-
-  .exports .pill {
-    margin-top: 0;
   }
 
   .busy {

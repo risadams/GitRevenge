@@ -105,14 +105,14 @@
           <span>Git executable (empty to find it automatically)</span>
           <span class="row">
             <input bind:value={p.gitPath} placeholder={p.gitInUse} />
-            <button type="button" class="tool" onclick={chooseGit}><Icon name="folder" size={14} />Choose…</button>
+            <button type="button" class="btn quiet" onclick={chooseGit}><Icon name="folder" size={14} />Choose…</button>
           </span>
         </label>
         <p class="hint">In use now: <code>{p.gitInUse || 'none found'}</code>. A change takes effect after restarting Git Revenge.</p>
         <span>
           <button
             type="button"
-            class="tool"
+            class="btn quiet"
             onclick={() => {
               onClose()
               void gitConfig.show(session.activeTab?.path ?? '')
@@ -127,7 +127,7 @@
           <span>Clone into (empty for the folder of the last repository opened)</span>
           <span class="row">
             <input bind:value={p.cloneDir} />
-            <button type="button" class="tool" onclick={chooseCloneDir}><Icon name="folder" size={14} />Choose…</button>
+            <button type="button" class="btn quiet" onclick={chooseCloneDir}><Icon name="folder" size={14} />Choose…</button>
           </span>
         </label>
       </fieldset>
@@ -137,7 +137,7 @@
         <span>
           <button
             type="button"
-            class="tool"
+            class="btn quiet"
             onclick={() => {
               onClose()
               commands.keybindingsOpen = true
