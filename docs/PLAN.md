@@ -126,9 +126,9 @@ It reports time to the first 100 rows, full load, heap in use, window reads, sea
 Two fixes from this run (#78): `git log` starts only from tags HEAD can't reach, because with all 953 tags as starting points `--topo-order` walked down from each and the first rows took 1.1 s. And checkpoints store each lane as a parent position instead of a 32-byte ID, which took the full-history heap from 857 MB to 467 MB.
 
 **What the measurements so far show:**
-- **Commit-graph file.** `git log --topo-order` only produces its first commits quickly when the repo has a commit-graph file (`git commit-graph write --reachable`, or `fetch.writeCommitGraph=true`). The check warns when it's missing.
+- **Commit-graph file.** `git log` (date order) only produces its first commits quickly when the repo has a commit-graph file (`git commit-graph write --reachable`, or `fetch.writeCommitGraph=true`). The check warns when it's missing.
 - **Ref short names.** `%(refname:short)` is quadratic in the number of refs, so the app strips ref prefixes itself.
-- **Tags as starting points.** Every starting point makes `--topo-order` walk down from it before printing anything, so old tags are expensive. Tags that HEAD reaches are left out, since their commits are in the history anyway.
+- **Tags as starting points.** Every starting point makes the ordered walk go down from it before printing anything, so old tags are expensive. Tags that HEAD reaches are left out, since their commits are in the history anyway.
 - **Loose refs.** A repo with thousands of loose (unpacked) refs reads them slowly on Windows. `git pack-refs --all` fixes this, and git does it during `gc`.
 
 ## Milestones

@@ -223,7 +223,7 @@ func (l *graphLoader) reload() {
 
 		// Stashes appear as single rows on their base commit. A stash commit's other parents
 		// (its index and untracked-files snapshots) are internal: drop those edges and skip
-		// the commits, which topological order always yields after the stash itself.
+		// the commits, which date order (children before parents) always yields after the stash itself.
 		stashIDs, _ := l.repo.StashIDs(ctx)
 		stashes := map[string]bool{}
 		for _, id := range stashIDs {

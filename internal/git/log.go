@@ -38,14 +38,19 @@ type LogOptions struct {
 // these fields can contain NUL.
 const logFormat = "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%s"
 
-// Log streams commits in topological order (children before parents), calling fn for each
-// as git produces it. Returning an error from fn stops git and is returned from Log.
+// Log streams commits in date order, calling fn for each as git produces it. Returning an
+// error from fn stops git and is returned from Log.
 //
-// Topological order is incremental, and the first commits arrive quickly, when the
+// Date order still lists every child before its parents, which the graph layout needs, but
+// otherwise follows committer date, so parallel lines of history (an orphan gh-pages, a
+// long-running branch) interleave as they happened. --topo-order kept each line together
+// and drew them as stacked blocks (#275).
+//
+// The walk is incremental, and the first commits arrive quickly, when the
 // repository has a commit-graph file (`git commit-graph write`, or fetch.writeCommitGraph).
 // Without one, git must walk the whole history before printing anything.
 func (r *Repo) Log(ctx context.Context, opts LogOptions, fn func(LogCommit) error) error {
-	args := []string{"log", "--topo-order", "-z", "--format=" + logFormat, "--no-show-signature"}
+	args := []string{"log", "--date-order", "-z", "--format=" + logFormat, "--no-show-signature"}
 	if opts.MaxCount > 0 {
 		args = append(args, "--max-count="+strconv.Itoa(opts.MaxCount))
 	}
@@ -119,7 +124,7 @@ func (r *Repo) logRevs(ctx context.Context, opts LogOptions) []string {
 
 // tagTips returns the tags to start a log from besides branches and HEAD: only those HEAD
 // can't reach. The others are in the history anyway, and every extra starting point makes
-// --topo-order walk down from it before printing anything. On the Linux kernel, with 953
+// the date-order walk go down from it before printing anything. On the Linux kernel, with 953
 // tags, passing --tags made the first 100 commits take a second instead of 90ms.
 func (r *Repo) tagTips(ctx context.Context) []string {
 	out, err := r.ReadString(ctx, "for-each-ref", "--no-merged=HEAD", "--format=%(refname)", "refs/tags")

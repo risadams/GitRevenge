@@ -1,7 +1,7 @@
 // Package graph lays out commit history as rows and lanes for the commit graph view.
 //
-// Commits must be added in topological order (children before parents), as `git log
-// --topo-order` produces them. Layout is incremental: each Add places one more row.
+// Commits must be added children before parents, as `git log --date-order` produces them.
+// Layout is incremental: each Add places one more row.
 //
 // Only each row's node column and color are stored, plus a snapshot of the lane state every
 // checkpointEvery rows. Rows replays from the nearest snapshot to produce the full edge
@@ -140,7 +140,7 @@ func New() *Graph {
 	}
 }
 
-// Add appends the next commit in topological order and lays out its row.
+// Add appends the next commit (children before parents) and lays out its row.
 func (g *Graph) Add(c git.LogCommit) error {
 	id, err := parseOID(c.ID)
 	if err != nil {
