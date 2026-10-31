@@ -2,3 +2,8 @@ build/bin
 frontend/node_modules
 frontend/dist
 frontend/package.json.md5
+
+# Built binaries (go build / wails build outside build/bin)
+/gitrevenge
+/gitrevenge.exe
+*.exe
