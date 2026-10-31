@@ -1,5 +1,5 @@
 import { BranchAction, HideBranch, Integrate, MarkBranchKind, PushRef, Refs, StashAction } from '../../wailsjs/go/app/App.js'
-import { KINDS } from './branchKinds'
+import { CONFIRM_DELETE, KINDS, kindWarning } from './branchKinds'
 import type { MenuItem } from './ContextMenu.svelte'
 import type { DialogSpec } from './Dialog.svelte'
 import type { Ref, Row } from './graph/rowCache'
@@ -160,7 +160,9 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
             run: () =>
               openDialog({
                 title: `Delete branch ${ref.short}?`,
-                message: 'The branch is removed locally. Its commits stay reachable from other branches if merged.',
+                message: [kindWarning(ref.short, ref.branchKind, CONFIRM_DELETE), 'The branch is removed locally. Its commits stay reachable from other branches if merged.']
+                  .filter(Boolean)
+                  .join(' '),
                 fields: [{ key: 'force', label: 'Delete even if it has unmerged commits', type: 'checkbox' }],
                 submit: 'Delete',
                 danger: true,
@@ -175,7 +177,27 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
         return groups(
           [{ label: `Checkout ${ref.short}`, icon: 'branch', run: () => session.run(() => branch(path, 'checkout', ref.short)) }, ...integrateItems(ctx, ref.short, ref.short)],
           [markItem(ctx, ref, rest.join('/')), hideItem(ctx, ref, rest.join('/'))],
-          [{ label: `Delete ${ref.short} from ${remote}`, icon: 'trash', danger: true, run: push(path, remote, 'delete-branch', rest.join('/')) }],
+          [
+            {
+              label: `Delete ${ref.short} from ${remote}`,
+              icon: 'trash',
+              danger: true,
+              run: (() => {
+                const del = push(path, remote, 'delete-branch', rest.join('/'))
+                // Trunk and Environment branches ask first, naming the kind; others go at once.
+                const warning = kindWarning(rest.join('/'), ref.branchKind, CONFIRM_DELETE)
+                if (!warning) return del
+                return () =>
+                  openDialog({
+                    title: `Delete ${rest.join('/')} from ${remote}?`,
+                    message: `${warning} Deleting it removes it from ${remote} for everyone.`,
+                    submit: 'Delete from ' + remote,
+                    danger: true,
+                    run: () => attempt(async () => del()),
+                  })
+              })(),
+            },
+          ],
         )
       }
     case 'tag':

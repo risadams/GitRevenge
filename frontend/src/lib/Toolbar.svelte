@@ -1,6 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { CancelNetwork, Fetch, Pull, PushCurrent, Redo, Undo, UndoState } from '../../wailsjs/go/app/App.js'
+  import { CancelNetwork, Fetch, Pull, PushCurrent, Redo, Refs, Undo, UndoState } from '../../wailsjs/go/app/App.js'
+  import { CONFIRM_FORCE_PUSH, kindWarning } from './branchKinds'
+  import type { Ref } from './graph/rowCache'
+  import InkButton from './ui/InkButton.svelte'
+  import Modal from './ui/Modal.svelte'
   import { EventsOn } from '../../wailsjs/runtime/runtime.js'
   import { formatShortcut, isMac, provideCommands, type Command } from './commands.svelte'
   import ContextMenu, { type MenuItem } from './ContextMenu.svelte'
@@ -58,6 +62,17 @@
   const fetchAll = () => run('fetch', () => Fetch(path, ''))
   const pull = (mode: string) => run('pull', () => Pull(path, mode))
   const push = (force: boolean) => run('push', () => PushCurrent(path, force))
+
+  // Force-pushing a Trunk, Release or Environment branch asks first, naming the kind.
+  let confirmForce = $state<{ branch: string; warning: string } | null>(null)
+
+  async function forcePush() {
+    const refs = ((await session.run(() => Refs(path))) as Ref[] | undefined) ?? []
+    const head = refs.find((r) => r.kind === 'local' && r.head)
+    const warning = head ? kindWarning(head.short, head.branchKind, CONFIRM_FORCE_PUSH) : ''
+    if (warning && head) confirmForce = { branch: head.short, warning }
+    else await push(true)
+  }
 
   provideCommands(() => {
     if (running) return []
@@ -128,7 +143,7 @@
       class="btn quiet caret"
       disabled={!!running}
       aria-label="Push options"
-      onclick={(e) => dropdown(e, [{ label: 'Force push (with lease)', icon: 'push', danger: true, run: () => push(true) }])}><Icon name="chevron" size={13} /></button
+      onclick={(e) => dropdown(e, [{ label: 'Force push (with lease)', icon: 'push', danger: true, run: forcePush }])}><Icon name="chevron" size={13} /></button
     >
   </span>
 
@@ -145,7 +160,30 @@
   <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => (menu = null)} />
 {/if}
 
+{#if confirmForce}
+  {@const c = confirmForce}
+  <Modal title="Force push {c.branch}?" eyebrow="careful" onClose={() => (confirmForce = null)}>
+    <p class="confirm-text">{c.warning} Force pushing replaces its history on the remote for everyone, as long as nobody has pushed since you last fetched.</p>
+    <div class="form-actions">
+      <InkButton variant="secondary" onclick={() => (confirmForce = null)}>Cancel</InkButton>
+      <InkButton
+        variant="danger"
+        onclick={() => {
+          confirmForce = null
+          void push(true)
+        }}>Force push anyway</InkButton
+      >
+    </div>
+  </Modal>
+{/if}
+
 <style>
+  .confirm-text {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
   .toolbar {
     display: flex;
     align-items: center;

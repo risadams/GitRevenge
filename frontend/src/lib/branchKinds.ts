@@ -24,3 +24,16 @@ export const KINDS: Record<Exclude<BranchKind, ''>, KindInfo> = {
 export function kindInfo(kind: string | undefined): KindInfo | undefined {
   return kind ? KINDS[kind as Exclude<BranchKind, ''>] : undefined
 }
+
+/** Kinds that ask before a force push overwrites them (ADR 0009). */
+export const CONFIRM_FORCE_PUSH: readonly string[] = ['trunk', 'release', 'environment']
+
+/** Kinds that ask, naming the kind, before they're deleted. */
+export const CONFIRM_DELETE: readonly string[] = ['trunk', 'environment']
+
+/** "main is a Trunk branch", for confirmations; '' for kinds that don't ask. */
+export function kindWarning(name: string, kind: string | undefined, kinds: readonly string[]): string {
+  const info = kindInfo(kind)
+  if (!info || !kind || !kinds.includes(kind)) return ''
+  return `${name} is ${/^[AEIOU]/.test(info.label) ? 'an' : 'a'} ${info.label} branch.`
+}
