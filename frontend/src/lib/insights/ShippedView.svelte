@@ -9,8 +9,11 @@
   let grouping = $state<'reference' | 'date'>('reference')
   let w = $derived(insights.resolved)
   let multi = $derived(insights.repos.length > 1)
-  let refGroups = $derived(byReference(insights.items))
-  let dayGroups = $derived(byDay(insights.items))
+  // Dependency updates a bot opened (ADR 0009) are listed apart, after the work people did.
+  let work = $derived(insights.items.filter((i) => !i.value.bot))
+  let deps = $derived(insights.items.filter((i) => i.value.bot))
+  let refGroups = $derived(byReference(work))
+  let dayGroups = $derived(byDay(work))
   let refCount = $derived(refGroups.filter((g) => g.ref).length)
 
   const repoName = (path: string) => session.tabs.find((t) => t.path === path)?.name ?? path.split(/[\\/]/).pop() ?? path
@@ -81,11 +84,29 @@
       </section>
     {/each}
   {/if}
+  {#if deps.length}
+    <details class="group deps">
+      <summary>
+        <h2><span>Dependency updates</span> <span class="meta">{deps.length} {deps.length === 1 ? 'item' : 'items'}</span></h2>
+      </summary>
+      {#each deps as i (i.repo + i.value.sha)}{@render item(i)}{/each}
+    </details>
+  {/if}
 
   <p class="foot">References come from subjects and trailers (<code>TIDE-88</code>, <code>#41</code>, <code>Refs:</code>, <code>Closes:</code>) and are shown as text, never links. An item with several goes under its first.</p>
 </div>
 
 <style>
+  .deps summary {
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .deps summary h2 {
+    display: inline-flex;
+    gap: 8px;
+  }
+
   .shipped {
     display: flex;
     flex-direction: column;

@@ -5,6 +5,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/risadams/gitrevenge/internal/branchkind"
 	"github.com/risadams/gitrevenge/internal/git"
 )
 
@@ -142,11 +143,12 @@ func (a *App) InsightsBranches(path string, in InsightsInputs) (AttentionResult,
 		return AttentionResult{}, err
 	}
 	res, err := cachedInsight(ctx, a, g, root, "branches", in, func() (AttentionResult, error) {
-		w, err := resolveInputs(ctx, g, in)
+		rules := a.branchRules(root)
+		w, err := resolveInputs(ctx, g, in, rules)
 		if err != nil {
 			return AttentionResult{}, err
 		}
-		open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches)
+		open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches, endStates(rules))
 		if err != nil {
 			return AttentionResult{}, err
 		}
@@ -240,20 +242,31 @@ func (a *App) InsightsHotspots(path string, in InsightsInputs) (HotspotsResult, 
 	if err != nil {
 		return HotspotsResult{}, err
 	}
-	return cachedInsight(ctx, a, g, root, "hotspots", in, func() (HotspotsResult, error) { return hotspots(ctx, g, in) })
+	rules := a.branchRules(root)
+	return cachedInsight(ctx, a, g, root, "hotspots", in, func() (HotspotsResult, error) { return hotspots(ctx, g, in, rules) })
 }
 
-func hotspots(ctx context.Context, g *git.Repo, in InsightsInputs) (HotspotsResult, error) {
-	w, err := resolveInputs(ctx, g, in)
+// endStates leaves Docs and Release branches out of branch signals and conflict checks.
+// They are end states (a published site, a release being maintained), expected to drift
+// from the target, not working copies waiting to merge (ADR 0009).
+func endStates(rules branchkind.Rules) func(string) bool {
+	return func(name string) bool {
+		k := rules.Kind(name)
+		return k == branchkind.Docs || k == branchkind.Release
+	}
+}
+
+func hotspots(ctx context.Context, g *git.Repo, in InsightsInputs, rules branchkind.Rules) (HotspotsResult, error) {
+	w, err := resolveInputs(ctx, g, in, rules)
 	if err != nil {
 		return HotspotsResult{}, err
 	}
-	q := git.ShippedQuery{Target: w.Target, Since: w.Since, Until: w.Until, Range: w.Range}
+	q := w.query()
 	files, err := g.HotFiles(ctx, q)
 	if err != nil {
 		return HotspotsResult{}, err
 	}
-	open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches)
+	open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches, endStates(rules))
 	if err != nil {
 		return HotspotsResult{}, err
 	}

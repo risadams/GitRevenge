@@ -186,6 +186,10 @@ export function InsightsHotspots(arg1, arg2) {
   return window['go']['app']['App']['InsightsHotspots'](arg1, arg2);
 }
 
+export function InsightsReleaseBranches(arg1, arg2) {
+  return window['go']['app']['App']['InsightsReleaseBranches'](arg1, arg2);
+}
+
 export function InsightsShipped(arg1, arg2) {
   return window['go']['app']['App']['InsightsShipped'](arg1, arg2);
 }

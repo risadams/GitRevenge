@@ -14,6 +14,10 @@ export interface RepoWindow {
   since: number
   until: number
   range: string
+  /** The commits a releases window measures ("sha..sha"), for release branches. */
+  points?: string
+  /** The branch kind patterns in use (ADR 0009), keyed by kind. */
+  kinds?: Record<string, string[]>
 }
 
 /** A thresholds set (app.Thresholds). */
@@ -46,6 +50,8 @@ export interface Shipped extends Item {
   removed: number
   merge: boolean
   cycle: number
+  /** A dependency update a bot opened, grouped apart in Shipped. */
+  bot?: boolean
 }
 
 /** "1 item", "2 items". */
@@ -55,7 +61,15 @@ const iso = (seconds: number) => new Date(seconds * 1000).toISOString().replace(
 
 /** The window as one line: a tag range, or absolute UTC bounds. */
 function windowLine(w: RepoWindow): string {
-  return w.range ? w.range : `${iso(w.since)} to ${iso(w.until)}`
+  return w.range ? w.range + (w.points && w.points !== w.range ? ` (commits ${w.points})` : '') : `${iso(w.since)} to ${iso(w.until)}`
+}
+
+/** The kind patterns in use, one line: "docs gh-pages gh-docs; bot dependabot/* …". */
+export function kindsLine(kinds: Record<string, string[]> | undefined): string {
+  if (!kinds) return ''
+  return ['trunk', 'release', 'environment', 'docs', 'bot']
+    .map((k) => `${k} ${kinds[k]?.length ? kinds[k].join(' ') : '(none)'}`)
+    .join('; ')
 }
 
 /** The inputs, one entry per line, shared by every export. */
@@ -67,6 +81,8 @@ export function inputLines(inp: ReportInputs): [string, string][] {
     lines.push(['Window', windowLine(first)])
     lines.push(['As of', iso(first.asOf)])
   }
+  const kinds = first ? kindsLine(first.kinds) : ''
+  if (kinds) lines.push(['Branch kinds', kinds])
   const t = inp.thresholds
   lines.push(['Thresholds', `stale ${t.stale}d, long-lived ${t.longLived}d, behind ${t.behind}, size ${t.size} lines`])
   return lines
@@ -109,15 +125,23 @@ export function summary(
   const where = (repo: string, author: string) => (multi ? `${repoName(repo)}, ${author}` : author)
 
   if (parts.shipped) {
+    // Bot items (dependency updates) are listed apart, after the work people did.
+    const work = items.filter((i) => !i.value.bot)
+    const deps = items.filter((i) => i.value.bot)
     out.push(`## Shipped (${items.length})`, '')
     if (parts.groupByReference) {
-      for (const g of byReference(items)) {
+      for (const g of byReference(work)) {
         out.push(`**${g.ref || 'No reference'}**`)
         for (const i of g.items) out.push(`- ${i.value.title} (${where(i.repo, i.value.author)})`)
         out.push('')
       }
     } else {
-      for (const i of latest(items)) out.push(`- ${i.value.title} (${where(i.repo, i.value.author)})`)
+      for (const i of latest(work)) out.push(`- ${i.value.title} (${where(i.repo, i.value.author)})`)
+      out.push('')
+    }
+    if (deps.length) {
+      out.push(`**Dependency updates (${deps.length})**`)
+      for (const i of latest(deps)) out.push(`- ${i.value.title} (${where(i.repo, i.value.author)})`)
       out.push('')
     }
   }
@@ -145,9 +169,9 @@ function withInputs(inp: ReportInputs, table: (string | number)[][]): string {
 }
 
 export function shippedCSV(inp: ReportInputs, items: Tagged<Shipped>[], repoName: (p: string) => string): string {
-  const rows: (string | number)[][] = [['repository', 'commit', 'committed_utc', 'title', 'author', 'email', 'references', 'files', 'added', 'removed', 'merge', 'cycle_hours', 'revert', 'fixup']]
+  const rows: (string | number)[][] = [['repository', 'commit', 'committed_utc', 'title', 'author', 'email', 'references', 'files', 'added', 'removed', 'merge', 'cycle_hours', 'revert', 'fixup', 'bot']]
   for (const { repo, value: i } of latest(items)) {
-    rows.push([repoName(repo), i.sha, iso(i.committed), i.title, i.author, i.email, i.refs.join(' '), i.files, i.added, i.removed, i.merge ? 'yes' : 'no', i.cycle ? (i.cycle / 3600).toFixed(1) : '', i.revert ? 'yes' : 'no', i.fixup ? 'yes' : 'no'])
+    rows.push([repoName(repo), i.sha, iso(i.committed), i.title, i.author, i.email, i.refs.join(' '), i.files, i.added, i.removed, i.merge ? 'yes' : 'no', i.cycle ? (i.cycle / 3600).toFixed(1) : '', i.revert ? 'yes' : 'no', i.fixup ? 'yes' : 'no', i.bot ? 'yes' : 'no'])
   }
   return withInputs(inp, rows)
 }

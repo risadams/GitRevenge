@@ -91,8 +91,8 @@ describe('CSV', () => {
     const lines = csv.split('\r\n')
     expect(lines[0]).toBe('Scope,Harbour team')
     expect(lines[6]).toBe('')
-    expect(lines[7]).toBe('repository,commit,committed_utc,title,author,email,references,files,added,removed,merge,cycle_hours,revert,fixup')
-    expect(lines[8]).toBe('api,s2,2026-07-22T08:59:10Z,"Ignore logs, ""really""",Maya Okafor,maya@x,,2,10,3,no,,no,no')
+    expect(lines[7]).toBe('repository,commit,committed_utc,title,author,email,references,files,added,removed,merge,cycle_hours,revert,fixup,bot')
+    expect(lines[8]).toBe('api,s2,2026-07-22T08:59:10Z,"Ignore logs, ""really""",Maya Okafor,maya@x,,2,10,3,no,,no,no,no')
     expect(lines[9]).toContain('TIDE-88,2,10,3,yes,2.0,no,no')
   })
 

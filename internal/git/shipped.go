@@ -53,6 +53,15 @@ type TipInfo struct {
 	Time int64 `json:"time"`
 }
 
+// ForkPoint returns where branch left target: their merge base, with its committer date.
+func (r *Repo) ForkPoint(ctx context.Context, branch, target string) (TipInfo, error) {
+	base, err := r.ReadString(ctx, "merge-base", branch, target)
+	if err != nil {
+		return TipInfo{}, err
+	}
+	return r.Tip(ctx, strings.TrimSpace(base))
+}
+
 // Tip resolves rev to its commit and committer date.
 func (r *Repo) Tip(ctx context.Context, rev string) (TipInfo, error) {
 	out, err := r.ReadString(ctx, "log", "-1", "--format=%H %ct", rev+"^{commit}", "--")
@@ -126,6 +135,9 @@ type ShippedItem struct {
 	Cycle  int64 `json:"cycle"`
 	Revert bool  `json:"revert"`
 	Fixup  bool  `json:"fixup"`
+	// Bot marks a dependency update opened by a bot (set by the app from the repository's
+	// Bot branch patterns, not by git).
+	Bot bool `json:"bot"`
 }
 
 // Shipped lists the items of q, newest first, as they appear on the first-parent line.

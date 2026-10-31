@@ -84,13 +84,13 @@
         <label class="sub-field"
           ><span>From</span>
           <select class="field" bind:value={insights.from} onchange={() => insights.load()}>
-            {#each insights.tags as tag (tag.name)}<option value={tag.name}>{tag.name} · {utcDay(tag.time)}</option>{/each}
+            {#each insights.tags as tag (tag.name)}<option value={tag.name}>{tag.name} · {tag.branch ? 'forked ' : ''}{utcDay(tag.time)}</option>{/each}
           </select></label
         >
         <label class="sub-field"
           ><span>To</span>
           <select class="field" bind:value={insights.to} onchange={() => insights.load()}>
-            {#each insights.tags as tag (tag.name)}<option value={tag.name}>{tag.name} · {utcDay(tag.time)}</option>{/each}
+            {#each insights.tags as tag (tag.name)}<option value={tag.name}>{tag.name} · {tag.branch ? 'forked ' : ''}{utcDay(tag.time)}</option>{/each}
           </select></label
         >
       {/if}

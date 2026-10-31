@@ -19,7 +19,7 @@ Some branches aren't like the others. `main` is the line everything returns to; 
   - Layout: Trunk lanes are pinned, the first in column 0, the next in column 1.
   - Visibility: Docs lanes draw muted; Docs and Bot each have a visibility toggle, on by default.
   - Safety: cleanup on pull never deletes Trunk, Release, Environment or Docs branches; force push to Trunk, Release or Environment and deleting Trunk or Environment ask first, naming the kind.
-  - Insights: Docs commits are left out, Bot commits are grouped as dependency updates, and Release branches can bound the releases window.
+  - Insights: Docs and Release branches are left out of Needs attention, conflict checks and Hotspots' open-branch counts, since they are end states expected to drift from the target, not working copies; Bot commits are grouped as dependency updates; and Release branches can bound the releases window.
 - **Kinds are an Insights input.** ADR 0008 makes Insights a pure function of repository state and explicit inputs. The kind patterns in use affect results, so they join the inputs and are printed in every export.
 
 ## Consequences
