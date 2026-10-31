@@ -68,6 +68,60 @@ type Settings struct {
 	// Keybindings overrides command shortcuts by command id, in "Mod+Shift+K" form; an empty
 	// value unbinds the command.
 	Keybindings map[string]string `json:"keybindings,omitempty"`
+	// Repos holds settings that belong to one repository, such as its branch kinds.
+	Repos []RepoSettings `json:"repos,omitempty"`
+}
+
+// RepoSettings are one repository's own settings (ADR 0009).
+type RepoSettings struct {
+	Path string `json:"path"`
+	// Kinds overrides a branch kind's patterns, keyed by kind ("trunk", "release",
+	// "environment", "docs", "bot"). A kind not listed uses its defaults; one listed with no
+	// patterns matches nothing.
+	Kinds map[string][]string `json:"kinds,omitempty"`
+	// Hide lists glob patterns of branches to leave out of the sidebar and the graph.
+	Hide []string `json:"hide,omitempty"`
+	// CleanupOnPull deletes local branches whose upstream is gone and that have nothing
+	// unpushed, after each pull.
+	CleanupOnPull bool `json:"cleanupOnPull,omitempty"`
+	// SyncNotes fetches refs/notes/* on fetch and pull, and pushes changed notes on push.
+	SyncNotes bool `json:"syncNotes,omitempty"`
+}
+
+func (r RepoSettings) clone() RepoSettings {
+	r.Hide = slices.Clone(r.Hide)
+	if r.Kinds != nil {
+		kinds := make(map[string][]string, len(r.Kinds))
+		for k, v := range r.Kinds {
+			kinds[k] = slices.Clone(v)
+		}
+		r.Kinds = kinds
+	}
+	return r
+}
+
+// empty reports whether r holds nothing but its path, so it can be dropped.
+func (r RepoSettings) empty() bool {
+	return r.Kinds == nil && len(r.Hide) == 0 && !r.CleanupOnPull && !r.SyncNotes
+}
+
+// Repo returns the settings for the repository at path, or empty ones.
+func (s Settings) Repo(path string) RepoSettings {
+	for _, r := range s.Repos {
+		if fsutil.SamePath(r.Path, path) {
+			return r.clone()
+		}
+	}
+	return RepoSettings{Path: path}
+}
+
+// SetRepo stores r, replacing any settings for the same path, and drops it when it holds
+// nothing.
+func (s *Settings) SetRepo(r RepoSettings) {
+	s.Repos = slices.DeleteFunc(s.Repos, func(o RepoSettings) bool { return fsutil.SamePath(o.Path, r.Path) })
+	if !r.empty() {
+		s.Repos = append(s.Repos, r.clone())
+	}
 }
 
 // Group is a named collection of repository paths.
@@ -96,6 +150,11 @@ func (s Settings) clone() Settings {
 	}
 	s.Groups = groups
 	s.InsightsThresholds = maps.Clone(s.InsightsThresholds)
+	repos := make([]RepoSettings, len(s.Repos))
+	for i, r := range s.Repos {
+		repos[i] = r.clone()
+	}
+	s.Repos = repos
 	return s
 }
 
