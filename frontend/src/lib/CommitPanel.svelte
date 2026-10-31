@@ -153,13 +153,20 @@
   {:else}
     {@const c = info.commit}
     <header>
-      <span class="hand">this commit</span>
+      <div class="head-row">
+        <span class="hand">this commit</span>
+        {#if c.body}
+          <button
+            class="btn sm quiet raw-toggle"
+            aria-pressed={raw}
+            onclick={toggleRaw}
+            title={raw ? 'Show the message rendered as markdown' : 'Show the message as plain text'}>{raw ? 'Raw' : 'Markdown'}</button
+          >
+        {/if}
+      </div>
       <h2>{c.subject}</h2>
       {#if c.body}
         <div class="message">
-          <button class="raw-toggle meta" aria-pressed={raw} onclick={toggleRaw} title={raw ? 'Show the message rendered as markdown' : 'Show the message as plain text'}
-            >{raw ? 'Raw' : 'Markdown'}</button
-          >
           {#if raw}<p class="body">{reflow(c.body)}</p>{:else}<Markdown text={c.body} {issueURL} />{/if}
         </div>
       {/if}
@@ -346,7 +353,6 @@
   }
 
   .message {
-    position: relative;
     margin: 0 0 12px;
   }
 
@@ -355,20 +361,18 @@
   }
 
   /* A quiet switch above the message's top right corner. */
-  .raw-toggle {
-    position: absolute;
-    top: -22px;
-    right: 0;
-    height: 20px;
-    padding: 0 6px;
-    background: none;
-    border: none;
-    border-radius: 3px;
+  /* The kicker and the message toggle share a row above the subject, so a long subject
+     can't cover the toggle. */
+  .head-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
   }
 
-  .raw-toggle:hover:not(:disabled) {
-    background: var(--wash-hover);
-    color: var(--ink);
+  .raw-toggle {
+    min-width: 0;
+    flex-shrink: 0;
   }
 
   .notes .note p {
