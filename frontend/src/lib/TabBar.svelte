@@ -84,11 +84,11 @@
     <span>Commands</span>
     <kbd>{formatShortcut('Mod+K')}</kbd>
   </button>
-  <button class="theme" onclick={() => (commands.settingsOpen = true)} aria-label="Settings" title="Settings ({formatShortcut('Mod+,')})">
-    <Icon name="gear" size={17} />
+  <button class="btn quiet icon" onclick={() => (commands.settingsOpen = true)} aria-label="Settings" title="Settings ({formatShortcut('Mod+,')})">
+    <Icon name="gear" />
   </button>
-  <button class="theme" onclick={() => session.run(() => theme.toggle())} aria-label={toggleLabel} title={toggleLabel}>
-    <Icon name={theme.resolved === 'dark' ? 'sun' : 'moon'} size={17} />
+  <button class="btn quiet icon theme" onclick={() => session.run(() => theme.toggle())} aria-label={toggleLabel} title={toggleLabel}>
+    <Icon name={theme.resolved === 'dark' ? 'sun' : 'moon'} />
   </button>
 </nav>
 
@@ -246,32 +246,6 @@
   }
 
   .theme {
-    position: relative;
-    align-self: center;
-    display: grid;
-    place-items: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border-radius: 50%;
-  }
-
-  .theme::before {
-    content: '';
-    position: absolute;
-    inset: 3px;
-    background: var(--accent-a);
-    opacity: 0;
-    filter: url(#wc-edge);
-    border-radius: 45% 55% 50% 50% / 55% 45%;
-    transition: opacity var(--dur-base);
-  }
-
-  .theme:hover::before {
-    opacity: 0.14;
-  }
-
-  .theme > :global(svg) {
-    position: relative;
+    margin-right: 4px;
   }
 </style>

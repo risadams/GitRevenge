@@ -154,7 +154,7 @@
       {#each gitConfig.dirtyPaths as p (p)}<li><code>{p}</code></li>{/each}
     </ul>
     <div class="form-actions">
-      <button class="tool" onclick={() => (gitConfig.confirmClose = false)}>Keep editing</button>
+      <InkButton variant="secondary" onclick={() => (gitConfig.confirmClose = false)}>Keep editing</InkButton>
       <InkButton variant="danger" onclick={() => gitConfig.close()}>Discard and close</InkButton>
     </div>
   </Modal>
@@ -185,7 +185,7 @@
       <div class="banner" role="alert">
         <Icon name="warning" />
         <span class="message">{session.error}</span>
-        <button class="tool" onclick={() => (session.error = '')}>Dismiss</button>
+        <button class="btn sm quiet" onclick={() => (session.error = '')}>Dismiss</button>
       </div>
     {/if}
     {#if update.available || update.upToDate}
@@ -193,11 +193,11 @@
         <Icon name="update" />
         {#if update.available}
           <span class="message">Git Revenge {update.available.latest} is available. You have {update.available.current}.</span>
-          <button class="tool" onclick={() => BrowserOpenURL(update.available!.url)}><Icon name="external" />Download</button>
+          <button class="btn sm secondary" onclick={() => BrowserOpenURL(update.available!.url)}><Icon name="external" />Download</button>
         {:else}
           <span class="message">{update.upToDate}</span>
         {/if}
-        <button class="tool" onclick={() => update.dismiss()}>Dismiss</button>
+        <button class="btn sm quiet" onclick={() => update.dismiss()}>Dismiss</button>
       </div>
     {/if}
     {#if session.activeTab}

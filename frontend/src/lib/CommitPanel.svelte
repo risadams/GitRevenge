@@ -224,13 +224,13 @@
           {#if noteDraft !== null}
             <textarea bind:value={noteDraft} rows="3" aria-label="Note" disabled={noteBusy}></textarea>
             <span class="note-actions">
-              <button class="tool" disabled={noteBusy} onclick={() => saveNote(noteDraft ?? '')}>Save note</button>
-              <button class="tool" disabled={noteBusy} onclick={() => (noteDraft = null)}>Cancel</button>
+              <button class="btn sm secondary" disabled={noteBusy} onclick={() => saveNote(noteDraft ?? '')}>Save note</button>
+              <button class="btn sm quiet" disabled={noteBusy} onclick={() => (noteDraft = null)}>Cancel</button>
             </span>
           {:else}
             <span class="note-actions">
-              <button class="tool" onclick={() => (noteDraft = ownNote?.text ?? '')}><Icon name={ownNote ? 'edit' : 'plus'} size={14} />{ownNote ? 'Edit note' : 'Add note'}</button>
-              {#if ownNote}<button class="tool" disabled={noteBusy} onclick={() => saveNote('')}><Icon name="trash" size={14} />Remove</button>{/if}
+              <button class="btn sm quiet" onclick={() => (noteDraft = ownNote?.text ?? '')}><Icon name={ownNote ? 'edit' : 'plus'} size={14} />{ownNote ? 'Edit note' : 'Add note'}</button>
+              {#if ownNote}<button class="btn sm quiet" disabled={noteBusy} onclick={() => saveNote('')}><Icon name="trash" size={14} />Remove</button>{/if}
             </span>
           {/if}
         </dd>
@@ -393,12 +393,7 @@
   .note-actions {
     display: flex;
     gap: 4px;
-    margin-left: -10px;
-  }
-
-  .note-actions .tool {
-    height: 26px;
-    font-size: 13px;
+    margin-left: -12px;
   }
 
   .sig :global(svg) {

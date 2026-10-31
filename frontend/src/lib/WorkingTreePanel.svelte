@@ -184,18 +184,18 @@
     {#if confirmDiscard?.length === 1 && confirmDiscard[0] === f.path}
       <span class="confirm">
         Discard?
-        <button class="mini danger" onclick={() => discard([f.path])}>Yes</button>
-        <button class="mini" onclick={() => (confirmDiscard = null)}>No</button>
+        <button class="btn sm danger" onclick={() => discard([f.path])}>Yes</button>
+        <button class="btn sm secondary" onclick={() => (confirmDiscard = null)}>No</button>
       </span>
     {:else if inStaged}
-      <button class="icon" disabled={busy} onclick={() => unstage([f.path])} title="Unstage" aria-label="Unstage {f.path}"><Icon name="minus" size={14} /></button>
+      <button class="btn sm quiet icon row-act" disabled={busy} onclick={() => unstage([f.path])} title="Unstage" aria-label="Unstage {f.path}"><Icon name="minus" size={14} /></button>
     {:else}
       {#if !f.conflicted}
-        <button class="icon" disabled={busy} onclick={() => (confirmDiscard = [f.path])} title="Discard changes" aria-label="Discard changes to {f.path}"
+        <button class="btn sm quiet icon row-act" disabled={busy} onclick={() => (confirmDiscard = [f.path])} title="Discard changes" aria-label="Discard changes to {f.path}"
           ><Icon name="undo" size={14} /></button
         >
       {/if}
-      <button class="icon" disabled={busy} onclick={() => stage([f.path])} title="Stage" aria-label="Stage {f.path}"><Icon name="plus" size={14} /></button>
+      <button class="btn sm quiet icon row-act" disabled={busy} onclick={() => stage([f.path])} title="Stage" aria-label="Stage {f.path}"><Icon name="plus" size={14} /></button>
     {/if}
   </li>
 {/snippet}
@@ -208,7 +208,7 @@
       <h2>Uncommitted changes</h2>
     </div>
     {#if !stashing}
-      <button class="tool" disabled={busy || files.length === 0} onclick={() => (stashing = true)} title="Set these changes aside in a stash"
+      <button class="btn quiet" disabled={busy || files.length === 0} onclick={() => (stashing = true)} title="Set these changes aside in a stash"
         ><Icon name="stash" />Stash…</button
       >
     {/if}
@@ -225,8 +225,8 @@
       <div class="stash-row">
         <label class="form-check"><input type="checkbox" bind:checked={stashUntracked} /> Include untracked</label>
         <span class="spacer"></span>
-        <button type="button" class="tool" onclick={() => (stashing = false)}>Cancel</button>
-        <button type="submit" class="tool strong" disabled={busy}>Stash</button>
+        <button type="button" class="btn quiet" onclick={() => (stashing = false)}>Cancel</button>
+        <button type="submit" class="btn secondary" disabled={busy}>Stash</button>
       </div>
     </form>
   {/if}
@@ -241,10 +241,10 @@
                 <span class="code c-!">!</span>
                 <span class="path">{f.path}</span>
               </button>
-              <button class="mini" disabled={busy} title="Resolve with ours" onclick={() => act(() => TakeConflictSide(path, f.path, 'ours'))}
+              <button class="btn sm quiet" disabled={busy} title="Resolve with ours" onclick={() => act(() => TakeConflictSide(path, f.path, 'ours'))}
                 >Ours</button
               >
-              <button class="mini" disabled={busy} title="Resolve with theirs" onclick={() => act(() => TakeConflictSide(path, f.path, 'theirs'))}
+              <button class="btn sm quiet" disabled={busy} title="Resolve with theirs" onclick={() => act(() => TakeConflictSide(path, f.path, 'theirs'))}
                 >Theirs</button
               >
             </li>
@@ -259,17 +259,17 @@
           {#if confirmDiscard && confirmDiscard.length > 1}
             <span class="confirm">
               Discard all unstaged changes?
-              <button class="mini danger" onclick={() => discard(confirmDiscard ?? [])}>Yes</button>
-              <button class="mini" onclick={() => (confirmDiscard = null)}>No</button>
+              <button class="btn sm danger" onclick={() => discard(confirmDiscard ?? [])}>Yes</button>
+              <button class="btn sm secondary" onclick={() => (confirmDiscard = null)}>No</button>
             </span>
           {:else}
             <button
-              class="mini"
+              class="btn sm text"
               disabled={busy}
               onclick={() => (confirmDiscard = unstaged.filter((f) => !f.conflicted).map((f) => f.path))}
               title="Discard all unstaged changes">Discard all</button
             >
-            <button class="mini" disabled={busy} onclick={() => stage([])}>Stage all</button>
+            <button class="btn sm text" disabled={busy} onclick={() => stage([])}>Stage all</button>
           {/if}
         {/if}
       </header>
@@ -280,7 +280,7 @@
     <section>
       <header>
         <span class="meta">Staged · {staged.length}</span>
-        {#if staged.length}<button class="mini" disabled={busy} onclick={() => unstage([])}>Unstage all</button>{/if}
+        {#if staged.length}<button class="btn sm text" disabled={busy} onclick={() => unstage([])}>Unstage all</button>{/if}
       </header>
       <ul>
         {#each staged as f (f.path)}{@render fileRow(f, true)}{/each}
@@ -318,7 +318,7 @@
         {:else}
           <span class="missing">Git doesn't know who you are yet.</span>
         {/if}
-        <button type="button" class="textbtn" onclick={() => gitConfig.showKey(path, wt?.identity.email || !wt?.identity.name ? 'user.email' : 'user.name')}
+        <button type="button" class="btn sm text" onclick={() => gitConfig.showKey(path, wt?.identity.email || !wt?.identity.name ? 'user.email' : 'user.name')}
           >{wt.identity.name || wt.identity.email ? 'change' : 'set it in Git Config'}</button
         >
       </p>
@@ -382,10 +382,6 @@
 
   .spacer {
     flex: 1;
-  }
-
-  .strong {
-    color: var(--link);
   }
 
   .lists {
@@ -462,41 +458,19 @@
   }
 
   /* Row actions appear on hover or focus, so the list reads calmly. */
-  .icon {
-    display: grid;
-    place-items: center;
-    width: 26px;
-    height: 26px;
-    padding: 0;
-    border-radius: 4px;
-    color: var(--ink-mute);
+  /* Row actions (stage, unstage, discard) show on hover, focus or selection. */
+  .row-act {
     opacity: 0;
-    transition: opacity var(--dur-quick);
+    transition:
+      opacity var(--dur-quick),
+      background-color var(--dur-quick),
+      transform var(--dur-base) var(--ease-ink);
   }
 
-  li:hover .icon,
-  li.active .icon,
-  .icon:focus-visible {
+  li:hover .row-act,
+  li.active .row-act,
+  .row-act:focus-visible {
     opacity: 1;
-  }
-
-  .icon:hover:not(:disabled) {
-    background: var(--wash-hover);
-    color: var(--ink);
-  }
-
-  .mini {
-    height: 24px;
-    padding: 0 8px;
-    border-radius: 4px;
-    font-size: 12.5px;
-    color: var(--ink-soft);
-    white-space: nowrap;
-  }
-
-  .mini:hover:not(:disabled) {
-    background: var(--wash-hover);
-    color: var(--ink);
   }
 
   .code {
@@ -628,12 +602,6 @@
     color: var(--warning);
   }
 
-  .identity .textbtn {
-    min-height: 0;
-    padding: 0 2px;
-    font-size: 13px;
-  }
-
   .commit-row {
     display: flex;
     align-items: center;
@@ -648,7 +616,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     li,
-    .icon {
+    .row-act {
       transition: none;
     }
   }
