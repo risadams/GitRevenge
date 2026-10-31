@@ -139,3 +139,44 @@ func TestTrunkPinnedInGraph(t *testing.T) {
 		t.Fatalf("columns = %v, want main's commits in column 0 even though HEAD is on feature", cols)
 	}
 }
+
+func TestKindToggleAndLaneKinds(t *testing.T) {
+	a := newTestApp(t)
+	fx := gittest.New(t)
+	fx.CommitFile("a.txt", "1", "code")
+	fx.Git("checkout", "-q", "--orphan", "gh-pages")
+	fx.Git("rm", "-rq", "--cached", ".")
+	fx.CommitFile("index.html", "1", "site")
+	fx.Checkout("main")
+	tab, err := a.OpenRepo(fx.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	page := loadedPage(t, a, tab.Path)
+	kinds := map[string]string{}
+	for _, r := range page.Rows {
+		kinds[r.Subject] = r.Kind
+	}
+	if kinds["site"] != "docs" || kinds["code"] != "trunk" {
+		t.Fatalf("row kinds = %v", kinds)
+	}
+
+	if err := a.SetKindVisible(tab.Path, "docs", false); err != nil {
+		t.Fatal(err)
+	}
+	for deadline := time.Now().Add(10 * time.Second); time.Now().Before(deadline); time.Sleep(20 * time.Millisecond) {
+		if page = loadedPage(t, a, tab.Path); page.Total == 1 {
+			break
+		}
+	}
+	if page.Total != 1 || page.Rows[0].Subject != "code" {
+		t.Fatalf("with docs hidden: total %d", page.Total)
+	}
+	p, _ := a.RepoPreferences(tab.Path)
+	if len(p.HideKinds) != 1 || p.HideKinds[0] != "docs" {
+		t.Fatalf("hideKinds = %v", p.HideKinds)
+	}
+	if err := a.SetKindVisible(tab.Path, "nightly", true); err == nil {
+		t.Fatal("accepted an unknown kind")
+	}
+}

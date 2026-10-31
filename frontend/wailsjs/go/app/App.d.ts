@@ -200,6 +200,8 @@ export function SetInsightsThresholds(arg1:string,arg2:app.Thresholds):Promise<v
 
 export function SetKeybindings(arg1:Record<string, string>):Promise<void>;
 
+export function SetKindVisible(arg1:string,arg2:string,arg3:boolean):Promise<void>;
+
 export function SetPreferences(arg1:app.Preferences):Promise<void>;
 
 export function SetRepoPreferences(arg1:string,arg2:app.RepoPreferences):Promise<void>;

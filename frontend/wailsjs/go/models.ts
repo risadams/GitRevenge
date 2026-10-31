@@ -585,6 +585,7 @@ export namespace app {
 	export class RepoPreferences {
 	    kinds: KindPatterns[];
 	    hide: string[];
+	    hideKinds: string[];
 	    cleanupOnPull: boolean;
 	    syncNotes: boolean;
 	
@@ -596,6 +597,7 @@ export namespace app {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.kinds = this.convertValues(source["kinds"], KindPatterns);
 	        this.hide = source["hide"];
+	        this.hideKinds = source["hideKinds"];
 	        this.cleanupOnPull = source["cleanupOnPull"];
 	        this.syncNotes = source["syncNotes"];
 	    }
@@ -1500,6 +1502,7 @@ export namespace graph {
 	    from: number;
 	    to: number;
 	    color: number;
+	    kind?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Seg(source);
@@ -1510,6 +1513,7 @@ export namespace graph {
 	        this.from = source["from"];
 	        this.to = source["to"];
 	        this.color = source["color"];
+	        this.kind = source["kind"];
 	    }
 	}
 	export class Row {
@@ -1519,6 +1523,7 @@ export namespace graph {
 	    up: Seg[];
 	    down: Seg[];
 	    width: number;
+	    kind?: string;
 	    id: string;
 	    parents: number;
 	    author: string;
@@ -1537,6 +1542,7 @@ export namespace graph {
 	        this.up = this.convertValues(source["up"], Seg);
 	        this.down = this.convertValues(source["down"], Seg);
 	        this.width = source["width"];
+	        this.kind = source["kind"];
 	        this.id = source["id"];
 	        this.parents = source["parents"];
 	        this.author = source["author"];

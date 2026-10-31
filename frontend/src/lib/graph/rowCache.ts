@@ -3,6 +3,8 @@ export interface Seg {
   from: number
   to: number
   color: number
+  /** The branch kind of the lane this line belongs to (ADR 0009), if any. */
+  kind?: string
 }
 
 export interface Row {
@@ -12,6 +14,8 @@ export interface Row {
   up: Seg[]
   down: Seg[]
   width: number
+  /** The branch kind of the lane the commit sits on, if any. */
+  kind?: string
   id: string
   parents: number
   author: string

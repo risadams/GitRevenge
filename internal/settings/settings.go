@@ -81,6 +81,8 @@ type RepoSettings struct {
 	Kinds map[string][]string `json:"kinds,omitempty"`
 	// Hide lists glob patterns of branches to leave out of the sidebar and the graph.
 	Hide []string `json:"hide,omitempty"`
+	// HideKinds hides every branch of these kinds (the graph's Docs and Bots toggles).
+	HideKinds []string `json:"hideKinds,omitempty"`
 	// CleanupOnPull deletes local branches whose upstream is gone and that have nothing
 	// unpushed, after each pull.
 	CleanupOnPull bool `json:"cleanupOnPull,omitempty"`
@@ -90,6 +92,7 @@ type RepoSettings struct {
 
 func (r RepoSettings) clone() RepoSettings {
 	r.Hide = slices.Clone(r.Hide)
+	r.HideKinds = slices.Clone(r.HideKinds)
 	if r.Kinds != nil {
 		kinds := make(map[string][]string, len(r.Kinds))
 		for k, v := range r.Kinds {
@@ -102,7 +105,7 @@ func (r RepoSettings) clone() RepoSettings {
 
 // empty reports whether r holds nothing but its path, so it can be dropped.
 func (r RepoSettings) empty() bool {
-	return r.Kinds == nil && len(r.Hide) == 0 && !r.CleanupOnPull && !r.SyncNotes
+	return r.Kinds == nil && len(r.Hide) == 0 && len(r.HideKinds) == 0 && !r.CleanupOnPull && !r.SyncNotes
 }
 
 // Repo returns the settings for the repository at path, or empty ones.

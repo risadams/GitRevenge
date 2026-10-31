@@ -1,6 +1,6 @@
 import { kindInfo, type KindInfo } from '../branchKinds'
 import { PATHS, type IconName } from '../ui/icons'
-import type { Ref, Row } from './rowCache'
+import type { Ref, Row, Seg } from './rowCache'
 
 /** Row density: the two-line timeline, or single-line rows that fit twice as many commits. */
 export type Density = 'comfortable' | 'compact'
@@ -127,6 +127,9 @@ function iconPath(name: IconName): Path2D | undefined {
   return p
 }
 
+/** How strongly Docs lanes, nodes and messages fade (ADR 0009). */
+const MUTED = 0.4
+
 /** Width a kind icon takes in a ref label, gap included. */
 const KIND_ICON_W = 15
 
@@ -247,8 +250,16 @@ export function drawRow(
   ctx.lineCap = 'round'
   const mid = y + h / 2
   const lx = (col: number) => laneX(col - lay.firstLane, m)
-  for (const s of row.up) segment(ctx, lx(s.from), y, lx(s.to), mid, laneColor(s.color))
-  for (const s of row.down) segment(ctx, lx(s.from), mid, lx(s.to), y + h, laneColor(s.color))
+  // Docs lanes (a published site, not code) draw muted.
+  const lane = (s: Seg, x1: number, y1: number, x2: number, y2: number) => {
+    if (s.kind === 'docs') ctx.globalAlpha *= MUTED
+    segment(ctx, x1, y1, x2, y2, laneColor(s.color))
+    if (s.kind === 'docs') ctx.globalAlpha /= MUTED
+  }
+  for (const s of row.up) lane(s, lx(s.from), y, lx(s.to), mid)
+  for (const s of row.down) lane(s, lx(s.from), mid, lx(s.to), y + h)
+  const docs = row.kind === 'docs'
+  if (docs) ctx.globalAlpha *= MUTED
 
   const x = lx(row.col)
   const color = laneColor(row.color)
@@ -283,20 +294,36 @@ export function drawRow(
     cut(r - 2)
     disc(ctx, x, mid, r - 4, color)
   } else if (comfortable) {
-    // The author's initials in a lane-coloured ring, as on dev-null's timeline.
+    // The author's initials in a lane-coloured ring, as on dev-null's timeline; on a
+    // Release, Environment, Docs or Bot lane, the kind's icon instead.
     cut(15)
     disc(ctx, x, mid, 13.5, color)
     cut(11.5)
     disc(ctx, x, mid, 10.5, theme.deep)
-    setFont(ctx, `500 9.5px ${MONO}`)
-    ctx.fillStyle = theme.soft
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(initials(row.author), x, mid + 0.5)
+    const kind = row.kind && row.kind !== 'trunk' ? kindInfo(row.kind) : undefined
+    const icon = kind ? iconPath(kind.icon) : undefined
+    if (icon) {
+      ctx.save()
+      ctx.translate(x - 6, mid - 6)
+      ctx.scale(12 / 24, 12 / 24)
+      ctx.lineWidth = 2.2
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.strokeStyle = theme.soft
+      ctx.stroke(icon)
+      ctx.restore()
+    } else {
+      setFont(ctx, `500 9.5px ${MONO}`)
+      ctx.fillStyle = theme.soft
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(initials(row.author), x, mid + 0.5)
+    }
   } else {
     cut(7)
     disc(ctx, x, mid, 5.5, color)
   }
+  if (docs) ctx.globalAlpha /= MUTED
   ctx.restore()
 
   ctx.textBaseline = 'middle'
@@ -324,7 +351,7 @@ export function drawRow(
   const subjectRight = right - 12
   left = drawLabels(ctx, refs, left, line1, Math.min(subjectRight - left, (subjectRight - left) * 0.6), color, theme, comfortable)
   setFont(ctx, `${comfortable ? 14.5 : 13.5}px ${SERIF}`)
-  ctx.fillStyle = theme.fg
+  ctx.fillStyle = docs ? theme.muted : theme.fg
   ctx.fillText(clip(ctx, row.subject, subjectRight - left), left, line1)
 
   if (comfortable) {
