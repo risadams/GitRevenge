@@ -134,6 +134,65 @@ func (a *App) HideBranch(path, name string, hide bool) error {
 	return nil
 }
 
+// MarkBranchKind makes a branch (named without its remote) a kind in the repository at
+// path, or ordinary when kind is "", by adding its exact name to that kind's patterns and
+// taking it out of the others. A kind that was using its defaults keeps them, plus the name.
+// If a wider pattern of another kind still claims the branch, the error says which.
+func (a *App) MarkBranchKind(path, name, kind string) error {
+	name = strings.TrimSpace(name)
+	if err := branchkind.CheckPattern(name); err != nil {
+		return userError("Can't mark that branch: " + err.Error() + ".")
+	}
+	k := branchkind.Kind(kind)
+	if k != branchkind.None && !branchkind.Valid(k) {
+		return userError("Unknown branch kind " + kind + ".")
+	}
+	m, err := a.sessions()
+	if err != nil {
+		return err
+	}
+	var result branchkind.Kind
+	err = m.Settings().Update(func(s *settings.Settings) {
+		rs := s.Repo(path)
+		if rs.Kinds == nil {
+			rs.Kinds = map[string][]string{}
+		}
+		for _, o := range branchkind.Order {
+			pats, custom := rs.Kinds[string(o)]
+			if !custom {
+				pats = slices.Clone(branchkind.Defaults[o])
+			}
+			had := slices.Contains(pats, name)
+			pats = slices.DeleteFunc(pats, func(p string) bool { return p == name })
+			if o == k {
+				pats = append(pats, name)
+			}
+			if o == k || had {
+				if slices.Equal(pats, branchkind.Defaults[o]) {
+					delete(rs.Kinds, string(o))
+				} else {
+					rs.Kinds[string(o)] = pats
+				}
+			}
+		}
+		if len(rs.Kinds) == 0 {
+			rs.Kinds = nil
+		}
+		s.SetRepo(rs)
+		result = session.Rules(rs).Kind(name)
+	})
+	if err != nil {
+		return err
+	}
+	if r := m.Get(path); r != nil {
+		r.ReloadGraph()
+	}
+	if result != k {
+		return userError(name + " still matches a " + string(result) + " pattern. Change it in Settings, under This repository.")
+	}
+	return nil
+}
+
 // SetShowHidden shows the hidden branches of the repository at path again, or hides them,
 // for this session only.
 func (a *App) SetShowHidden(path string, show bool) error {

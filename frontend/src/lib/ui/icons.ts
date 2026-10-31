@@ -24,6 +24,16 @@ export const ICONS = {
   rebase: ['M6 3v18', 'M6 10.5C6 8 9 6.5 15 6.5', c(17.5, 6.5, 2.5), 'M17.5 20v-8.5', 'm14.5 14.5 3-3 3 3'],
   'cherry-pick': [c(7, 17, 3), c(16.5, 18, 2.5), 'M7 14c.6-5 3.4-8.6 8.5-10.5', 'M16.5 15.5c-.3-4-.6-7.6-1-12'],
   tag: ['M3.5 12.3V4.8a1.3 1.3 0 0 1 1.3-1.3h7.5l8.2 8.2a1.4 1.4 0 0 1 0 2l-6.8 6.8a1.4 1.4 0 0 1-2 0z', c(8.5, 8.5, 1.5)],
+  // Branch kinds (ADR 0009). Trunk: the main line, two commits strung on it.
+  trunk: ['M12 3v3', c(12, 8.5, 2.5), 'M12 11v2', c(12, 15.5, 2.5), 'M12 18v3'],
+  // Release: a package ready to ship, its tape across the lid.
+  package: ['M12 3l8.5 4.5v9L12 21l-8.5-4.5v-9z', 'M3.5 7.5 12 12l8.5-4.5', 'M12 12v9', 'M7.75 5.25l8.5 4.5'],
+  // Environment: two servers in a rack, a light on each.
+  server: [rr(3.5, 4, 17, 7, 2), rr(3.5, 13, 17, 7, 2), dot(7, 7.5), dot(7, 16.5), 'M11 7.5h6', 'M11 16.5h6'],
+  // Docs: an open book.
+  book: ['M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5', 'M12 6.5c2-1.5 5-2 8.5-1.5v13c-3.5-.5-6.5 0-8.5 1.5', 'M12 6.5v13'],
+  // Bot: a robot's head, antenna up.
+  bot: [rr(4.5, 8, 15, 11, 3), 'M12 8V5.5', c(12, 4, 1.5), dot(9.5, 13), dot(14.5, 13), 'M10 16h4', 'M2.5 12v3', 'M21.5 12v3'],
   stash: [
     'M4.5 4h15a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z',
     'M5 9v9.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V9',

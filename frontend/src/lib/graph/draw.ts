@@ -1,3 +1,5 @@
+import { kindInfo, type KindInfo } from '../branchKinds'
+import { PATHS, type IconName } from '../ui/icons'
 import type { Ref, Row } from './rowCache'
 
 /** Row density: the two-line timeline, or single-line rows that fit twice as many commits. */
@@ -109,6 +111,30 @@ export interface Theme {
   good: string
   bad: string
   warn: string
+  /** Branch kind colours, keyed by kind (trunk, release, environment, docs, bot). */
+  kinds?: Record<string, string>
+}
+
+// Icons drawn on the canvas, built once each from the same paths as the Icon component.
+const iconPaths = new Map<IconName, Path2D>()
+function iconPath(name: IconName): Path2D | undefined {
+  if (typeof Path2D === 'undefined') return undefined
+  let p = iconPaths.get(name)
+  if (!p) {
+    p = new Path2D(PATHS[name])
+    iconPaths.set(name, p)
+  }
+  return p
+}
+
+/** Width a kind icon takes in a ref label, gap included. */
+const KIND_ICON_W = 15
+
+/** The kind of a branch label, for ref kinds that can have one. */
+function labelKind(r: Ref): (KindInfo & { kind: string }) | undefined {
+  if (r.kind !== 'local' && r.kind !== 'remote') return undefined
+  const info = kindInfo(r.branchKind)
+  return info && r.branchKind ? { ...info, kind: r.branchKind } : undefined
 }
 
 /** A commit's signature as the graph shows it; unsigned commits get no seal. */
@@ -348,11 +374,12 @@ function drawLabels(
     const more = remaining > 1 ? ` +${remaining - 1}` : ''
     const prefix = r.kind === 'tag' ? '◆ ' : r.kind === 'stash' ? '≡ ' : ''
     const text = prefix + r.short
-    let w = ctx.measureText(text).width + 14
+    const extra = 14 + (labelKind(r) ? KIND_ICON_W : 0)
+    let w = ctx.measureText(text).width + extra
     if (x + w > end) {
       // Out of room: one clipped label that also counts the rest.
-      const label = clip(ctx, text, Math.max(0, end - x - 14 - ctx.measureText(more).width)) + more
-      w = ctx.measureText(label).width + 14
+      const label = clip(ctx, text, Math.max(0, end - x - extra - ctx.measureText(more).width)) + more
+      w = ctx.measureText(label).width + extra
       if (w > 26) drawLabel(ctx, label, x, mid, w, h, r, color, theme)
       x += w + 5
       break
@@ -368,12 +395,21 @@ function drawLabels(
  * branch is solid; tags take the ochre wash whatever their lane. */
 function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, mid: number, w: number, h: number, r: Ref, color: string, theme: Theme) {
   const y = mid - h / 2
-  const fill = r.kind === 'tag' ? theme.tag : color
+  const kind = labelKind(r)
+  const kindColor = kind ? theme.kinds?.[kind.kind] : undefined
+  const fill = r.kind === 'tag' ? theme.tag : (kindColor ?? color)
   ctx.beginPath()
   ctx.roundRect(x, y, w, h, 4)
   if (r.head) {
     ctx.fillStyle = fill
     ctx.fill()
+  } else if (kind?.kind === 'docs') {
+    // Docs: an outline, not a wash, so a published site reads as "not code".
+    ctx.save()
+    ctx.strokeStyle = fill
+    ctx.lineWidth = 1
+    ctx.stroke()
+    ctx.restore()
   } else {
     ctx.save()
     ctx.globalAlpha *= r.kind === 'remote' ? 0.12 : 0.22
@@ -389,10 +425,26 @@ function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, mid: 
     ctx.stroke()
     ctx.restore()
   }
-  setFont(ctx, `${r.head ? '600 ' : ''}10.5px ${MONO}`)
-  ctx.fillStyle = r.head ? theme.bg : r.kind === 'remote' ? theme.muted : theme.fg
+  let tx = x + 7
+  const icon = kind ? iconPath(kind.icon) : undefined
+  if (kind && icon) {
+    const size = 11
+    ctx.save()
+    ctx.translate(x + 6, mid - size / 2)
+    ctx.scale(size / 24, size / 24)
+    ctx.lineWidth = 2.4
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.strokeStyle = r.head ? theme.bg : fill
+    ctx.stroke(icon)
+    ctx.restore()
+  }
+  if (kind) tx += KIND_ICON_W - 1
+  const weight = r.head || kind?.kind === 'trunk' ? '600 ' : ''
+  setFont(ctx, `${weight}${kind?.kind === 'bot' ? 9.5 : 10.5}px ${MONO}`)
+  ctx.fillStyle = r.head ? theme.bg : r.kind === 'remote' || kind?.kind === 'bot' ? theme.muted : theme.fg
   ctx.textBaseline = 'middle'
-  ctx.fillText(text, x + 7, mid + 0.5)
+  ctx.fillText(text, tx, mid + 0.5)
 }
 
 function segment(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, color: string) {
