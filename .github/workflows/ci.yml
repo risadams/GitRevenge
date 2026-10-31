@@ -58,7 +58,7 @@ jobs:
         # The race detector needs cgo: macOS runners have clang, Windows runners have no gcc.
         run: |
           if [ "$RUNNER_OS" = "macOS" ]; then go test -race ./...; else go test ./...; fi
-      - uses: golangci/golangci-lint-action@v9
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.15.0
       - name: Install Wails CLI

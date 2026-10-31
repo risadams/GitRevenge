@@ -8,11 +8,19 @@ vi.mock('./theme.svelte', () => ({ theme: { resolved: 'light' } }))
 
 const { default: Markdown } = await import('./Markdown.svelte')
 
+/** Drops Svelte's hydration comments, which may span lines, until none are left. */
+function withoutComments(out: string): string {
+  let prev
+  do {
+    prev = out
+    out = out.replace(/<!--[\s\S]*?-->/g, '')
+  } while (out !== prev)
+  return out
+}
+
 /** Rendered HTML without hydration comments or scoped class names. */
 const html = (text: string, issueURL = '', extra: Record<string, unknown> = {}) =>
-  render(Markdown, { props: { text, issueURL, ...extra } })
-    .body.replace(/<!--.*?-->/g, '')
-    .replace(/ class="[^"]*"/g, '')
+  withoutComments(render(Markdown, { props: { text, issueURL, ...extra } }).body).replace(/ class="[^"]*"/g, '')
 
 describe('Markdown', () => {
   it('renders emphasis, code, lists and links', () => {
