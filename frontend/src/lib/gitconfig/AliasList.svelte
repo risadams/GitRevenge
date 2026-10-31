@@ -104,7 +104,7 @@
           <span>Name</span>
           <input class="field name" bind:value={name} spellcheck="false" autocomplete="off" />
         </label>
-        <span class="segmented pills" role="group" aria-label="Kind of alias">
+        <span class="segmented" role="group" aria-label="Kind of alias">
           <button type="button" aria-pressed={!shell} onclick={() => (shell = false)}>git command</button>
           <button type="button" aria-pressed={shell} onclick={() => (shell = true)}>shell command</button>
         </span>
@@ -122,7 +122,7 @@
       {#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
       <div class="form-bottom">
         <span class="spacer"></span>
-        <button class="textbtn" type="button" onclick={() => (editing = '')}>Cancel</button>
+        <button class="btn text" type="button" onclick={() => (editing = '')}>Cancel</button>
         <InkButton type="submit" disabled={gitConfig.busy}>Done</InkButton>
       </div>
     </form>
@@ -153,13 +153,13 @@
             </div>
             <div class="actions">
               {#if a.own}
-                <button class="textbtn" onclick={() => open(a)}>Edit</button>
+                <button class="btn text" onclick={() => open(a)}>Edit</button>
                 {#each targets as t (t.path)}
-                  <button class="textbtn" onclick={() => copy(a, t.path)}>Copy to {destination(t.path)}</button>
+                  <button class="btn text" onclick={() => copy(a, t.path)}>Copy to {destination(t.path)}</button>
                 {/each}
-                <button class="textbtn" onclick={() => remove(a)}>Delete</button>
+                <button class="btn text" onclick={() => remove(a)}>Delete</button>
               {:else}
-                <button class="textbtn" onclick={() => copy(a)}>Copy here</button>
+                <button class="btn text" onclick={() => copy(a)}>Copy here</button>
               {/if}
             </div>
           </div>

@@ -36,8 +36,8 @@
         <Icon name="search" size={14} />
         <input type="search" placeholder="Search keys and values" aria-label="Search keys and values" bind:value={query} />
       </label>
-      <button class="tool" onclick={() => collapsed.clear()}>Expand all</button>
-      <button class="tool" onclick={collapseAll}>Collapse all</button>
+      <button class="btn quiet" onclick={() => collapsed.clear()}>Expand all</button>
+      <button class="btn quiet" onclick={collapseAll}>Collapse all</button>
       <span class="meta">{shown.length.toLocaleString()} of {nodes.length.toLocaleString()} lines</span>
     </div>
     <ul role="tree" aria-label={path}>

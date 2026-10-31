@@ -125,12 +125,12 @@
 
 <div class="conflict">
   <header class="view-head">
-    <button class="tool" onclick={onClose} title="Back"><Icon name="back" />Back</button>
+    <button class="btn quiet" onclick={onClose} title="Back"><Icon name="back" />Back</button>
     <span class="view-badge danger">Conflict</span>
     <span class="view-file" title={file}>{file}</span>
     <span class="spacer"></span>
-    <button class="tool" disabled={busy} onclick={() => take('ours')} title="Resolve with the whole ours version">Use ours</button>
-    <button class="tool" disabled={busy} onclick={() => take('theirs')} title="Resolve with the whole theirs version">Use theirs</button>
+    <button class="btn quiet" disabled={busy} onclick={() => take('ours')} title="Resolve with the whole ours version">Use ours</button>
+    <button class="btn quiet" disabled={busy} onclick={() => take('theirs')} title="Resolve with the whole theirs version">Use theirs</button>
     {#if cf && !cf.binary}
       <InkButton
         disabled={busy || hasMarkers(result)}
@@ -162,11 +162,11 @@
         <span>{regions.length} {regions.length === 1 ? 'conflict' : 'conflicts'}:</span>
         {#each regions as r, i (r.from)}
           <span class="region">
-            <button class="link" onclick={() => jump(r)} title="Go to conflict {i + 1}">#{i + 1}</button>
-            <button onclick={() => choose(r, 'ours')}>Ours</button>
-            <button onclick={() => choose(r, 'theirs')}>Theirs</button>
-            <button onclick={() => choose(r, 'both')}>Both</button>
-            {#if r.base !== null}<button onclick={() => choose(r, 'base')}>Base</button>{/if}
+            <button class="btn sm text link" onclick={() => jump(r)} title="Go to conflict {i + 1}">#{i + 1}</button>
+            <button class="btn sm quiet" onclick={() => choose(r, 'ours')}>Ours</button>
+            <button class="btn sm quiet" onclick={() => choose(r, 'theirs')}>Theirs</button>
+            <button class="btn sm quiet" onclick={() => choose(r, 'both')}>Both</button>
+            {#if r.base !== null}<button class="btn sm quiet" onclick={() => choose(r, 'base')}>Base</button>{/if}
           </span>
         {/each}
       {/if}
@@ -262,23 +262,8 @@
     background: var(--wash-hover);
   }
 
-  .region button {
-    height: 24px;
-    padding: 0 8px;
-    background: none;
-    border: none;
-    border-radius: 4px;
-    font-size: 13px;
-  }
-
-  .region button:hover:not(:disabled) {
-    background: var(--paper);
-  }
-
   .region .link {
     font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--link);
   }
 
   .done {

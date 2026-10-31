@@ -94,7 +94,7 @@
               <span class="when">{dayLabel(new Date(choice.time))}, {time(choice)}</span>
               <span class="against">compared with the file now</span>
             </div>
-            <span class="segmented pills" role="group" aria-label="Diff layout">
+            <span class="segmented" role="group" aria-label="Diff layout">
               <button aria-pressed={!split} onclick={() => (split = false)}>unified</button>
               <button aria-pressed={split} onclick={() => (split = true)}>split</button>
             </span>
@@ -137,7 +137,7 @@
   <Modal title="Restore and discard your edits?" onClose={() => (confirming = false)}>
     <p class="form-note">Restoring the {time(choice)} backup replaces the file and discards the changes you haven't saved.</p>
     <div class="form-actions">
-      <button class="textbtn" onclick={() => (confirming = false)}>Keep editing</button>
+      <button class="btn text" onclick={() => (confirming = false)}>Keep editing</button>
       <InkButton variant="danger" onclick={restore}>Discard and restore</InkButton>
     </div>
   </Modal>

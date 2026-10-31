@@ -81,8 +81,8 @@
               <td class="mono when" title={new Date(e.time * 1000).toLocaleString()}>{e.time ? relativeTime(e.time, now) : ''}</td>
               <td class="mono">{e.commit.slice(0, 7)}</td>
               <td class="row-actions">
-                <button class="tool" onclick={() => onReveal(e.commit)} title="Show this commit in the graph"><Icon name="search" size={14} />Show</button>
-                <button class="tool" onclick={() => onCreateBranch(e.commit)} title="Start a branch at this commit"><Icon name="branch" size={14} />New branch…</button>
+                <button class="btn sm quiet" onclick={() => onReveal(e.commit)} title="Show this commit in the graph"><Icon name="search" size={14} />Show</button>
+                <button class="btn sm quiet" onclick={() => onCreateBranch(e.commit)} title="Start a branch at this commit"><Icon name="branch" size={14} />New branch…</button>
               </td>
             </tr>
           {/each}
@@ -151,11 +151,6 @@
   .row-actions {
     white-space: nowrap;
     text-align: right;
-  }
-
-  .row-actions .tool {
-    height: 26px;
-    font-size: 13px;
   }
 
   .muted {

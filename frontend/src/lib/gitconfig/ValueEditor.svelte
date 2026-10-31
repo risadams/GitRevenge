@@ -57,7 +57,7 @@
     <span class="spelling">{implicit ? 'true' : value}</span>
   </label>
 {:else if info?.type === 'enum' && pills}
-  <span class="segmented pills" role="group" aria-label={label}>
+  <span class="segmented" role="group" aria-label={label}>
     {#each options as o (o)}
       <button aria-pressed={o === value} {disabled} onclick={() => o !== value && onCommit(o)}>{o}</button>
     {/each}

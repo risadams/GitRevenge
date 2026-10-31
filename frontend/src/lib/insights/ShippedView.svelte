@@ -52,7 +52,7 @@
         across {insights.repos.length} repositories{/if} · {refCount}
       {refCount === 1 ? 'reference' : 'references'}
     </p>
-    <span class="segmented pills" role="group" aria-label="Group items">
+    <span class="segmented" role="group" aria-label="Group items">
       <button aria-pressed={grouping === 'reference'} onclick={() => (grouping = 'reference')}>by reference</button>
       <button aria-pressed={grouping === 'date'} onclick={() => (grouping = 'date')}>by date</button>
     </span>

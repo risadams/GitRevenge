@@ -109,16 +109,16 @@
           </span>
           <span class="actions">
             {#if !w.current && !w.prunable}
-              <button class="tool" disabled={busy} onclick={() => session.open(w.path)}><Icon name="folder-open" size={14} />Open</button>
+              <button class="btn quiet" disabled={busy} onclick={() => session.open(w.path)}><Icon name="folder-open" size={14} />Open</button>
             {/if}
             {#if !w.main}
               {#if confirmRemove === w.path}
                 <label class="force"><input type="checkbox" bind:checked={force} /> even with changes</label>
-                <button class="tool danger" disabled={busy} onclick={() => remove(w)}>Remove</button>
-                <button class="tool" disabled={busy} onclick={() => (confirmRemove = '')}>Cancel</button>
+                <button class="btn sm danger" disabled={busy} onclick={() => remove(w)}>Remove</button>
+                <button class="btn quiet" disabled={busy} onclick={() => (confirmRemove = '')}>Cancel</button>
               {:else}
                 <button
-                  class="tool"
+                  class="btn quiet"
                   disabled={busy || w.current}
                   onclick={() => (confirmRemove = w.path)}
                   title={w.current ? 'This worktree is open here' : 'Remove this worktree'}><Icon name="trash" size={14} />Remove…</button
@@ -149,7 +149,7 @@
           <span>Folder</span>
           <span class="row">
             <input bind:value={dir} oninput={() => (dirTouched = true)} />
-            <button type="button" class="tool" onclick={browse}><Icon name="folder" size={14} />Choose…</button>
+            <button type="button" class="btn quiet" onclick={browse}><Icon name="folder" size={14} />Choose…</button>
           </span>
         </label>
         <span class="buttons">
@@ -158,7 +158,7 @@
         </span>
       </form>
     {:else}
-      <button class="tool" onclick={() => (adding = true)}><Icon name="plus" size={14} />Add worktree…</button>
+      <button class="btn quiet" onclick={() => (adding = true)}><Icon name="plus" size={14} />Add worktree…</button>
     {/if}
   {/if}
 </Modal>
