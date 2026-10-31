@@ -208,6 +208,14 @@
               <input bind:value={kindText[k.kind]} placeholder={k.defaults.length ? '' : 'None by default'} spellcheck="false" autocomplete="off" />
             </label>
           {/each}
+          <label class="check">
+            <input type="checkbox" bind:checked={repo.cleanupOnPull} />
+            Clean up merged branches after each pull
+          </label>
+          <p class="hint">
+            Deletes a local branch once its upstream is deleted, if it has nothing unpushed. Trunk, Release, Environment and Docs branches, the branch
+            you're on and worktree branches are always kept. Undo brings them back.
+          </p>
           <label class="form-field">
             <span>Hidden branches</span>
             <input bind:value={hideText} placeholder="For example wip/*, gh-pages" spellcheck="false" autocomplete="off" />

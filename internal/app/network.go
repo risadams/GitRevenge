@@ -180,6 +180,7 @@ func (a *App) cancelNetwork(key string) {
 // Fetch downloads from a remote, or all remotes when remote is empty.
 func (a *App) Fetch(path, remote string) error {
 	return a.runNetwork(path, "fetch", func(ctx context.Context, r *session.Repo, o git.NetOptions) error {
+		a.upstreams.remember(ctx, r.Path, r.Git)
 		return r.Git.Fetch(ctx, remote, o)
 	})
 }
@@ -187,7 +188,12 @@ func (a *App) Fetch(path, remote string) error {
 // Pull integrates the current branch's upstream. mode is "", "ff-only", "merge" or "rebase".
 func (a *App) Pull(path, mode string) error {
 	return a.runNetwork(path, "pull", func(ctx context.Context, r *session.Repo, o git.NetOptions) error {
-		return a.record(r, "Pull", kindMove, "", func() error { return r.Git.Pull(ctx, git.PullMode(mode), o) })
+		a.upstreams.remember(ctx, r.Path, r.Git)
+		if err := a.record(r, "Pull", kindMove, "", func() error { return r.Git.Pull(ctx, git.PullMode(mode), o) }); err != nil {
+			return err
+		}
+		a.cleanupAfterPull(ctx, r)
+		return nil
 	})
 }
 
