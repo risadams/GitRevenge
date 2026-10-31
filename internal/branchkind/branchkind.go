@@ -43,6 +43,8 @@ func Valid(k Kind) bool { return slices.Contains(Order, k) }
 type Rules struct {
 	kinds map[Kind][]string
 	hide  []string
+	// hideKinds hides every branch of these kinds (the graph's Docs and Bots toggles).
+	hideKinds map[Kind]bool
 }
 
 // New returns rules from a repository's overrides: a kind missing from overrides uses its
@@ -59,11 +61,40 @@ func New(overrides map[Kind][]string, hide []string) Rules {
 	return r
 }
 
+// HidingKinds returns r with every branch of the given kinds hidden as well.
+func (r Rules) HidingKinds(kinds []Kind) Rules {
+	if len(kinds) == 0 {
+		return r
+	}
+	r.hideKinds = map[Kind]bool{}
+	for _, k := range kinds {
+		if k != None {
+			r.hideKinds[k] = true
+		}
+	}
+	return r
+}
+
+// KindHidden reports whether branches of kind k are hidden.
+func (r Rules) KindHidden(k Kind) bool { return r.hideKinds[k] }
+
 // Patterns returns the patterns kind k uses under these rules.
 func (r Rules) Patterns(k Kind) []string { return r.kinds[k] }
 
-// Hide returns the hide patterns.
-func (r Rules) Hide() []string { return r.hide }
+// Hide returns the hide patterns, including the patterns of hidden kinds, for leaving
+// branches out of git log.
+func (r Rules) Hide() []string {
+	if len(r.hideKinds) == 0 {
+		return r.hide
+	}
+	out := slices.Clone(r.hide)
+	for _, k := range Order {
+		if r.hideKinds[k] {
+			out = append(out, r.kinds[k]...)
+		}
+	}
+	return out
+}
 
 // Kind classifies a branch by its name without any remote prefix (see Strip).
 func (r Rules) Kind(name string) Kind {
@@ -85,7 +116,7 @@ func (r Rules) Hidden(name string) bool {
 			return true
 		}
 	}
-	return false
+	return len(r.hideKinds) > 0 && r.hideKinds[r.Kind(name)]
 }
 
 // Strip removes a remote's name from a remote-tracking branch, so origin/release/1.4

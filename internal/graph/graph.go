@@ -53,6 +53,8 @@ type Seg struct {
 	From  int `json:"from"`
 	To    int `json:"to"`
 	Color int `json:"color"`
+	// Kind is the branch kind of the lane the line belongs to (see SetTipKinds), or "".
+	Kind string `json:"kind,omitempty"`
 }
 
 // Row is everything needed to draw one commit row.
@@ -65,6 +67,8 @@ type Row struct {
 	Down  []Seg `json:"down"`
 	// Width is the number of lane columns used by this row.
 	Width int `json:"width"`
+	// Kind is the branch kind of the lane the commit sits on, or "" (see SetTipKinds).
+	Kind string `json:"kind,omitempty"`
 
 	ID         string `json:"id"`
 	Parents    int    `json:"parents"`
@@ -79,7 +83,9 @@ type lane struct {
 	// position instead of a 32-byte ID.
 	pos   int32
 	color int
-	used  bool
+	// kind indexes Graph.kindNames: the branch kind this lane carries down from its tip.
+	kind uint8
+	used bool
 }
 
 type state struct {
@@ -106,7 +112,7 @@ func (st state) pack(row int) checkpoint {
 	for i, l := range st.lanes {
 		cp.lanes[i] = cpLane{pos: -1}
 		if l.used {
-			cp.lanes[i] = cpLane{pos: l.pos, color: int32(l.color)}
+			cp.lanes[i] = cpLane{pos: l.pos, color: int32(l.color) | int32(l.kind)<<24}
 		}
 	}
 	return cp
@@ -117,7 +123,7 @@ func (cp checkpoint) unpack(parents []oid) state {
 	st := state{lanes: make([]lane, len(cp.lanes)), nextColor: cp.nextColor}
 	for i, l := range cp.lanes {
 		if l.pos >= 0 {
-			st.lanes[i] = lane{want: parents[l.pos], pos: l.pos, color: int(l.color), used: true}
+			st.lanes[i] = lane{want: parents[l.pos], pos: l.pos, color: int(l.color & 0xffffff), kind: uint8(l.color >> 24), used: true}
 		}
 	}
 	return st
@@ -143,7 +149,7 @@ type Graph struct {
 	nodeColor []uint16
 
 	cur         state
-	pins        *pinning     // Trunk lanes held in the leftmost columns, or nil
+	cfg         layout       // pinned lanes and tip kinds, fixed before the first Add
 	checkpoints []checkpoint // in row order; the first is before row 0
 	nextCP      int          // the row before which the next checkpoint is taken
 }
@@ -186,10 +192,56 @@ func (g *Graph) Pin(ids []string) {
 		}
 	}
 	if p.n > 0 {
-		g.pins = p
+		g.cfg.pins = p
 		// Colour 0 is the first Trunk's; other lanes start from the next one.
 		g.cur.nextColor = 1
 	}
+}
+
+// layout is what a graph's layout depends on besides its commits.
+type layout struct {
+	pins *pinning
+	// tipKind gives branch tips their kind; a lane started at a tip carries it down the
+	// tip's first parents. kindNames[0] is "".
+	tipKind   map[oid]uint8
+	kindNames []string
+}
+
+// SetTipKinds gives branch tips a kind ("docs", "release", …), which the lane starting at
+// each carries down its first parents and rows report (Row.Kind, Seg.Kind). It must be
+// called before the first Add; at most 255 kinds.
+func (g *Graph) SetTipKinds(tips map[string]string) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if len(g.ids) > 0 || len(tips) == 0 {
+		return
+	}
+	g.cfg.tipKind = map[oid]uint8{}
+	g.cfg.kindNames = []string{""}
+	codes := map[string]uint8{}
+	for id, kind := range tips {
+		o, err := parseOID(id)
+		if err != nil || kind == "" {
+			continue
+		}
+		c, ok := codes[kind]
+		if !ok {
+			if len(g.cfg.kindNames) == 256 {
+				continue
+			}
+			c = uint8(len(g.cfg.kindNames))
+			codes[kind] = c
+			g.cfg.kindNames = append(g.cfg.kindNames, kind)
+		}
+		g.cfg.tipKind[o] = c
+	}
+}
+
+func (c *layout) name(kind uint8) string {
+	if int(kind) < len(c.kindNames) {
+		return c.kindNames[kind]
+	}
+	return ""
 }
 
 // reserved is how many leftmost columns pinned lanes own.
@@ -238,7 +290,7 @@ func (g *Graph) Add(c git.LogCommit) error {
 	g.times = append(g.times, c.AuthorTime)
 	g.subjects = append(g.subjects, c.Subject)
 
-	col, color := step(&g.cur, g.pins, id, ps, base, nil)
+	col, color := step(&g.cur, &g.cfg, id, ps, base, nil)
 	g.nodeCol = append(g.nodeCol, uint16(min(col, 0xffff)))
 	g.nodeColor = append(g.nodeColor, uint16(color%0x10000))
 	return nil
@@ -284,12 +336,12 @@ func (g *Graph) Rows(start, count int) []Row {
 	for i := cp.row; i < end; i++ {
 		ps := g.parents[g.parentStart[i]:g.parentStart[i+1]]
 		if i < start {
-			step(&st, g.pins, g.ids[i], ps, g.parentStart[i], nil)
+			step(&st, &g.cfg, g.ids[i], ps, g.parentStart[i], nil)
 			continue
 		}
 		// Empty, not nil: the frontend iterates these, and nil marshals to JSON null.
 		r := Row{Index: i, Up: []Seg{}, Down: []Seg{}}
-		r.Col, r.Color = step(&st, g.pins, g.ids[i], ps, g.parentStart[i], &r)
+		r.Col, r.Color = step(&st, &g.cfg, g.ids[i], ps, g.parentStart[i], &r)
 		r.ID = hex.EncodeToString(g.ids[i][:g.hashLen])
 		r.Parents = len(ps)
 		r.Author = g.authors[g.authorIdx[i]]
@@ -308,7 +360,8 @@ func (g *Graph) Rows(start, count int) []Row {
 // reused by the next new lane. With pins, the leftmost columns belong to Trunk lanes: a
 // Trunk tip takes its column even if a branch above reached it first, its first parent
 // always continues there, and other lanes start to the right.
-func step(st *state, pins *pinning, id oid, ps []oid, base int32, row *Row) (col, color int) {
+func step(st *state, cfg *layout, id oid, ps []oid, base int32, row *Row) (col, color int) {
+	pins := cfg.pins
 	reserved := pins.reserved()
 	col = -1
 	for i, l := range st.lanes {
@@ -321,6 +374,7 @@ func step(st *state, pins *pinning, id oid, ps []oid, base int32, row *Row) (col
 	if pins != nil {
 		pinCol, isTip = pins.tips[id]
 	}
+	kind := cfg.tipKind[id]
 	switch {
 	case isTip && col != pinCol:
 		// A Trunk tip: its own column, with any lanes waiting for it converging there.
@@ -335,6 +389,12 @@ func step(st *state, pins *pinning, id oid, ps []oid, base int32, row *Row) (col
 		color = st.newColor()
 	default:
 		color = st.lanes[col].color
+		if kind == 0 {
+			kind = st.lanes[col].kind
+		}
+	}
+	if row != nil {
+		row.Kind = cfg.name(kind)
 	}
 
 	// Lines entering from above: lanes waiting for this commit converge on the node, the
@@ -345,11 +405,11 @@ func step(st *state, pins *pinning, id oid, ps []oid, base int32, row *Row) (col
 		}
 		if l.want == id {
 			if row != nil {
-				row.Up = append(row.Up, Seg{From: i, To: col, Color: l.color})
+				row.Up = append(row.Up, Seg{From: i, To: col, Color: l.color, Kind: cfg.name(l.kind)})
 			}
 			st.lanes[i] = lane{}
 		} else if row != nil {
-			row.Up = append(row.Up, Seg{From: i, To: i, Color: l.color})
+			row.Up = append(row.Up, Seg{From: i, To: i, Color: l.color, Kind: cfg.name(l.kind)})
 		}
 	}
 
@@ -364,41 +424,43 @@ func step(st *state, pins *pinning, id oid, ps []oid, base int32, row *Row) (col
 			target, tcolor = col, color
 			// The Up pass cleared this column, so the lane starts again here for the parent.
 			if l := st.lanes[col]; !l.used || l.want != p {
-				st.lanes[target] = lane{want: p, pos: base + int32(pi), color: tcolor, used: true}
+				st.lanes[target] = lane{want: p, pos: base + int32(pi), color: tcolor, kind: kind, used: true}
 				created = append(created, target)
 			}
 			if row != nil {
-				row.Down = append(row.Down, Seg{From: col, To: target, Color: color})
+				row.Down = append(row.Down, Seg{From: col, To: target, Color: color, Kind: cfg.name(kind)})
 			}
 			continue
 		}
+		tkind := uint8(0)
 		for i, l := range st.lanes {
 			if l.used && l.want == p {
-				target, tcolor = i, l.color
+				target, tcolor, tkind = i, l.color, l.kind
 				break
 			}
 		}
 		if target < 0 {
 			if pi == 0 {
-				target, tcolor = col, color
+				// The first parent continues this lane, kind and all.
+				target, tcolor, tkind = col, color, kind
 			} else {
 				target, tcolor = st.freeSlot(max(col+1, reserved)), st.newColor()
 			}
-			st.lanes[target] = lane{want: p, pos: base + int32(pi), color: tcolor, used: true}
+			st.lanes[target] = lane{want: p, pos: base + int32(pi), color: tcolor, kind: tkind, used: true}
 			created = append(created, target)
 		}
 		if row != nil {
-			segColor := tcolor
+			segColor, segKind := tcolor, tkind
 			if pi == 0 {
-				segColor = color
+				segColor, segKind = color, kind
 			}
-			row.Down = append(row.Down, Seg{From: col, To: target, Color: segColor})
+			row.Down = append(row.Down, Seg{From: col, To: target, Color: segColor, Kind: cfg.name(segKind)})
 		}
 	}
 	if row != nil {
 		for i, l := range st.lanes {
 			if l.used && !slices.Contains(created, i) {
-				row.Down = append(row.Down, Seg{From: i, To: i, Color: l.color})
+				row.Down = append(row.Down, Seg{From: i, To: i, Color: l.color, Kind: cfg.name(l.kind)})
 			}
 		}
 		row.Width = len(st.lanes)

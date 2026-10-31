@@ -25,7 +25,9 @@ type RepoPreferences struct {
 	// Kinds lists every branch kind, in matching order.
 	Kinds []KindPatterns `json:"kinds"`
 	// Hide lists patterns of branches to leave out of the sidebar and the graph.
-	Hide          []string `json:"hide"`
+	Hide []string `json:"hide"`
+	// HideKinds lists kinds whose branches are hidden (the graph's Docs and Bots toggles).
+	HideKinds     []string `json:"hideKinds"`
 	CleanupOnPull bool     `json:"cleanupOnPull"`
 	SyncNotes     bool     `json:"syncNotes"`
 }
@@ -37,7 +39,7 @@ func (a *App) RepoPreferences(path string) (RepoPreferences, error) {
 		return RepoPreferences{}, err
 	}
 	rs := m.Settings().Get().Repo(path)
-	out := RepoPreferences{Hide: nonNil(rs.Hide), CleanupOnPull: rs.CleanupOnPull, SyncNotes: rs.SyncNotes}
+	out := RepoPreferences{Hide: nonNil(rs.Hide), HideKinds: nonNil(rs.HideKinds), CleanupOnPull: rs.CleanupOnPull, SyncNotes: rs.SyncNotes}
 	for _, k := range branchkind.Order {
 		kp := KindPatterns{Kind: string(k), Defaults: nonNil(branchkind.Defaults[k])}
 		if p, ok := rs.Kinds[string(k)]; ok {
@@ -81,6 +83,14 @@ func (a *App) SetRepoPreferences(path string, p RepoPreferences) error {
 	}
 	if len(hide) > 0 {
 		rs.Hide = hide
+	}
+	for _, k := range p.HideKinds {
+		if !branchkind.Valid(branchkind.Kind(k)) {
+			return userError("Unknown branch kind " + k + ".")
+		}
+		if !slices.Contains(rs.HideKinds, k) {
+			rs.HideKinds = append(rs.HideKinds, k)
+		}
 	}
 	m, err := a.sessions()
 	if err != nil {
@@ -189,6 +199,33 @@ func (a *App) MarkBranchKind(path, name, kind string) error {
 	}
 	if result != k {
 		return userError(name + " still matches a " + string(result) + " pattern. Change it in Settings, under This repository.")
+	}
+	return nil
+}
+
+// SetKindVisible shows or hides every branch of a kind in the repository at path, as the
+// graph's "Show docs branches" and "Show bot branches" toggles do.
+func (a *App) SetKindVisible(path, kind string, visible bool) error {
+	if !branchkind.Valid(branchkind.Kind(kind)) {
+		return userError("Unknown branch kind " + kind + ".")
+	}
+	m, err := a.sessions()
+	if err != nil {
+		return err
+	}
+	err = m.Settings().Update(func(s *settings.Settings) {
+		rs := s.Repo(path)
+		rs.HideKinds = slices.DeleteFunc(rs.HideKinds, func(k string) bool { return k == kind })
+		if !visible {
+			rs.HideKinds = append(rs.HideKinds, kind)
+		}
+		s.SetRepo(rs)
+	})
+	if err != nil {
+		return err
+	}
+	if r := m.Get(path); r != nil {
+		r.ReloadGraph()
 	}
 	return nil
 }

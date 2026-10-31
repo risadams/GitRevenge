@@ -1,7 +1,7 @@
 <script lang="ts">
   import { KINDS } from '../branchKinds'
   import { onMount } from 'svelte'
-  import { CommitRow, CommitSignatures, GraphRows, SearchGraph } from '../../../wailsjs/go/app/App.js'
+  import { CommitRow, CommitSignatures, GraphRows, Refs, RepoPreferences, SearchGraph, SetKindVisible } from '../../../wailsjs/go/app/App.js'
   import { session } from '../session.svelte'
   import { EventsOn } from '../../../wailsjs/runtime/runtime.js'
   import { theme as colorTheme } from '../theme.svelte'
@@ -25,6 +25,23 @@
     /** auto is true for the automatic selection of HEAD when the graph first loads. */
     onSelect?: (row: Row | undefined, auto: boolean) => void
   } = $props()
+
+  // The Docs and Bots visibility toggles (ADR 0009): shown when the repository has branches
+  // of that kind, or has them hidden. On means visible.
+  let kindToggles = $state<{ kind: 'docs' | 'bot'; label: string; icon: (typeof KINDS)['docs']['icon']; hidden: boolean }[]>([])
+
+  async function loadKindToggles() {
+    const [refs, prefs] = await Promise.all([Refs(path).catch(() => []), RepoPreferences(path).catch(() => null)])
+    const hidden = new Set(prefs?.hideKinds ?? [])
+    kindToggles = (['docs', 'bot'] as const)
+      .filter((k) => hidden.has(k) || (refs as Ref[]).some((r) => r.branchKind === k))
+      .map((k) => ({ kind: k, label: k === 'docs' ? 'Docs' : 'Bots', icon: KINDS[k].icon, hidden: hidden.has(k) }))
+  }
+
+  async function toggleKind(kind: string, hidden: boolean) {
+    await session.run(() => SetKindVisible(path, kind, hidden))
+    await loadKindToggles()
+  }
 
   /** Rows fetched beyond the viewport, so short scrolls never show blanks. */
   const OVERSCAN = 40
@@ -404,8 +421,10 @@
     // The canvas paints with the bundled fonts; repaint once they finish loading.
     void document.fonts.ready.then(schedule)
     document.fonts.addEventListener('loadingdone', schedule)
+    void loadKindToggles()
     const off = EventsOn('graph:progress', (p: GraphProgress) => {
       if (p.path !== path) return
+      if (p.done) void loadKindToggles()
       cache.setTotal(p.rows, !p.done, p.paused, p.estimate)
       if (p.refsReady) cache.invalidate() // labels arrived after the first rows
       if (p.reset && !p.done) {
@@ -453,6 +472,16 @@
     {:else}
       <span class="meta">{total.toLocaleString()} commits</span>
     {/if}
+    {#each kindToggles as k (k.kind)}
+      <button
+        class="btn sm quiet"
+        onclick={() => toggleKind(k.kind, k.hidden)}
+        aria-pressed={!k.hidden}
+        title={k.hidden ? `Show ${k.label.toLowerCase()} branches` : `Hide ${k.label.toLowerCase()} branches`}
+      >
+        <Icon name={k.icon} size={14} />{k.label}
+      </button>
+    {/each}
     <button
       class="btn sm quiet density"
       onclick={() => session.run(() => colorTheme.toggleDensity())}

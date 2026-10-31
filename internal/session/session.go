@@ -91,7 +91,11 @@ func Rules(rs settings.RepoSettings) branchkind.Rules {
 	for k, p := range rs.Kinds {
 		overrides[branchkind.Kind(k)] = p
 	}
-	return branchkind.New(overrides, rs.Hide)
+	var hidden []branchkind.Kind
+	for _, k := range rs.HideKinds {
+		hidden = append(hidden, branchkind.Kind(k))
+	}
+	return branchkind.New(overrides, rs.Hide).HidingKinds(hidden)
 }
 
 func (r *Repo) close() {

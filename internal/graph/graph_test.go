@@ -67,7 +67,7 @@ func TestBranchAndMerge(t *testing.T) {
 	if !slices.Equal(cols(rows), []int{0, 0, 1, 0}) {
 		t.Fatalf("cols = %v", cols(rows))
 	}
-	if !slices.Equal(rows[0].Down, []Seg{{0, 0, rows[0].Color}, {0, 1, rows[2].Color}}) {
+	if !slices.Equal(rows[0].Down, []Seg{{From: 0, To: 0, Color: rows[0].Color}, {From: 0, To: 1, Color: rows[2].Color}}) {
 		t.Fatalf("merge row down = %+v", rows[0].Down)
 	}
 	if rows[2].Color == rows[0].Color {
@@ -75,7 +75,7 @@ func TestBranchAndMerge(t *testing.T) {
 	}
 	// The feature commit's parent is already awaited by lane 0, so its line joins that lane
 	// right away instead of running a parallel lane down to the base.
-	if !slices.Equal(rows[2].Down, []Seg{{1, 0, rows[2].Color}, {0, 0, rows[0].Color}}) {
+	if !slices.Equal(rows[2].Down, []Seg{{From: 1, To: 0, Color: rows[2].Color}, {From: 0, To: 0, Color: rows[0].Color}}) {
 		t.Fatalf("feature row down = %+v", rows[2].Down)
 	}
 	if len(rows[3].Up) != 1 || rows[3].Width != 1 {
@@ -373,6 +373,70 @@ func TestPinnedWindowsMatchFullLayout(t *testing.T) {
 		for _, s := range full[i+1].Up {
 			if !down[s.From] {
 				t.Fatalf("row %d: line from column %d has nothing above it", i+1, s.From)
+			}
+		}
+	}
+}
+
+func TestTipKindsFollowLanes(t *testing.T) {
+	// 0: docs tip (orphan line 0 → 2 → 4); 1: main tip → 3 → 5 (root); 2, 4 docs history.
+	// 1 also merges a side line 6 (no kind) whose parent is 3.
+	commits := [][]int{{2}, {3, 6}, {4}, {5}, {}, {}, {3}}
+	g := New()
+	g.SetTipKinds(map[string]string{fakeID(0): "docs", fakeID(1): "trunk"})
+	for i, ps := range commits {
+		c := git.LogCommit{ID: fakeID(i), Subject: fmt.Sprint(i), AuthorName: "a"}
+		for _, p := range ps {
+			c.Parents = append(c.Parents, fakeID(p))
+		}
+		if err := g.Add(c); err != nil {
+			t.Fatal(err)
+		}
+	}
+	rows := g.Rows(0, len(commits))
+	want := map[int]string{0: "docs", 2: "docs", 4: "docs", 1: "trunk", 3: "trunk", 5: "trunk", 6: ""}
+	for i, k := range want {
+		if rows[i].Kind != k {
+			t.Errorf("row %d kind = %q, want %q", i, rows[i].Kind, k)
+		}
+	}
+	for _, s := range rows[1].Down {
+		if s.From == rows[1].Col && s.To != rows[1].Col && s.Kind != "" {
+			t.Errorf("the merged side line should carry no kind: %+v", s)
+		}
+	}
+}
+
+func TestTipKindsSurviveCheckpoints(t *testing.T) {
+	commits := randomDAG(1200, 3)
+	g := New()
+	kinds := map[string]string{}
+	for i := 0; i < len(commits); i += 37 {
+		kinds[fakeID(i)] = []string{"docs", "bot", "release"}[i%3]
+	}
+	g.SetTipKinds(kinds)
+	for i, ps := range commits {
+		c := git.LogCommit{ID: fakeID(i), Subject: fmt.Sprint(i), AuthorName: "a"}
+		for _, p := range ps {
+			c.Parents = append(c.Parents, fakeID(p))
+		}
+		if err := g.Add(c); err != nil {
+			t.Fatal(err)
+		}
+	}
+	full := g.Rows(0, g.Len())
+	seen := false
+	for _, r := range full {
+		seen = seen || r.Kind != ""
+	}
+	if !seen {
+		t.Fatal("no row got a kind; the fixture should have kinded tips")
+	}
+	for _, start := range []int{1, 127, 128, 300, 1190} {
+		for i, r := range g.Rows(start, 15) {
+			w := full[start+i]
+			if r.Kind != w.Kind || r.Color != w.Color || !slices.Equal(r.Up, w.Up) || !slices.Equal(r.Down, w.Down) {
+				t.Fatalf("row %d differs when read from window at %d", start+i, start)
 			}
 		}
 	}
