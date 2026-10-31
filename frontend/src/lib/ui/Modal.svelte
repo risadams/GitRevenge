@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte'
+  import { inkIn, inkOut, scrim } from './motion'
 
   /** A modal dialog: scrim, paper panel, title. Keeps focus inside while open, starts it on
    * the first field (or button), and gives it back to whatever had it on close. */
@@ -60,9 +61,16 @@
   }
 </script>
 
-<div class="scrim" role="presentation" style:z-index={layer} onmousedown={(e) => dismissable && scrimCloses && e.target === e.currentTarget && onClose()}>
+<div
+  class="scrim"
+  role="presentation"
+  in:scrim|global
+  out:scrim|global={{ out: true }}
+  style:z-index={layer} onmousedown={(e) => dismissable && scrimCloses && e.target === e.currentTarget && onClose()}>
   <div
     class="panel"
+    in:inkIn|global
+    out:inkOut|global
     role="dialog"
     aria-modal="true"
     aria-labelledby="{id}-title"
@@ -88,7 +96,6 @@
     place-items: center;
     padding: 16px;
     background: var(--scrim);
-    animation: fade-in var(--dur-base) var(--ease-ink);
   }
 
   .panel {
@@ -104,7 +111,6 @@
     border-radius: 10px;
     box-shadow: var(--shadow);
     outline: none;
-    animation: ink-in var(--dur-enter) var(--ease-ink);
   }
 
   /* A torn rose stroke along the top edge, like the active tab's. */
@@ -142,12 +148,5 @@
     font-variation-settings:
       'SOFT' 50,
       'WONK' 1;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .scrim,
-    .panel {
-      animation: none;
-    }
   }
 </style>
