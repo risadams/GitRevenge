@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/risadams/gitrevenge/internal/branchkind"
 	"github.com/risadams/gitrevenge/internal/git"
 	"github.com/risadams/gitrevenge/internal/graph"
 	"github.com/risadams/gitrevenge/internal/session"
@@ -59,13 +60,27 @@ func benchRepo(t *testing.T) *git.Repo {
 
 var errFirstPage = errors.New("first page reached")
 
+// newGraph returns an empty graph with the repository's Trunk lanes pinned under the
+// default branch kinds, as the app lays it out (ADR 0009).
+func newGraph(ctx context.Context, r *git.Repo) *graph.Graph {
+	g := graph.New()
+	var remotes []string
+	if rs, err := r.Remotes(ctx); err == nil {
+		for _, rm := range rs {
+			remotes = append(remotes, rm.Name)
+		}
+	}
+	g.Pin(session.TrunkTips(ctx, r, branchkind.New(nil, nil), remotes, false))
+	return g
+}
+
 func TestTargets(t *testing.T) {
 	r := benchRepo(t)
 	ctx := context.Background()
 
 	// Time to first screen: from starting git log until enough rows are laid out to draw.
 	start := time.Now()
-	g := graph.New()
+	g := newGraph(ctx, r)
 	err := r.Log(ctx, git.LogOptions{}, func(c git.LogCommit) error {
 		if err := g.Add(c); err != nil {
 			return err
@@ -82,7 +97,7 @@ func TestTargets(t *testing.T) {
 
 	// Full load.
 	start = time.Now()
-	g = graph.New()
+	g = newGraph(ctx, r)
 	if err := r.Log(ctx, git.LogOptions{}, g.Add); err != nil {
 		t.Fatal(err)
 	}
@@ -237,7 +252,7 @@ func TestReadAhead(t *testing.T) {
 func BenchmarkFullLoad(b *testing.B) {
 	r := benchRepo(&testing.T{})
 	for b.Loop() {
-		g := graph.New()
+		g := newGraph(context.Background(), r)
 		if err := r.Log(context.Background(), git.LogOptions{}, g.Add); err != nil {
 			b.Fatal(err)
 		}

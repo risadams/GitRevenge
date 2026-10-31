@@ -283,3 +283,97 @@ func TestRowsJSONHasNoNullSegments(t *testing.T) {
 		t.Fatalf("rows JSON contains null: %s", b)
 	}
 }
+
+// buildPinned lays out commits like build, with the given commit indexes pinned.
+func buildPinned(t *testing.T, commits [][]int, pins ...int) *Graph {
+	t.Helper()
+	g := New()
+	var ids []string
+	for _, p := range pins {
+		ids = append(ids, fakeID(p))
+	}
+	g.Pin(ids)
+	for i, ps := range commits {
+		c := git.LogCommit{ID: fakeID(i), Subject: fmt.Sprint(i), AuthorName: "a"}
+		for _, p := range ps {
+			c.Parents = append(c.Parents, fakeID(p))
+		}
+		if err := g.Add(c); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return g
+}
+
+func TestPinnedTrunkHoldsColumnZero(t *testing.T) {
+	// 0: feature tip (newest) → 2; 1: main tip → 2; 2 → 3; 3: root.
+	// Unpinned, the feature lane would take column 0 and main would sit to its right.
+	commits := [][]int{{2}, {2}, {3}, {}}
+	plain := build(t, commits)
+	if c := cols(plain.Rows(0, 4)); c[1] == 0 {
+		t.Fatalf("fixture should put main off column 0 when unpinned: %v", c)
+	}
+	g := buildPinned(t, commits, 1)
+	rows := g.Rows(0, 4)
+	got := cols(rows)
+	if got[0] == 0 || got[1] != 0 || got[2] != 0 || got[3] != 0 {
+		t.Fatalf("cols = %v, want main (rows 1-3) in column 0 and the feature to its right", got)
+	}
+	if rows[1].Color != 0 || rows[2].Color != 0 {
+		t.Fatalf("main's colour = %d, %d, want 0", rows[1].Color, rows[2].Color)
+	}
+	if rows[0].Color == 0 {
+		t.Fatal("the feature lane shouldn't share the Trunk colour")
+	}
+}
+
+func TestPinnedTipReachedFromAbove(t *testing.T) {
+	// 0: a branch whose parent is main's tip (1); main continues 1 → 2 → 3.
+	g := buildPinned(t, [][]int{{1}, {2}, {3}, {}}, 1)
+	got := cols(g.Rows(0, 4))
+	if got[1] != 0 || got[2] != 0 || got[3] != 0 || got[0] == 0 {
+		t.Fatalf("cols = %v, want main in column 0 and the branch above it to the right", got)
+	}
+}
+
+func TestTwoPinsAndMerges(t *testing.T) {
+	// develop (0) merges feature (2) and continues to main's tip (1); main 1 → 3 → 4.
+	// 0: develop [1, 2]; 1: main [3]; 2: feature [3]; 3 [4]; 4 root.
+	g := buildPinned(t, [][]int{{1, 2}, {3}, {3}, {4}, {}}, 1, 0)
+	got := cols(g.Rows(0, 5))
+	if got[1] != 0 || got[3] != 0 || got[4] != 0 {
+		t.Fatalf("cols = %v, want main in column 0", got)
+	}
+	if got[0] != 1 {
+		t.Fatalf("cols = %v, want develop in column 1", got)
+	}
+	if got[2] < 2 {
+		t.Fatalf("cols = %v, want the feature right of both Trunk columns", got)
+	}
+}
+
+func TestPinnedWindowsMatchFullLayout(t *testing.T) {
+	commits := randomDAG(1500, 3)
+	g := buildPinned(t, commits, 5, 40)
+	full := g.Rows(0, g.Len())
+	for _, start := range []int{0, 1, 127, 128, 129, 700, 1490} {
+		for i, r := range g.Rows(start, 20) {
+			want := full[start+i]
+			if r.Col != want.Col || r.Color != want.Color || !slices.Equal(r.Up, want.Up) || !slices.Equal(r.Down, want.Down) {
+				t.Fatalf("row %d differs when read from window at %d", start+i, start)
+			}
+		}
+	}
+	// Every row's segments connect: what leaves a row downward enters the next from above.
+	for i := 0; i+1 < len(full); i++ {
+		down := map[int]bool{}
+		for _, s := range full[i].Down {
+			down[s.To] = true
+		}
+		for _, s := range full[i+1].Up {
+			if !down[s.From] {
+				t.Fatalf("row %d: line from column %d has nothing above it", i+1, s.From)
+			}
+		}
+	}
+}

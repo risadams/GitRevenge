@@ -118,3 +118,24 @@ func TestRefKinds(t *testing.T) {
 		}
 	}
 }
+
+func TestTrunkPinnedInGraph(t *testing.T) {
+	a := newTestApp(t)
+	fx := gittest.New(t)
+	fx.CommitFile("a.txt", "1", "base")
+	fx.CommitFile("a.txt", "2", "main work")
+	fx.Git("checkout", "-q", "-b", "feature", "HEAD~1")
+	fx.CommitFile("f.txt", "1", "newer feature work")
+	tab, err := a.OpenRepo(fx.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	page := loadedPage(t, a, tab.Path)
+	cols := map[string]int{}
+	for _, r := range page.Rows {
+		cols[r.Subject] = r.Col
+	}
+	if cols["main work"] != 0 || cols["base"] != 0 || cols["newer feature work"] == 0 {
+		t.Fatalf("columns = %v, want main's commits in column 0 even though HEAD is on feature", cols)
+	}
+}
