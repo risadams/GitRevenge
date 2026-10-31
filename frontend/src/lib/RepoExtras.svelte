@@ -81,7 +81,7 @@
       <button class="group" onclick={() => (open.subs = !open.subs)}>
         <span class="caret" class:open={open.subs}><Icon name="right" size={12} /></span> <span class="meta title">Submodules</span> <span class="meta count">{subs.length}</span>
       </button>
-      <button class="mini" disabled={busy} onclick={() => run(() => UpdateSubmodules(path))} title="Initialize and update all submodules"
+      <button class="btn sm quiet" disabled={busy} onclick={() => run(() => UpdateSubmodules(path))} title="Initialize and update all submodules"
         >Update</button
       >
     </div>
@@ -106,7 +106,7 @@
       <button class="group" onclick={() => (open.lfs = !open.lfs)}>
         <span class="caret" class:open={open.lfs}><Icon name="right" size={12} /></span> <span class="meta title">LFS</span> <span class="meta count">{lfs.status.files.length}</span>
       </button>
-      <button class="mini" onclick={track} title="Track a pattern with LFS" aria-label="Track a pattern with LFS"><Icon name="plus" size={13} /></button>
+      <button class="btn sm quiet icon" onclick={track} title="Track a pattern with LFS" aria-label="Track a pattern with LFS"><Icon name="plus" size={13} /></button>
     </div>
     {#if open.lfs}
       <ul>
@@ -114,8 +114,8 @@
           <li class="row">
             <span class="name mono" title="from {p.source}">{p.pattern}</span>
             {#if p.lockable}<span class="badge">lockable</span>{/if}
-            <button class="x" disabled={busy} onclick={() => run(() => LFSAction(path, 'untrack', [p.pattern]))} aria-label="Stop tracking {p.pattern}"
-              >×</button
+            <button class="btn sm quiet icon" disabled={busy} onclick={() => run(() => LFSAction(path, 'untrack', [p.pattern]))} aria-label="Stop tracking {p.pattern}"
+              ><Icon name="close" /></button
             >
           </li>
         {:else}
@@ -127,7 +127,7 @@
           <button class="group sub" onclick={() => (open.files = !open.files)}>
             <span class="caret" class:open={open.files}><Icon name="right" size={12} /></span> <span class="meta title">Files</span> <span class="meta count">{lfs.status.files.length}</span>
           </button>
-          <button class="mini" disabled={busy} onclick={checkLocks} title="Ask the LFS server which files are locked">Check locks</button>
+          <button class="btn sm quiet" disabled={busy} onclick={checkLocks} title="Ask the LFS server which files are locked">Check locks</button>
         </div>
         {#if open.files}
           <ul>
@@ -138,11 +138,11 @@
                 {#if !f.downloaded}<span class="badge" title="Only the pointer is here; content not downloaded">pointer</span>{/if}
                 {#if lock}
                   <span class="badge" class:mine={lock.ours} title="Locked {lock.lockedAt}">locked · {lock.ours ? 'you' : lock.owner}</span>
-                  <button class="mini" disabled={busy} onclick={() => lockAction(f.name, 'unlock', !lock.ours)}
+                  <button class="btn sm quiet" disabled={busy} onclick={() => lockAction(f.name, 'unlock', !lock.ours)}
                     >{lock.ours ? 'Unlock' : 'Force unlock'}</button
                   >
                 {:else if locks}
-                  <button class="mini" disabled={busy} onclick={() => lockAction(f.name, 'lock')}>Lock</button>
+                  <button class="btn sm quiet" disabled={busy} onclick={() => lockAction(f.name, 'lock')}>Lock</button>
                 {/if}
               </li>
             {/each}
@@ -209,22 +209,6 @@
     margin-left: auto;
   }
 
-  .mini {
-    display: inline-flex;
-    align-items: center;
-    padding: 1px 7px;
-    background: none;
-    border: 1px solid var(--paper-edge);
-    border-radius: 3px;
-    font-size: 12px;
-    color: var(--ink-mute);
-  }
-
-  .mini:hover:not(:disabled) {
-    color: var(--ink);
-    background: var(--wash-hover);
-  }
-
   ul {
     list-style: none;
     margin: 0;
@@ -280,10 +264,6 @@
 
   .s-conflict {
     color: var(--danger);
-  }
-
-  .x {
-    color: var(--ink-mute);
   }
 
   .muted {
