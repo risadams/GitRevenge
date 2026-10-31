@@ -1,11 +1,49 @@
-# Keeps the workflow actions current, including the third-party ones pinned to commit SHAs
-# (Dependabot updates the SHA and its version comment together).
+# Dependabot version updates. Security updates are on in the repository settings and need
+# nothing here. Minor and patch bumps are grouped into one weekly PR per ecosystem and
+# folder; major bumps come one PR each, since they need reading.
 version: 2
 updates:
+  # Workflow actions, including the third-party ones pinned to commit SHAs (Dependabot
+  # updates the SHA and its version comment together).
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
-    labels:
-      - dependencies
-      - area:ci
+    groups:
+      actions:
+        update-types: [minor, patch]
+    labels: [dependencies, area:ci]
+
+  # The Go backend.
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      go:
+        update-types: [minor, patch]
+    ignore:
+      # Wails is bumped by hand, together with the Wails CLI version in ci.yml and
+      # release.yml (WAILS_VERSION) and a regenerated frontend/wailsjs.
+      - dependency-name: github.com/wailsapp/wails/v2
+    labels: [dependencies, go]
+
+  # The app's frontend (Svelte, Vite, CodeMirror, …).
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    groups:
+      frontend:
+        update-types: [minor, patch]
+    labels: [dependencies, area:ui]
+
+  # The documentation site (Docusaurus).
+  - package-ecosystem: npm
+    directory: /docs-site
+    schedule:
+      interval: weekly
+    groups:
+      docs-site:
+        update-types: [minor, patch]
+    labels: [dependencies, documentation]
