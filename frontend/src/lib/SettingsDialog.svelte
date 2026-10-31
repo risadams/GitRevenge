@@ -1,9 +1,9 @@
 <script lang="ts">
   // The settings panel: appearance, git, repositories and updates, saved to the local
   // settings file (ADR 0005).
-  import { ChooseFile, ChooseFolder, Preferences, SetPreferences } from '../../wailsjs/go/app/App.js'
+  import { ChooseFile, ChooseFolder, Preferences, RepoPreferences, SetPreferences, SetRepoPreferences } from '../../wailsjs/go/app/App.js'
   import { commands } from './commands.svelte'
-  import type { app } from '../../wailsjs/go/models'
+  import { app } from '../../wailsjs/go/models'
   import { errorText } from './errors'
   import { gitConfig } from './gitconfig/config.svelte'
   import { session } from './session.svelte'
@@ -21,6 +21,47 @@
   let error = $state('')
   let saving = $state(false)
   let restartNote = $state(false)
+
+  // This repository's own settings (ADR 0009), when a repository tab is active. Patterns are
+  // edited as text, comma or space separated.
+  const repoPath = session.activeTab?.path ?? ''
+  const repoName = session.activeTab?.name ?? ''
+  const KIND_LABELS: Record<string, { label: string; hint: string }> = {
+    trunk: { label: 'Trunk', hint: 'The main line' },
+    release: { label: 'Release', hint: 'Releases in progress' },
+    environment: { label: 'Environment', hint: 'Deploy branches such as staging' },
+    docs: { label: 'Docs', hint: 'Published sites such as gh-pages' },
+    bot: { label: 'Bot', hint: 'Branches a bot opens' },
+  }
+  let repo = $state<app.RepoPreferences | null>(null)
+  let kindText = $state<Record<string, string>>({})
+  let hideText = $state('')
+
+  const splitPatterns = (text: string) => text.split(/[\s,]+/).filter(Boolean)
+  const joinPatterns = (list: string[]) => list.join(', ')
+  const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i])
+
+  $effect(() => {
+    if (!repoPath) return
+    void RepoPreferences(repoPath)
+      .then((res) => {
+        repo = res
+        kindText = Object.fromEntries(res.kinds.map((k) => [k.kind, joinPatterns(k.patterns)]))
+        hideText = joinPatterns(res.hide)
+      })
+      .catch((e) => (error = errorText(e)))
+  })
+
+  function repoToSave(r: app.RepoPreferences): app.RepoPreferences {
+    return app.RepoPreferences.createFrom({
+      ...r,
+      kinds: r.kinds.map((k) => {
+        const patterns = splitPatterns(kindText[k.kind] ?? '')
+        return { ...k, patterns, custom: !sameList(patterns, k.defaults) }
+      }),
+      hide: splitPatterns(hideText),
+    })
+  }
 
   $effect(() => {
     void Preferences()
@@ -47,6 +88,7 @@
     saving = true
     try {
       await SetPreferences(p)
+      if (repo) await SetRepoPreferences(repoPath, repoToSave(repo))
       // Apply what can change now; the git executable waits for a restart.
       theme.mode = p.theme as typeof theme.mode
       theme.density = p.graphDensity === 'compact' ? 'compact' : 'comfortable'
@@ -146,6 +188,33 @@
         </span>
       </fieldset>
 
+      {#if repo}
+        <fieldset>
+          <legend class="meta">This repository · {repoName}</legend>
+          <p class="hint">
+            Branch kinds change how branches look and behave. Patterns match the branch name without the remote, so <code>release/*</code> also
+            matches <code>origin/release/1.4</code>; <code>*</code> matches any run of characters. These stay on this computer.
+          </p>
+          {#each repo.kinds as k (k.kind)}
+            {@const custom = !sameList(splitPatterns(kindText[k.kind] ?? ''), k.defaults)}
+            <label class="form-field">
+              <span class="kind-label">
+                {KIND_LABELS[k.kind]?.label ?? k.kind}
+                <span class="kind-hint">{KIND_LABELS[k.kind]?.hint ?? ''}</span>
+                {#if custom}
+                  <button type="button" class="btn sm text" onclick={() => (kindText[k.kind] = joinPatterns(k.defaults))}>Use defaults</button>
+                {/if}
+              </span>
+              <input bind:value={kindText[k.kind]} placeholder={k.defaults.length ? '' : 'None by default'} spellcheck="false" autocomplete="off" />
+            </label>
+          {/each}
+          <label class="form-field">
+            <span>Hidden branches</span>
+            <input bind:value={hideText} placeholder="For example wip/*, gh-pages" spellcheck="false" autocomplete="off" />
+          </label>
+        </fieldset>
+      {/if}
+
       <fieldset>
         <legend class="meta">Updates</legend>
         <label class="check"><input type="checkbox" bind:checked={p.updateChecks} /> Check GitHub for a newer version at startup</label>
@@ -205,6 +274,24 @@
 
   .check {
     font-size: 14px;
+  }
+
+  .kind-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 28px;
+  }
+
+  .kind-hint {
+    flex: 1;
+    color: var(--ink-mute);
+    font-size: 12px;
+  }
+
+  .form-field input {
+    font-family: var(--font-mono);
+    font-size: 13px;
   }
 
   input[type='range'] {

@@ -471,6 +471,24 @@ export namespace app {
 		}
 	}
 	
+	export class KindPatterns {
+	    kind: string;
+	    patterns: string[];
+	    custom: boolean;
+	    defaults: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new KindPatterns(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.patterns = source["patterns"];
+	        this.custom = source["custom"];
+	        this.defaults = source["defaults"];
+	    }
+	}
 	export class LFSInfo {
 	    available: boolean;
 	    status: git.LFSStatus;
@@ -544,6 +562,42 @@ export namespace app {
 	        this.name = source["name"];
 	        this.lastOpened = this.convertValues(source["lastOpened"], null);
 	        this.exists = source["exists"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class RepoPreferences {
+	    kinds: KindPatterns[];
+	    hide: string[];
+	    cleanupOnPull: boolean;
+	    syncNotes: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new RepoPreferences(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kinds = this.convertValues(source["kinds"], KindPatterns);
+	        this.hide = source["hide"];
+	        this.cleanupOnPull = source["cleanupOnPull"];
+	        this.syncNotes = source["syncNotes"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

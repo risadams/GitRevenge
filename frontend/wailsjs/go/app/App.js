@@ -310,6 +310,10 @@ export function RepoInfo(arg1) {
   return window['go']['app']['App']['RepoInfo'](arg1);
 }
 
+export function RepoPreferences(arg1) {
+  return window['go']['app']['App']['RepoPreferences'](arg1);
+}
+
 export function RepoState(arg1) {
   return window['go']['app']['App']['RepoState'](arg1);
 }
@@ -380,6 +384,10 @@ export function SetKeybindings(arg1) {
 
 export function SetPreferences(arg1) {
   return window['go']['app']['App']['SetPreferences'](arg1);
+}
+
+export function SetRepoPreferences(arg1, arg2) {
+  return window['go']['app']['App']['SetRepoPreferences'](arg1, arg2);
 }
 
 export function SetStagedContent(arg1, arg2, arg3, arg4) {
