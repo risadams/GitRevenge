@@ -4,7 +4,7 @@
 
 Git Revenge is a desktop git client for Windows and macOS that stays fast on huge repositories. It's a Go app that drives the `git` you already have installed. There are no accounts, no cloud features and no AI.
 
-> **Status:** early development. The latest release is [`0.7.0`](https://github.com/risadams/GitRevenge/releases/tag/v0.7.0), and `0.8.0` (UI touch and branch care) is in progress.
+> **Status:** early development. The latest release is [`0.8.0`](https://github.com/risadams/GitRevenge/releases/tag/v0.8.0), and `0.9.0` is in progress.
 
 ## What it does
 
