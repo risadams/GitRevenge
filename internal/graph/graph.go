@@ -4,20 +4,34 @@
 // Layout is incremental: each Add places one more row.
 //
 // Only each row's node column and color are stored, plus a snapshot of the lane state every
-// checkpointEvery rows. Rows replays from the nearest snapshot to produce the full edge
-// data for a window, so memory grows with the number of commits, not commits × graph width.
+// checkpointEvery rows, or further apart where the graph is wide (see checkpointGap). Rows
+// replays from the nearest snapshot to produce the full edge data for a window, so memory
+// grows with the number of commits, not commits × graph width.
 package graph
 
 import (
 	"encoding/hex"
 	"fmt"
 	"slices"
+	"sort"
 	"sync"
 
 	"github.com/risadams/gitrevenge/internal/git"
 )
 
 const checkpointEvery = 128
+
+// wideLanes is the width past which snapshots spread out: a graph twice as wide snapshots
+// half as often. Snapshot memory is rows/gap × width, so it stops growing with width, and a
+// window read replays at most about checkpointEvery × wideLanes lane steps. Date order puts
+// the Linux kernel's parallel lines side by side, thousands of lanes wide; snapshotting
+// that every 128 rows took the full-history heap from 467 MB to 641 MB.
+const wideLanes = 1024
+
+// checkpointGap is how many rows to lay out after a snapshot taken at the given width.
+func checkpointGap(width int) int {
+	return checkpointEvery * max(1, (width+wideLanes-1)/wideLanes)
+}
 
 // oid is a binary object ID. 32 bytes fits both SHA-1 (20) and SHA-256 (32) repositories.
 type oid [32]byte
@@ -77,6 +91,7 @@ type state struct {
 // for (-1 for a free lane) and its color. On a wide history (the Linux kernel runs to
 // about 800 lanes) this is a sixth of the size of the state itself.
 type checkpoint struct {
+	row       int // the state before this row
 	lanes     []cpLane
 	nextColor int
 }
@@ -86,8 +101,8 @@ type cpLane struct {
 	color int32
 }
 
-func (st state) pack() checkpoint {
-	cp := checkpoint{lanes: make([]cpLane, len(st.lanes)), nextColor: st.nextColor}
+func (st state) pack(row int) checkpoint {
+	cp := checkpoint{row: row, lanes: make([]cpLane, len(st.lanes)), nextColor: st.nextColor}
 	for i, l := range st.lanes {
 		cp.lanes[i] = cpLane{pos: -1}
 		if l.used {
@@ -128,7 +143,8 @@ type Graph struct {
 	nodeColor []uint16
 
 	cur         state
-	checkpoints []checkpoint // checkpoints[k] is the state before row k*checkpointEvery
+	checkpoints []checkpoint // in row order; the first is before row 0
+	nextCP      int          // the row before which the next checkpoint is taken
 }
 
 // New returns an empty Graph.
@@ -159,8 +175,9 @@ func (g *Graph) Add(c git.LogCommit) error {
 		g.hashLen = len(c.ID) / 2
 	}
 	row := len(g.ids)
-	if row%checkpointEvery == 0 {
-		g.checkpoints = append(g.checkpoints, g.cur.pack())
+	if row == g.nextCP {
+		g.checkpoints = append(g.checkpoints, g.cur.pack(row))
+		g.nextCP = row + checkpointGap(len(g.cur.lanes))
 	}
 	g.index[id] = int32(row)
 	g.ids = append(g.ids, id)
@@ -215,10 +232,12 @@ func (g *Graph) Rows(start, count int) []Row {
 		return []Row{}
 	}
 
-	cp := start / checkpointEvery
-	st := g.checkpoints[cp].unpack(g.parents)
+	// The last checkpoint at or before start.
+	k := sort.Search(len(g.checkpoints), func(k int) bool { return g.checkpoints[k].row > start }) - 1
+	cp := g.checkpoints[k]
+	st := cp.unpack(g.parents)
 	out := make([]Row, 0, end-start)
-	for i := cp * checkpointEvery; i < end; i++ {
+	for i := cp.row; i < end; i++ {
 		ps := g.parents[g.parentStart[i]:g.parentStart[i+1]]
 		if i < start {
 			step(&st, g.ids[i], ps, g.parentStart[i], nil)

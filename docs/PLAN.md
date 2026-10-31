@@ -109,19 +109,21 @@ It reports time to the first 100 rows, full load, heap in use, window reads, sea
 - `TestReadAhead` in `internal/perf` reports time and heap at the first pause, the estimate, and the jump to the oldest commit.
 - The graph's scroll area is capped at 8M px and its position scaled beyond that, since browsers cap element height (Chromium at about 33.5M px) and 1.5M rows at 52 px is 78M px. Scaled, the wheel still moves at its normal speed.
 
-**Kernel run, 2026-10-29** (Windows 11, Linux at c339f4010dea: 1,503,174 commits, 956 refs, with a commit-graph file):
+**Kernel run, 2026-10-31** (Windows 11, Linux at c339f4010dea: 1,503,174 commits, 956 refs, with a commit-graph file; date order):
 
 | Measure | Result | Target |
 |---|---|---|
-| First 100 rows | 328 ms | < 1 s |
-| First pause (30,000 rows) | 971 ms, 12 MB heap | |
-| Estimate known | 1.35 s | |
-| Full load and layout | 15.5 s | |
-| Heap, whole history loaded | 467 MB | < 500 MB |
-| 100-row window read | avg 0.74 ms, worst 3.0 ms | < 16 ms |
-| Search "fix" (whole history) | 158 ms | |
-| Jump to the oldest commit (reads all of it) | 15.5 s | |
-| Status, warm | 153 ms | < 500 ms |
+| First 100 rows | 283 ms | < 1 s |
+| First pause (30,000 rows) | 857 ms, 29 MB heap | |
+| Estimate known | 1.26 s | |
+| Full load and layout | 22.0 s | |
+| Heap, whole history loaded | 469 MB | < 500 MB |
+| 100-row window read | avg 3.8 ms, worst 11.0 ms | < 16 ms |
+| Search "fix" (whole history) | 156 ms | |
+| Jump to the oldest commit (reads all of it) | 19.4 s | |
+| Status, warm | 267 ms | < 500 ms |
+
+**Date order (#275).** The graph moved from `--topo-order` to `--date-order` so parallel lines of history (an orphan `gh-pages`, long-running branches) interleave as they happened instead of stacking as blocks. On the kernel that puts thousands of lanes side by side instead of about 800. Snapshotting every 128 rows then took the full-history heap to 641 MB, so snapshots now spread out once the graph is wider than 1,024 lanes (`checkpointGap`), which brought it back to 469 MB. The cost is a slower full load (16.3 s → 22.0 s, since each row steps through more lanes) and slower window reads, both within target. The topo-order run from 2026-10-29 measured 328 ms, 15.5 s, 467 MB and avg 0.74 ms for the same rows.
 
 Two fixes from this run (#78): `git log` starts only from tags HEAD can't reach, because with all 953 tags as starting points `--topo-order` walked down from each and the first rows took 1.1 s. And checkpoints store each lane as a parent position instead of a 32-byte ID, which took the full-history heap from 857 MB to 467 MB.
 
