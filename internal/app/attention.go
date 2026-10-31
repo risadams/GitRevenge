@@ -5,6 +5,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/risadams/gitrevenge/internal/branchkind"
 	"github.com/risadams/gitrevenge/internal/git"
 )
 
@@ -142,11 +143,12 @@ func (a *App) InsightsBranches(path string, in InsightsInputs) (AttentionResult,
 		return AttentionResult{}, err
 	}
 	res, err := cachedInsight(ctx, a, g, root, "branches", in, func() (AttentionResult, error) {
-		w, err := resolveInputs(ctx, g, in)
+		rules := a.branchRules(root)
+		w, err := resolveInputs(ctx, g, in, rules)
 		if err != nil {
 			return AttentionResult{}, err
 		}
-		open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches)
+		open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches, notDocs(rules))
 		if err != nil {
 			return AttentionResult{}, err
 		}
@@ -240,20 +242,26 @@ func (a *App) InsightsHotspots(path string, in InsightsInputs) (HotspotsResult, 
 	if err != nil {
 		return HotspotsResult{}, err
 	}
-	return cachedInsight(ctx, a, g, root, "hotspots", in, func() (HotspotsResult, error) { return hotspots(ctx, g, in) })
+	rules := a.branchRules(root)
+	return cachedInsight(ctx, a, g, root, "hotspots", in, func() (HotspotsResult, error) { return hotspots(ctx, g, in, rules) })
 }
 
-func hotspots(ctx context.Context, g *git.Repo, in InsightsInputs) (HotspotsResult, error) {
-	w, err := resolveInputs(ctx, g, in)
+// notDocs leaves Docs branches (a published site, not code) out of branch signals.
+func notDocs(rules branchkind.Rules) func(string) bool {
+	return func(name string) bool { return rules.Kind(name) == branchkind.Docs }
+}
+
+func hotspots(ctx context.Context, g *git.Repo, in InsightsInputs, rules branchkind.Rules) (HotspotsResult, error) {
+	w, err := resolveInputs(ctx, g, in, rules)
 	if err != nil {
 		return HotspotsResult{}, err
 	}
-	q := git.ShippedQuery{Target: w.Target, Since: w.Since, Until: w.Until, Range: w.Range}
+	q := w.query()
 	files, err := g.HotFiles(ctx, q)
 	if err != nil {
 		return HotspotsResult{}, err
 	}
-	open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches)
+	open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches, notDocs(rules))
 	if err != nil {
 		return HotspotsResult{}, err
 	}

@@ -61,6 +61,8 @@ export namespace app {
 	    since: number;
 	    until: number;
 	    range: string;
+	    points?: string;
+	    kinds: Record<string, Array<string>>;
 	
 	    static createFrom(source: any = {}) {
 	        return new InsightsWindow(source);
@@ -74,6 +76,8 @@ export namespace app {
 	        this.since = source["since"];
 	        this.until = source["until"];
 	        this.range = source["range"];
+	        this.points = source["points"];
+	        this.kinds = source["kinds"];
 	    }
 	}
 	export class AttentionResult {
@@ -581,6 +585,20 @@ export namespace app {
 		    }
 		    return a;
 		}
+	}
+	export class ReleaseBranch {
+	    name: string;
+	    forkTime: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ReleaseBranch(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.forkTime = source["forkTime"];
+	    }
 	}
 	export class RepoPreferences {
 	    kinds: KindPatterns[];
@@ -1296,6 +1314,7 @@ export namespace git {
 	    cycle: number;
 	    revert: boolean;
 	    fixup: boolean;
+	    bot: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new ShippedItem(source);
@@ -1316,6 +1335,7 @@ export namespace git {
 	        this.cycle = source["cycle"];
 	        this.revert = source["revert"];
 	        this.fixup = source["fixup"];
+	        this.bot = source["bot"];
 	    }
 	}
 	

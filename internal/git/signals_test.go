@@ -58,7 +58,7 @@ func TestOpenBranches(t *testing.T) {
 	repo := OpenRepo(newTestRunner(t), fx.Dir)
 	ctx := context.Background()
 
-	bs, err := repo.OpenBranches(ctx, "origin/main", MaxSignalBranches)
+	bs, err := repo.OpenBranches(ctx, "origin/main", MaxSignalBranches, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +96,7 @@ func TestOpenBranches(t *testing.T) {
 			t.Errorf("order: %s before %s", bs[i-1].Name, bs[i].Name)
 		}
 	}
-	two, err := repo.OpenBranches(ctx, "origin/main", 2)
+	two, err := repo.OpenBranches(ctx, "origin/main", 2, nil)
 	if err != nil || len(two) != 2 || two[0].Name != bs[0].Name || two[1].Name != bs[1].Name {
 		t.Errorf("capped = %+v, %v", two, err)
 	}

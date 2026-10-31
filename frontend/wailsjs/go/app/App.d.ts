@@ -98,6 +98,8 @@ export function InsightsFetchedAt(arg1:string):Promise<number>;
 
 export function InsightsHotspots(arg1:string,arg2:app.InsightsInputs):Promise<app.HotspotsResult>;
 
+export function InsightsReleaseBranches(arg1:string,arg2:string):Promise<Array<app.ReleaseBranch>>;
+
 export function InsightsShipped(arg1:string,arg2:app.InsightsInputs):Promise<app.ShippedResult>;
 
 export function InsightsTags(arg1:string):Promise<Array<git.TagInfo>>;

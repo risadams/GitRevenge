@@ -81,6 +81,19 @@ func (r Rules) KindHidden(k Kind) bool { return r.hideKinds[k] }
 // Patterns returns the patterns kind k uses under these rules.
 func (r Rules) Patterns(k Kind) []string { return r.kinds[k] }
 
+// KindPatterns returns every kind's patterns in use, keyed by kind, for printing as an
+// input (ADR 0008) and keying cached results.
+func (r Rules) KindPatterns() map[string][]string {
+	out := make(map[string][]string, len(Order))
+	for _, k := range Order {
+		out[string(k)] = slices.Clone(r.kinds[k])
+		if out[string(k)] == nil {
+			out[string(k)] = []string{}
+		}
+	}
+	return out
+}
+
 // Hide returns the hide patterns, including the patterns of hidden kinds, for leaving
 // branches out of git log.
 func (r Rules) Hide() []string {

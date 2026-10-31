@@ -7,6 +7,7 @@ import {
   InsightsHotspots,
   InsightsShipped,
   SaveFile,
+  InsightsReleaseBranches,
   InsightsTags,
   InsightsThresholds,
   SetInsightsTab,
@@ -84,7 +85,9 @@ class InsightsTab {
   view = $state<View>('overview')
   thresholds = $state<app.Thresholds>({ ...DEFAULT_THRESHOLDS } as app.Thresholds)
   groups = $state<settings.Group[]>([])
-  tags = $state<git.TagInfo[]>([])
+  /** Releases a releases window can run between: tags, and Release branches (ADR 0009) at
+   * the point they forked from the target. Newest first. */
+  tags = $state<{ name: string; time: number; branch?: boolean }[]>([])
   data = $state<Record<string, RepoData>>({})
   /** Dry-run merge results by target and branch commit. They're kept apart from data
    * because cached checks are reported at once, often before the branch list arrives. */
@@ -195,7 +198,12 @@ class InsightsTab {
     void SetInsightsTab(encode(s)).catch(() => {})
     // Release windows go by tags, which only make sense for one repository.
     if (s.kind === 'group' && this.window === 'releases') this.window = '14d'
-    this.tags = s.kind === 'repo' ? ((await InsightsTags(s.id).catch(() => null)) ?? []) : []
+    if (s.kind === 'repo') {
+      const [tags, branches] = await Promise.all([InsightsTags(s.id).catch(() => null), InsightsReleaseBranches(s.id, '').catch(() => null)])
+      this.tags = [...(tags ?? []), ...(branches ?? []).map((b) => ({ name: b.name, time: b.forkTime, branch: true }))].sort((a, b) => b.time - a.time || a.name.localeCompare(b.name))
+    } else {
+      this.tags = []
+    }
     this.thresholds = (await InsightsThresholds(encode(s)).catch(() => null)) ?? ({ ...DEFAULT_THRESHOLDS } as app.Thresholds)
     await this.load()
   }
