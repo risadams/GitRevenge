@@ -88,11 +88,15 @@ type RepoSettings struct {
 	CleanupOnPull bool `json:"cleanupOnPull,omitempty"`
 	// SyncNotes fetches refs/notes/* on fetch and pull, and pushes changed notes on push.
 	SyncNotes bool `json:"syncNotes,omitempty"`
+	// StackParents overrides which local branch each branch is stacked on, by branch name;
+	// "" means not stacked. Branches not listed are inferred.
+	StackParents map[string]string `json:"stackParents,omitempty"`
 }
 
 func (r RepoSettings) clone() RepoSettings {
 	r.Hide = slices.Clone(r.Hide)
 	r.HideKinds = slices.Clone(r.HideKinds)
+	r.StackParents = maps.Clone(r.StackParents)
 	if r.Kinds != nil {
 		kinds := make(map[string][]string, len(r.Kinds))
 		for k, v := range r.Kinds {
@@ -105,7 +109,7 @@ func (r RepoSettings) clone() RepoSettings {
 
 // empty reports whether r holds nothing but its path, so it can be dropped.
 func (r RepoSettings) empty() bool {
-	return r.Kinds == nil && len(r.Hide) == 0 && len(r.HideKinds) == 0 && !r.CleanupOnPull && !r.SyncNotes
+	return r.Kinds == nil && len(r.Hide) == 0 && len(r.HideKinds) == 0 && len(r.StackParents) == 0 && !r.CleanupOnPull && !r.SyncNotes
 }
 
 // Repo returns the settings for the repository at path, or empty ones.

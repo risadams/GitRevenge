@@ -1244,6 +1244,9 @@ export namespace git {
 	    gone: boolean;
 	    hidden?: boolean;
 	    branchKind?: string;
+	    stackParent?: string;
+	    stackDepth?: number;
+	    stackSize?: number;
 	    subject?: string;
 	
 	    static createFrom(source: any = {}) {
@@ -1263,6 +1266,9 @@ export namespace git {
 	        this.gone = source["gone"];
 	        this.hidden = source["hidden"];
 	        this.branchKind = source["branchKind"];
+	        this.stackParent = source["stackParent"];
+	        this.stackDepth = source["stackDepth"];
+	        this.stackSize = source["stackSize"];
 	        this.subject = source["subject"];
 	    }
 	}

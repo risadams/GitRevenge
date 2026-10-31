@@ -44,6 +44,8 @@ type graphLoader struct {
 	// rules returns the repository's current branch rules (hide patterns, kinds); nil means
 	// the defaults.
 	rules func() branchkind.Rules
+	// stackOverrides returns the repository's stack parent overrides; nil skips stacks.
+	stackOverrides func() map[string]string
 
 	mu sync.Mutex
 	// showHidden puts hidden branches back in the graph, for this session only.
@@ -256,6 +258,9 @@ func (l *graphLoader) reload() {
 		refsCh := make(chan refResult, 1)
 		go func() {
 			list, err := l.repo.Refs(ctx)
+			if err == nil && l.stackOverrides != nil {
+				annotateStacks(list, Stacks(ctx, l.repo, list, rules, l.stackOverrides()))
+			}
 			idx := newRefIndex(list)
 			idx.annotate(rules, remotes, show)
 			first := false

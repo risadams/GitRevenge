@@ -10,6 +10,7 @@
   import Icon from './ui/Icon.svelte'
   import { reveal } from './ui/motion'
   import { KINDS, kindInfo } from './branchKinds'
+  import { stackLabel, stackOrder } from './stacks'
 
   let {
     path,
@@ -74,7 +75,7 @@
       if (!q || r.short.toLowerCase().includes(q)) out[groupOf(r)].push(r)
     }
     const byName = (a: Ref, b: Ref) => Number(b.head) - Number(a.head) || a.short.localeCompare(b.short, undefined, { numeric: true })
-    for (const k of ['trunk', 'local', 'environment', 'docs', 'bot'] as const) out[k].sort(byName)
+    for (const k of ['trunk', 'local', 'environment', 'docs', 'bot'] as const) out[k] = stackOrder(out[k].sort(byName))
     // Newest version first: release/1.10 above release/1.9.
     out.release.sort((a, b) => Number(b.head) - Number(a.head) || b.short.localeCompare(a.short, undefined, { numeric: true }))
     out.remote.sort((a, b) => a.short.localeCompare(b.short, undefined, { numeric: true }))
@@ -141,6 +142,8 @@
                   class="ref"
                   class:head={r.head}
                   class:hidden-ref={r.hidden}
+                  class:stacked={!!r.stackParent}
+                  style:--stack-indent="{Math.max((r.stackDepth ?? 1) - 1, 0) * 14}px"
                   onclick={() => onPick(r)}
                   ondblclick={() => onActivate?.(r)}
                   oncontextmenu={(e) => {
@@ -156,6 +159,13 @@
                     <span class="kind-icon" style:color="var({k.token})" title={k.label}><Icon name={k.icon} size={13} /><span class="visually-hidden">{k.label}</span></span>
                   {/if}
                   <span class="name">{r.kind === 'stash' ? r.subject : r.short}</span>
+                  {#if stackLabel(r)}
+                    <span class="track stack" title={r.stackParent ? `Stacked on ${r.stackParent}` : 'The bottom of a stack'}
+                      ><Icon name="stack" size={12} /><span>{stackLabel(r)}</span><span class="visually-hidden"
+                        >{r.stackParent ? `, stacked on ${r.stackParent}` : ', the bottom of a stack'}</span
+                      ></span
+                    >
+                  {/if}
                   {#if r.hidden}<span class="track" title="Hidden: shown for now">hidden</span>{/if}
                   {#if r.gone}
                     <span class="track" title="Upstream branch was deleted">gone</span>
@@ -185,6 +195,26 @@
 </aside>
 
 <style>
+  /* A stacked branch sits indented under its parent, with a thin elbow joining them. */
+  .ref.stacked::before {
+    content: '';
+    position: absolute;
+    left: calc(22px + var(--stack-indent, 0px));
+    top: 0;
+    width: 7px;
+    height: 50%;
+    border-left: 1px solid var(--paper-edge);
+    border-bottom: 1px solid var(--paper-edge);
+    border-bottom-left-radius: 4px;
+    pointer-events: none;
+  }
+
+  .track.stack {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+
   .kind-icon {
     display: inline-flex;
     flex: none;
@@ -326,8 +356,9 @@
   }
 
   .ref {
+    position: relative;
     min-height: 28px;
-    padding-left: 32px;
+    padding-left: calc(32px + var(--stack-indent, 0px));
     font-size: 14px;
     color: var(--ink-soft);
     transition:

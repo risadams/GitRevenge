@@ -109,9 +109,14 @@ func (a *App) cleanupCandidates(ctx context.Context, r *session.Repo) ([]git.Ref
 		}
 	}
 	rules := a.branchRules(r.Path)
+	// A branch something is stacked on stays: its children still build on it.
+	parentOf := map[string]bool{}
+	for _, p := range session.Stacks(ctx, r.Git, refs, rules, a.repoSettings(r.Path).StackParents) {
+		parentOf[p] = true
+	}
 	var out []git.Ref
 	for _, ref := range refs {
-		if ref.Kind != git.LocalBranch || !ref.Gone || ref.Head || busy[ref.Short] || protectedKinds[rules.Kind(ref.Short)] {
+		if ref.Kind != git.LocalBranch || !ref.Gone || ref.Head || busy[ref.Short] || protectedKinds[rules.Kind(ref.Short)] || parentOf[ref.Short] {
 			continue
 		}
 		last, ok := a.upstreams.remembered(r.Path, ref.Short)

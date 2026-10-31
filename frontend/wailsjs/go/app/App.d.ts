@@ -210,6 +210,8 @@ export function SetRepoPreferences(arg1:string,arg2:app.RepoPreferences):Promise
 
 export function SetShowHidden(arg1:string,arg2:boolean):Promise<void>;
 
+export function SetStackParent(arg1:string,arg2:string,arg3:string,arg4:boolean):Promise<void>;
+
 export function SetStagedContent(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
 export function SetTheme(arg1:string):Promise<void>;
