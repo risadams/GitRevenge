@@ -3,6 +3,7 @@
   import type { app } from '../../wailsjs/go/models'
   import { session } from './session.svelte'
   import Icon from './ui/Icon.svelte'
+  import { reveal } from './ui/motion'
 
   let { path }: { path: string } = $props()
 
@@ -37,7 +38,7 @@
 </script>
 
 {#if opState?.operation}
-  <div class="op" role="status">
+  <div class="op" role="status" in:reveal out:reveal={{ out: true }}>
     <Icon name="warning" />
     <strong>{labels[opState.operation] ?? opState.operation} in progress</strong>
     {#if opState.total > 0}<span class="meta">Step {opState.step} of {opState.total}</span>{/if}

@@ -8,6 +8,7 @@
   import RepoExtras from './RepoExtras.svelte'
   import { session } from './session.svelte'
   import Icon from './ui/Icon.svelte'
+  import { reveal } from './ui/motion'
 
   let {
     path,
@@ -104,7 +105,7 @@
           <button class="btn sm quiet icon add" onclick={onManageRemotes} title="Add, edit or remove remotes" aria-label="Manage remotes"><Icon name="gear" size={14} /></button>
         {/if}
         {#if open[g.kind] || filter}
-          <ul>
+          <ul in:reveal out:reveal={{ out: true }}>
             {#each items.slice(0, MAX_ITEMS) as r (r.name)}
               <li>
                 <button

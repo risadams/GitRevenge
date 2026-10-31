@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from './ui/Icon.svelte'
+  import { reveal } from './ui/motion'
   import { LFS, LFSAction, LFSLocks, Submodules, UpdateSubmodules } from '../../wailsjs/go/app/App.js'
   import type { app, git } from '../../wailsjs/go/models'
   import type { DialogSpec } from './Dialog.svelte'
@@ -86,7 +87,7 @@
       >
     </div>
     {#if open.subs}
-      <ul>
+      <ul in:reveal out:reveal={{ out: true }}>
         {#each subs as s (s.path)}
           <li>
             <button class="item" onclick={() => session.open(join(path, s.path))} title="Open {s.path} as a tab ({s.commit.slice(0, 7)})">
@@ -109,7 +110,7 @@
       <button class="btn sm quiet icon" onclick={track} title="Track a pattern with LFS" aria-label="Track a pattern with LFS"><Icon name="plus" size={13} /></button>
     </div>
     {#if open.lfs}
-      <ul>
+      <ul in:reveal out:reveal={{ out: true }}>
         {#each lfs.status.patterns as p (p.pattern)}
           <li class="row">
             <span class="name mono" title="from {p.source}">{p.pattern}</span>
@@ -130,7 +131,7 @@
           <button class="btn sm quiet" disabled={busy} onclick={checkLocks} title="Ask the LFS server which files are locked">Check locks</button>
         </div>
         {#if open.files}
-          <ul>
+          <ul in:reveal out:reveal={{ out: true }}>
             {#each lfs.status.files as f (f.name)}
               {@const lock = locks?.[f.name]}
               <li class="row">

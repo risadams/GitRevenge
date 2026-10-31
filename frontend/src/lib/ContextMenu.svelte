@@ -22,6 +22,7 @@
   import { formatShortcut } from './commands.svelte'
   import { edge, step, typeahead } from './menuKeys'
   import Icon from './ui/Icon.svelte'
+  import { menuOut } from './ui/motion'
 
   let { x, y, items, onClose }: { x: number; y: number; items: MenuItem[]; onClose: () => void } = $props()
 
@@ -103,7 +104,7 @@
   onblur={onClose}
 />
 
-<div class="menu" bind:this={menu} role="menu" tabindex="-1" style:left="{left}px" style:top="{top}px" onkeydown={onKey}>
+<div class="menu" bind:this={menu} out:menuOut|global role="menu" tabindex="-1" style:left="{left}px" style:top="{top}px" onkeydown={onKey}>
   {#each items as item, i (item.label)}
     {#if item.separator && i > 0}<div class="rule" role="separator"></div>{/if}
     <button

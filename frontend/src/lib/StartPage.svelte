@@ -180,7 +180,7 @@
           {#if session.recent.length === 0}
             <p class="empty"><Icon name="folder-open" size={28} wash="teal" />Repositories you open show up here.</p>
           {:else}
-            <ul>
+            <ul class="cascade">
               {#each session.recent as r (r.path)}
                 <li class:missing={!r.exists}>
                   <button class="row" disabled={!r.exists} onclick={() => session.open(r.path)} title={r.exists ? r.path : `${r.path} (not found)`}>
@@ -207,7 +207,7 @@
               <Icon name="worktree" size={28} wash="rose" />Group related repositories to open them together, see their status side by side, and fetch or pull them in one go.
             </p>
           {/if}
-          <div class="cards">
+          <div class="cards cascade">
             {#each groups as g, i (g.name)}
               <article class="card" style:--splash={TONES[i % TONES.length]}>
                 <span class="splash" aria-hidden="true"></span>

@@ -67,6 +67,9 @@ export function stagger(index: number): number {
 
 type Opts = { delay?: number }
 
+/** A transition that needs nothing from the element it runs on. */
+type Transition = (node: Element) => TransitionConfig
+
 /** Dialogs, toasts and the palette arriving: fade, 6px blur to sharp, 6px rise. */
 export function inkIn(_node: Element, { delay = 0 }: Opts = {}): TransitionConfig {
   return {
@@ -77,14 +80,13 @@ export function inkIn(_node: Element, { delay = 0 }: Opts = {}): TransitionConfi
   }
 }
 
-/** Anything leaving: a fade and a 4px drop, faster than it came. */
-export function inkOut(): TransitionConfig {
-  return {
-    duration: dur(DUR.base),
-    easing: easeExit,
-    css: (t, u) => `opacity: ${t}; transform: translateY(${u * 4}px)`,
-  }
-}
+/** Anything leaving: a fade and a 4px drop, faster than it came. It stops taking clicks at
+ * once, so nothing underneath is blocked while it fades. */
+export const inkOut: Transition = () => ({
+  duration: dur(DUR.base),
+  easing: easeExit,
+  css: (t, u) => `opacity: ${t}; transform: translateY(${u * 4}px); pointer-events: none`,
+})
 
 /** Panels and list rows arriving: a fade and a 4px rise. Pass `delay: stagger(i)` to cascade. */
 export function fadeUp(_node: Element, { delay = 0 }: Opts = {}): TransitionConfig {
@@ -98,17 +100,45 @@ export function fadeUp(_node: Element, { delay = 0 }: Opts = {}): TransitionConf
 
 /** A row that moved here, such as a file just staged: it slides in 6px under a rose wash
  * that fades over the rest of the time, so the eye follows it. */
-export function rowLand(): TransitionConfig {
-  const total = DUR.enter * 2
+export const rowLand: Transition = () => ({
+  duration: dur(DUR.enter * 2),
+  css: (t) => {
+    const arrive = easeInk(Math.min(t / 0.4, 1))
+    const wash = t < 0.4 ? 1 : 1 - easeInk((t - 0.4) / 0.6)
+    const bg = `color-mix(in srgb, var(--selected) ${Math.round(wash * 100)}%, transparent)`
+    return `opacity: ${arrive}; transform: translateX(${(1 - arrive) * -6}px); background-color: ${bg}`
+  },
+})
+
+/** A scrim or backdrop: a plain fade, in at --dur-base and out a little faster. */
+export function scrim(_node: Element, { out = false }: { out?: boolean } = {}): TransitionConfig {
   return {
-    duration: dur(total),
-    css: (t) => {
-      const arrive = easeInk(Math.min(t / 0.4, 1))
-      const wash = t < 0.4 ? 1 : 1 - easeInk((t - 0.4) / 0.6)
-      return (
-        `opacity: ${arrive}; transform: translateX(${(1 - arrive) * -6}px); ` +
-        `background-color: color-mix(in srgb, var(--selected) ${Math.round(wash * 100)}%, transparent)`
-      )
-    },
+    duration: dur(out ? Math.round(DUR.base * 0.7) : DUR.base),
+    easing: out ? easeExit : easeInk,
+    css: (t) => `opacity: ${t}` + (out ? '; pointer-events: none' : ''),
+  }
+}
+
+/** Menus closing: gone in --dur-quick, so the click that closed one never waits on it. */
+export const menuOut: Transition = () => ({
+  duration: dur(DUR.quick),
+  easing: easeExit,
+  css: (t) => `opacity: ${t}; pointer-events: none`,
+})
+
+/** Something in the flow opening or closing, such as a banner or a sidebar section: its
+ * height grows from nothing as it fades in, so what's below moves instead of jumping. */
+export function reveal(node: Element, { out = false }: { out?: boolean } = {}): TransitionConfig {
+  const style = getComputedStyle(node)
+  const height = parseFloat(style.height)
+  const padTop = parseFloat(style.paddingTop)
+  const padBottom = parseFloat(style.paddingBottom)
+  return {
+    duration: dur(out ? DUR.base : DUR.move),
+    easing: out ? easeExit : easeInk,
+    css: (t) =>
+      `overflow: hidden; opacity: ${Math.min(t * 1.5, 1)}; height: ${t * height}px; ` +
+      `padding-top: ${t * padTop}px; padding-bottom: ${t * padBottom}px` +
+      (out ? '; pointer-events: none' : ''),
   }
 }
