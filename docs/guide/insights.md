@@ -17,7 +17,7 @@ The tab sits after your repository tabs, and it comes back where you left it whe
 The side panel holds everything a result depends on:
 
 - **Scope:** one open repository, or a [project group](repositories.md), whose repositories are combined. In a group, every item and branch says which repository it's from.
-- **Window:** the last **7 days**, **14 days**, the **month** so far, or **releases**: everything between two tags. Releases are offered for a single repository with at least two tags. The window's exact dates are shown underneath, in UTC.
+- **Window:** the last **7 days**, **14 days**, the **month** so far, or **releases**: everything between two releases. A release is a tag, or a [Release branch](branch-care.md#branch-kinds), measured from where it split off the target. Releases are offered for a single repository with at least two of them. The window's exact dates are shown underneath, in UTC.
 - **As of:** the point the window and branch ages are measured from. It's the date of the latest commit on the target branch, so "the last 14 days" means the 14 days up to that commit, not up to today, and the results don't drift as time passes. **Pick a date instead** measures to the end of a day you choose. In a group, the repositories share one as-of point, the latest of theirs, so their windows line up.
 - **Remote branches:** when each repository last fetched. Other people's branches are only as current as that, so the tab offers **Fetch** (or **Fetch all** for a group). A fetch more than a day old shows in a warning colour.
 
@@ -43,12 +43,14 @@ Items are grouped **by reference**: ticket IDs like `TIDE-88` or `#41` found in 
 
 Each item shows its author, how many files and lines it changed, and its **cycle time**: from the merged branch's first commit to the merge. Only merge commits have one. Squash merges and direct commits don't keep the branch's history, so they say **single commit** rather than show a guess.
 
+**Dependency updates** a bot made are listed on their own at the end, collapsed, so they don't crowd out the work people did. An item counts as one when its author is a bot account (a name ending in `[bot]`, like `dependabot[bot]`), or when the branch a merge brought in is a [Bot branch](branch-care.md#branch-kinds).
+
 ## Needs attention
 
 ![Branches that need attention, with their thresholds](../img/insights-attention-light.webp#gh-light-mode-only)
 ![Branches that need attention, with their thresholds](../img/insights-attention-dark.webp#gh-dark-mode-only)
 
-The open branches are the remote branches, plus local branches that have never been pushed (marked **local only**), that aren't merged into the target yet. Up to 50 of the most recently active are measured:
+The open branches are the remote branches, plus local branches that have never been pushed (marked **local only**), that aren't merged into the target yet. Docs and Release branches are left out: they're end states, a published site or a release being maintained, and they're expected to drift from the target. Up to 50 of the most recently active are measured:
 
 | Signal | Measured as | Flagged past |
 |---|---|---|
@@ -75,7 +77,7 @@ The files the window's items changed most, by lines. A file that open branches a
 
 **Export CSV**, in the Shipped, Needs attention and Hotspots views, saves that list for a spreadsheet.
 
-Both start with the inputs they came from: the scope, each repository's target branch and exact commit, the window in UTC, the as-of point and the thresholds. That's what makes them reproducible. Anyone with those commits, using those inputs, gets the same result. The design decision behind this is [ADR 0008](../adr/0008-insights-from-repository-state.md).
+Both start with the inputs they came from: the scope, each repository's target branch and exact commit, the window in UTC, the as-of point, the [branch kind](branch-care.md#branch-kinds) patterns and the thresholds. That's what makes them reproducible. Anyone with those commits, using those inputs, gets the same result. The design decision behind this is [ADR 0008](../adr/0008-insights-from-repository-state.md).
 
 ## What it doesn't do
 

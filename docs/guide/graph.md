@@ -7,6 +7,10 @@ The graph is the main view of a repository: every commit, the branches and tags 
 
 It doesn't load the whole history when you open a repository. It loads the commits just ahead of where you're looking, and more as you scroll, search or jump. That's what keeps it quick on repositories with a million commits or more.
 
+Commits are in date order, newest at the top, so work that happened side by side, such as a `gh-pages` site and `main`, is interleaved as it happened. Every commit still sits below the commits built on it.
+
+Your **Trunk** branch (`main`, `master` or `develop`) runs straight down the left-hand column in rose, and other lines branch off it to the right. A second Trunk branch, such as `develop` beside `main`, gets the next column.
+
 ## Moving around
 
 - Scroll, or use the arrow keys to move the selection one commit at a time.
@@ -28,6 +32,12 @@ Press <kbd>Ctrl</kbd>+<kbd>F</kbd> to search. You can search by commit message, 
 ## Branches and tags
 
 The sidebar lists local branches, remotes, tags and stashes. Type in **Filter branches and tags** to narrow the list. Click a branch or tag to jump to its commit.
+
+Local branches are grouped by [kind](branch-care.md#branch-kinds): Trunk at the top, then ordinary branches, releases, environments, docs and bots. Branches built on other branches sit under them as a [stack](branch-care.md#stacked-branches). A branch's chip in the graph carries its kind's colour and icon.
+
+## Docs and Bots
+
+When a repository has Docs branches (such as `gh-pages`) or Bot branches (such as `dependabot/…`), the graph's header has **Docs** and **Bots** buttons to show or hide them. Docs lines are drawn faded either way. Other branches can be hidden too; see [hiding branches](branch-care.md#hiding-branches).
 
 ## Two layouts
 

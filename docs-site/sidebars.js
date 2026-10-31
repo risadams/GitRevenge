@@ -35,6 +35,7 @@ const sidebars = {
         { type: 'doc', id: 'guide/graph', label: 'The commit graph' },
         { type: 'doc', id: 'guide/changes', label: 'Changes and commits' },
         { type: 'doc', id: 'guide/branches', label: 'Branches, merges and rebases' },
+        { type: 'doc', id: 'guide/branch-care', label: 'Branch care' },
         { type: 'doc', id: 'guide/history', label: 'Diffs and history' },
         { type: 'doc', id: 'guide/remotes', label: 'Remotes, LFS and submodules' },
         { type: 'doc', id: 'guide/git-config', label: 'Git config' },

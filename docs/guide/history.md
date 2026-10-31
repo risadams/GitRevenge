@@ -53,6 +53,8 @@ The reflog is git's record of where HEAD and each branch have been. It's how you
 
 Git notes attach extra text to a commit without changing it. The details panel shows a selected commit's notes, and lets you add, edit or remove one.
 
+git doesn't fetch or push notes on its own. To share them, turn on [syncing notes](branch-care.md#syncing-notes) for the repository.
+
 ## Signatures
 
 A signed commit shows a badge in its details:
