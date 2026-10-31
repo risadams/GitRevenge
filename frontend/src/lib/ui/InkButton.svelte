@@ -1,133 +1,50 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
+  import type { HTMLButtonAttributes } from 'svelte/elements'
 
-  /** The brand's call to action: a serif label on a torn ink blob. One primary per view;
-   * ghost (an ink outline) for the actions beside it; danger for destructive confirmations. */
+  /** A button from the family in style.css: one shape in three sizes and five variants.
+   * Primary is the one call to action per view (a clean ink body with a small bleed behind
+   * it); secondary sits beside it; quiet is for toolbars and rows; text is an inline italic
+   * link; danger confirms something destructive. Size alone sets height, padding, type and
+   * radius: md by default, sm in dense rows, lg for a view's main action. The arrow belongs
+   * on an lg primary that leads somewhere. Busy keeps the label and width. */
   let {
     variant = 'primary',
+    size = 'md',
     arrow = false,
+    icon = false,
+    busy = false,
     type = 'button',
     disabled = false,
-    title,
     onclick,
     children,
-  }: {
-    variant?: 'primary' | 'ghost' | 'danger'
+    ...rest
+  }: Omit<HTMLButtonAttributes, 'children'> & {
+    variant?: 'primary' | 'secondary' | 'quiet' | 'text' | 'danger' | 'ghost'
+    size?: 'sm' | 'md' | 'lg'
     arrow?: boolean
-    type?: 'button' | 'submit'
-    disabled?: boolean
-    title?: string
+    /** Icon-only: a square button. Give it an aria-label. */
+    icon?: boolean
+    busy?: boolean
     onclick?: (e: MouseEvent) => void
     children: Snippet
   } = $props()
+
+  // ghost was the 0.7 name for the outline button.
+  const kind = $derived(variant === 'ghost' ? 'secondary' : variant)
 </script>
 
-<button class="ink {variant}" {type} {disabled} {title} {onclick}>
+<button
+  {...rest}
+  class={['btn', kind, size !== 'md' && size, icon && 'icon']}
+  {type}
+  {disabled}
+  aria-busy={busy || undefined}
+  onclick={(e) => {
+    if (!busy) onclick?.(e)
+  }}
+>
+  {#if busy}<span class="busy" aria-hidden="true"><i></i><i></i><i></i></span>{/if}
   {@render children()}
   {#if arrow}<span class="arrow" aria-hidden="true">→</span>{/if}
 </button>
-
-<style>
-  .ink {
-    position: relative;
-    z-index: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 24px;
-    background: none;
-    border: none;
-    border-radius: 0;
-    font-family: var(--font-serif);
-    font-size: 15px;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-    cursor: pointer;
-    transition: transform 0.3s var(--ease-ink);
-  }
-
-  .ink::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    filter: url(#wc-edge);
-    border-radius: 45% 55% 50% 50% / 55% 45%;
-    transition:
-      opacity 0.3s,
-      transform 0.3s var(--ease-ink),
-      background-color 0.3s;
-  }
-
-  .ink:hover:not(:disabled) {
-    background: none;
-    transform: translateY(-1px);
-  }
-
-  .ink:hover:not(:disabled)::before {
-    transform: scale(1.03);
-  }
-
-  .primary {
-    color: var(--on-accent);
-  }
-
-  .primary::before {
-    background: var(--accent);
-    opacity: 0.92;
-  }
-
-  .primary:hover:not(:disabled)::before {
-    opacity: 1;
-  }
-
-  .ink:disabled {
-    opacity: 0.45;
-    cursor: default;
-  }
-
-  .danger {
-    color: var(--on-accent);
-  }
-
-  .danger::before {
-    background: var(--danger);
-  }
-
-  .ghost {
-    color: var(--ink);
-  }
-
-  .ghost::before {
-    border: 1.5px solid var(--ink);
-  }
-
-  .ghost:hover:not(:disabled)::before {
-    background: var(--wash-hover);
-  }
-
-  .arrow {
-    font-family: var(--font-hand);
-    font-size: 22px;
-    line-height: 1;
-    transition: transform 0.3s var(--ease-ink);
-  }
-
-  .ink:hover:not(:disabled) .arrow {
-    transform: translateX(4px);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .ink,
-    .ink::before,
-    .arrow {
-      transition: none;
-    }
-
-    .ink:hover:not(:disabled),
-    .ink:hover:not(:disabled)::before,
-    .ink:hover:not(:disabled) .arrow {
-      transform: none;
-    }
-  }
-</style>

@@ -155,7 +155,7 @@
       {#if restartNote}<p class="note" role="status">Saved. Restart Git Revenge to use the new git.</p>{/if}
       <span class="buttons">
         <InkButton type="submit" disabled={saving}>Save</InkButton>
-        <InkButton variant="ghost" onclick={onClose}>{restartNote ? 'Close' : 'Cancel'}</InkButton>
+        <InkButton variant="secondary" onclick={onClose}>{restartNote ? 'Close' : 'Cancel'}</InkButton>
       </span>
     </form>
   {/if}

@@ -176,7 +176,7 @@
           Install git {env.minVersion} or newer, then restart Git Revenge.
           {#if env.gitPath}Found: <code>{env.gitPath}</code>{/if}
         </p>
-        <InkButton arrow onclick={() => BrowserOpenURL('https://git-scm.com/downloads')}>Download git</InkButton>
+        <InkButton size="lg" arrow onclick={() => BrowserOpenURL('https://git-scm.com/downloads')}>Download git</InkButton>
       </div>
     </main>
   {:else if env}

@@ -69,7 +69,7 @@
   <div class="form-actions">
     <InkButton onclick={onClose}>Done</InkButton>
     <InkButton
-      variant="ghost"
+      variant="secondary"
       onclick={() => {
         onClose()
         commands.keybindingsOpen = true

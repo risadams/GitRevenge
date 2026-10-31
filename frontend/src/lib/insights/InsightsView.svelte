@@ -151,7 +151,7 @@
           {#if insights.view !== 'overview'}
             <button class="pill" onclick={() => insights.exportCSV(insights.view === 'shipped' ? 'shipped' : insights.view === 'attention' ? 'attention' : 'hotspots')}>Export CSV</button>
           {/if}
-          <InkButton arrow onclick={() => (summaryOpen = true)}>Copy summary</InkButton>
+          <InkButton onclick={() => (summaryOpen = true)}>Copy summary</InkButton>
         </div>
       {/if}
     </header>
