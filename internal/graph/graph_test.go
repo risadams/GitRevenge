@@ -175,6 +175,41 @@ func TestWindowsMatchFullLayout(t *testing.T) {
 	}
 }
 
+// A graph wider than wideLanes snapshots less often; windows read anywhere in it still match
+// the full layout.
+func TestWideGraphSpacesCheckpoints(t *testing.T) {
+	const tips = 2*wideLanes + 100 // every tip's lane stays open until its parent arrives
+	commits := make([][]int, 0, 2*tips+200)
+	for i := range tips {
+		commits = append(commits, []int{tips + i})
+	}
+	for range tips {
+		commits = append(commits, []int{2 * tips}) // parents all lead to one root line
+	}
+	for i := range 199 {
+		commits = append(commits, []int{2*tips + i + 1})
+	}
+	commits = append(commits, []int{})
+	g := build(t, commits)
+
+	if width := g.Rows(tips, 1)[0].Width; width <= 2*wideLanes {
+		t.Fatalf("width %d, want the fixture wider than %d", width, 2*wideLanes)
+	}
+	if n, dense := len(g.checkpoints), (g.Len()+checkpointEvery-1)/checkpointEvery; n >= dense {
+		t.Fatalf("%d checkpoints, want fewer than the %d a narrow graph takes", n, dense)
+	}
+
+	full := g.Rows(0, g.Len())
+	for _, start := range []int{0, 127, 128, 400, tips - 1, tips, tips + 300, 2*tips - 1, g.Len() - 5} {
+		for i, r := range g.Rows(start, 20) {
+			want := full[start+i]
+			if r.Col != want.Col || r.Color != want.Color || !slices.Equal(r.Up, want.Up) || !slices.Equal(r.Down, want.Down) {
+				t.Fatalf("row %d differs when read from window at %d", start+i, start)
+			}
+		}
+	}
+}
+
 func TestRowOf(t *testing.T) {
 	g := build(t, [][]int{{1}, {}})
 	if r, ok := g.RowOf(fakeID(1)); !ok || r != 1 {

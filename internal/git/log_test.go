@@ -133,6 +133,33 @@ func TestLogOrphanBranchKeepsOtherHistory(t *testing.T) {
 	}
 }
 
+// An orphan branch committed to alongside main, like gh-pages, interleaves with main by
+// date instead of being listed as one block after it (#275).
+func TestLogInterleavesParallelHistoriesByDate(t *testing.T) {
+	fx := gittest.New(t)
+	m1 := fx.CommitFile("a.txt", "1", "main 1")
+	fx.Git("checkout", "-q", "--orphan", "gh-pages")
+	fx.Git("rm", "-rq", "--cached", ".")
+	p1 := fx.CommitFile("index.html", "1", "pages 1")
+	fx.Checkout("main")
+	m2 := fx.CommitFile("a.txt", "2", "main 2")
+	fx.Checkout("gh-pages")
+	p2 := fx.CommitFile("index.html", "2", "pages 2")
+	fx.Checkout("main")
+	m3 := fx.CommitFile("a.txt", "3", "main 3")
+
+	got := readLog(t, fx, LogOptions{})
+	want := []string{m3, p2, m2, p1, m1}
+	if len(got) != len(want) {
+		t.Fatalf("got %d commits, want %d", len(got), len(want))
+	}
+	for i, c := range got {
+		if c.ID != want[i] {
+			t.Fatalf("row %d = %q, want the commits newest first across both branches", i, c.Subject)
+		}
+	}
+}
+
 func TestLogVeryLongSubject(t *testing.T) {
 	fx := gittest.New(t)
 	fx.Linear(1)
