@@ -41,6 +41,9 @@ type Ref struct {
 	// Hidden marks a branch the repository's hide patterns match (set by the session, not
 	// by git).
 	Hidden bool `json:"hidden,omitempty"`
+	// BranchKind is the branch's kind from the repository's patterns ("trunk", "release",
+	// "environment", "docs", "bot"), or "" for an ordinary branch (set by the session).
+	BranchKind string `json:"branchKind,omitempty"`
 	// Subject is the stash message, for stashes.
 	Subject string `json:"subject,omitempty"`
 }

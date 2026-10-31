@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { KINDS } from '../branchKinds'
   import { onMount } from 'svelte'
   import { CommitRow, CommitSignatures, GraphRows, SearchGraph } from '../../../wailsjs/go/app/App.js'
   import { session } from '../session.svelte'
@@ -125,6 +126,7 @@
       good: token('--success'),
       bad: token('--danger'),
       warn: token('--warning'),
+      kinds: Object.fromEntries(Object.entries(KINDS).map(([k, info]) => [k, token(info.token)])),
     }
   }
 

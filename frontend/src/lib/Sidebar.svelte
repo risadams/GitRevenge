@@ -9,6 +9,7 @@
   import { session } from './session.svelte'
   import Icon from './ui/Icon.svelte'
   import { reveal } from './ui/motion'
+  import { KINDS, kindInfo } from './branchKinds'
 
   let {
     path,
@@ -45,23 +46,37 @@
     await session.run(() => SetShowHidden(path, next))
     showingHidden = next
   }
-  let open = $state<Record<string, boolean>>({ local: true, remote: false, tag: false, stash: true })
+  let open = $state<Record<string, boolean>>({ trunk: true, local: true, release: true, environment: true, docs: true, bot: false, remote: false, tag: false, stash: true })
 
-  const groups: { kind: Ref['kind']; title: string }[] = [
-    { kind: 'local', title: 'Branches' },
-    { kind: 'remote', title: 'Remotes' },
-    { kind: 'tag', title: 'Tags' },
-    { kind: 'stash', title: 'Stashes' },
+  // Local branches split by kind (ADR 0009): Trunk pinned on top, then ordinary branches,
+  // then the other kinds. A kind's section shows only when it has branches; Bots start
+  // collapsed. Remote branches stay together under Remotes, each marked with its kind.
+  type GroupKey = 'trunk' | 'local' | 'release' | 'environment' | 'docs' | 'bot' | 'remote' | 'tag' | 'stash'
+  const groups: { kind: GroupKey; title: string; always?: boolean }[] = [
+    { kind: 'trunk', title: KINDS.trunk.section },
+    { kind: 'local', title: 'Branches', always: true },
+    { kind: 'release', title: KINDS.release.section },
+    { kind: 'environment', title: KINDS.environment.section },
+    { kind: 'docs', title: KINDS.docs.section },
+    { kind: 'bot', title: KINDS.bot.section },
+    { kind: 'remote', title: 'Remotes', always: true },
+    { kind: 'tag', title: 'Tags', always: true },
+    { kind: 'stash', title: 'Stashes', always: true },
   ]
+
+  const groupOf = (r: Ref): GroupKey => (r.kind === 'local' && kindInfo(r.branchKind) ? (r.branchKind as GroupKey) : r.kind)
 
   let byKind = $derived.by(() => {
     const q = filter.trim().toLowerCase()
-    const out: Record<string, Ref[]> = { local: [], remote: [], tag: [], stash: [] }
+    const out: Record<GroupKey, Ref[]> = { trunk: [], local: [], release: [], environment: [], docs: [], bot: [], remote: [], tag: [], stash: [] }
     for (const r of refs) {
       if (r.hidden && !showingHidden) continue
-      if (!q || r.short.toLowerCase().includes(q)) out[r.kind].push(r)
+      if (!q || r.short.toLowerCase().includes(q)) out[groupOf(r)].push(r)
     }
-    out.local.sort((a, b) => Number(b.head) - Number(a.head) || a.short.localeCompare(b.short, undefined, { numeric: true }))
+    const byName = (a: Ref, b: Ref) => Number(b.head) - Number(a.head) || a.short.localeCompare(b.short, undefined, { numeric: true })
+    for (const k of ['trunk', 'local', 'environment', 'docs', 'bot'] as const) out[k].sort(byName)
+    // Newest version first: release/1.10 above release/1.9.
+    out.release.sort((a, b) => Number(b.head) - Number(a.head) || b.short.localeCompare(a.short, undefined, { numeric: true }))
     out.remote.sort((a, b) => a.short.localeCompare(b.short, undefined, { numeric: true }))
     // Newest-looking tags first (v2.0 before v1.9).
     out.tag.sort((a, b) => b.short.localeCompare(a.short, undefined, { numeric: true }))
@@ -103,11 +118,13 @@
     </label>
   </header>
   <div class="groups">
-    {#each groups as g (g.kind)}
+    {#each groups.filter((g) => g.always || byKind[g.kind].length > 0) as g (g.kind)}
       {@const items = byKind[g.kind]}
+      {@const gk = kindInfo(g.kind)}
       <section>
         <button class="group" onclick={() => (open[g.kind] = !open[g.kind])} aria-expanded={open[g.kind] || !!filter}>
           <span class="caret" class:open={open[g.kind] || filter}><Icon name="right" size={12} /></span>
+          {#if gk}<span class="kind-icon" style:color="var({gk.token})" aria-hidden="true"><Icon name={gk.icon} size={13} /></span>{/if}
           <span class="meta title">{g.title}</span>
           <span class="meta count">{items.length.toLocaleString()}</span>
         </button>
@@ -134,6 +151,10 @@
                   title={r.subject ?? r.name}
                 >
                   {#if r.head}<span class="here" aria-label="checked out"></span>{/if}
+                  {#if r.kind === 'remote' && kindInfo(r.branchKind)}
+                    {@const k = kindInfo(r.branchKind)!}
+                    <span class="kind-icon" style:color="var({k.token})" title={k.label}><Icon name={k.icon} size={13} /><span class="visually-hidden">{k.label}</span></span>
+                  {/if}
                   <span class="name">{r.kind === 'stash' ? r.subject : r.short}</span>
                   {#if r.hidden}<span class="track" title="Hidden: shown for now">hidden</span>{/if}
                   {#if r.gone}
@@ -164,6 +185,11 @@
 </aside>
 
 <style>
+  .kind-icon {
+    display: inline-flex;
+    flex: none;
+  }
+
   .hidden-note {
     display: flex;
     align-items: center;

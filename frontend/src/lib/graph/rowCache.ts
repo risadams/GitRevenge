@@ -32,6 +32,8 @@ export interface Ref {
   gone: boolean
   /** A branch the repository's hide patterns match. */
   hidden?: boolean
+  /** The branch's kind (ADR 0009), or empty for an ordinary branch. */
+  branchKind?: string
   subject?: string
 }
 
