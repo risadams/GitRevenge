@@ -4,18 +4,20 @@
 
 Git Revenge is a desktop git client for Windows and macOS that stays fast on huge repositories. It's a Go app that drives the `git` you already have installed. There are no accounts, no cloud features and no AI.
 
-> **Status:** early development. The latest release is [`0.7.0`](https://github.com/risadams/GitRevenge/releases/tag/v0.7.0), and `0.8.0` (UI touch) is in progress.
+> **Status:** early development. The latest release is [`0.7.0`](https://github.com/risadams/GitRevenge/releases/tag/v0.7.0), and `0.8.0` (UI touch and branch care) is in progress.
 
 ## What it does
 
-- **A commit graph that copes with big histories.** It loads history just ahead of where you're scrolling instead of all at once. On the Linux kernel (1.3M commits) the goal is a first screen in under a second and 60fps scrolling. You can search, jump to any commit, and filter branches and tags.
+- **A commit graph that copes with big histories.** It loads history just ahead of where you're scrolling instead of all at once. On the Linux kernel (1.5M commits) the first screen arrives in under half a second. Commits are in date order, with `main` pinned down the left as a spine. You can search, jump to any commit, and filter branches and tags.
+- **Branch care.** Branches get kinds (Trunk, Release, Environment, Docs, Bot) that change how they look and behave. Hide the noise, clean up merged branches after a pull (squash merges included), sync git notes, and see stacked branches, with a one-click restack once the branch below merges.
 - **Everyday git.** Stage whole files, hunks or single lines. Commit and amend (signed, if your git config signs). Stash, branch, tag, merge, rebase, cherry-pick, reset and revert, with undo and redo.
 - **Digging through history.** Interactive rebase, a 3-pane conflict tool, file history, blame, the reflog, and git notes. Signed commits get a badge showing whether the signature checks out.
 - **Diffs and previews.** Unified or split diffs with syntax highlighting and image diffs. Files can also be shown rendered: Markdown, SVG, images, CSV tables, JSON/YAML/TOML trees, LaTeX math, Mermaid diagrams and PDFs.
 - **Remotes.** Fetch, pull and push through your existing credential helpers and SSH agent. If they can't answer, the app asks you.
 - **Lots of repos at once.** Repos open in tabs, worktrees are supported, and a group of local projects gets a dashboard with batch fetch and pull.
 - **LFS and submodules.** Track LFS patterns, see which files are in LFS, lock and unlock them. Initialize and update submodules.
-- **Comfortable to live in.** Light and dark themes, a timeline graph with a compact mode, a settings panel, and a command palette (<kbd>Ctrl</kbd>+<kbd>K</kbd>). Common actions have shortcuts, which you can rebind; <kbd>Ctrl</kbd>+<kbd>/</kbd> lists them. On macOS, read <kbd>⌘</kbd> for <kbd>Ctrl</kbd>.
+- **Insights for sprint reviews.** What shipped in a window, which branches are stuck or would conflict, and where the hotspots are, all computed from the repository alone and reproducible, with Markdown and CSV exports.
+- **Comfortable to live in.** Light and dark themes with subtle, reduced-motion-aware animation, a timeline graph with a compact mode, a settings panel, and a command palette (<kbd>Ctrl</kbd>+<kbd>K</kbd>). Common actions have shortcuts, which you can rebind; <kbd>Ctrl</kbd>+<kbd>/</kbd> lists them. On macOS, read <kbd>⌘</kbd> for <kbd>Ctrl</kbd>.
 
 ## Privacy
 

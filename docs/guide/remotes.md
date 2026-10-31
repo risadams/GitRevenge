@@ -12,6 +12,8 @@ The toolbar has **Fetch**, **Pull** and **Push**.
 
 **Pull** does whatever your git config says (`pull.rebase`, `pull.ff`). The arrow next to it, and the command palette, offer **fast-forward only**, **merge** and **rebase** for a one-off.
 
+Fetch and pull both prune remote branches that were deleted on the remote. Two settings under **This repository** add to them: [cleaning up merged branches](branch-care.md#cleaning-up-merged-branches) after a pull, and [syncing notes](branch-care.md#syncing-notes) on fetch, pull and push.
+
 ### Signing in
 
 Git Revenge uses your existing credential helpers and SSH agent, so if `git push` works in a terminal, it works here. When git needs something they can't supply, such as a password or a key's passphrase, the app asks you in a dialog. It never stores what you type; saving credentials is left to your credential helper.

@@ -14,6 +14,15 @@ Open **Settings** with <kbd>Ctrl</kbd>+<kbd>,</kbd> or from the command palette.
 | **Clone into** | Where new clones go. Empty means the folder of the last repository you opened. |
 | **Updates** | Whether to check GitHub for a newer version at startup. This is the only request the app makes on its own. |
 
+With a repository's tab active, a **This repository** section adds settings that belong to it:
+
+| Setting | What it does |
+|---|---|
+| **Trunk, Release, Environment, Docs, Bot** | The patterns that decide each [branch kind](branch-care.md#branch-kinds). **Use defaults** puts one back. |
+| **Clean up merged branches after each pull** | Deletes local branches whose upstream was deleted and that have nothing unpushed. [More](branch-care.md#cleaning-up-merged-branches). |
+| **Sync notes on fetch, pull and push** | Shares git notes with the remote. [More](branch-care.md#syncing-notes). |
+| **Hidden branches** | Patterns of branches to leave out of the sidebar and graph. [More](branch-care.md#hiding-branches). |
+
 Settings are saved to `settings.json`; see [where your data lives](install.md#where-your-data-lives). Git's own settings, such as your name, email and aliases, are edited in the [Git Config tab](git-config.md): choose **Edit git config…** under Git.
 
 ## The command palette
