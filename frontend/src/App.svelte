@@ -28,6 +28,8 @@
   import Mark from './lib/ui/Mark.svelte'
   import Modal from './lib/ui/Modal.svelte'
   import { reveal } from './lib/ui/motion'
+  import Toasts from './lib/ui/Toasts.svelte'
+  import './lib/toasts.svelte'
 
   let version = $state('')
   let env = $state<app.Environment | null>(null)
@@ -136,6 +138,7 @@
 
 <PromptDialog />
 <InkFilters />
+<Toasts />
 <CommandPalette />
 {#if commands.shortcutsOpen}
   <ShortcutsDialog onClose={() => (commands.shortcutsOpen = false)} />

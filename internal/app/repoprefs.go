@@ -154,6 +154,15 @@ func (a *App) ShowingHidden(path string) (bool, error) {
 	return r.ShowingHidden(), nil
 }
 
+// repoSettings returns the stored settings of the repository at path.
+func (a *App) repoSettings(path string) settings.RepoSettings {
+	m, err := a.sessions()
+	if err != nil {
+		return settings.RepoSettings{Path: path}
+	}
+	return m.Settings().Get().Repo(path)
+}
+
 // branchRules returns the kind and hide rules for the repository at path.
 func (a *App) branchRules(path string) branchkind.Rules {
 	m, err := a.sessions()

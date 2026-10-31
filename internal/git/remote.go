@@ -156,7 +156,8 @@ const (
 
 // Pull fetches and integrates the current branch's upstream.
 func (r *Repo) Pull(ctx context.Context, mode PullMode, o NetOptions) error {
-	args := []string{"pull", "--progress"}
+	// --prune, as Fetch does, so a deleted upstream shows as gone straight away.
+	args := []string{"pull", "--progress", "--prune"}
 	switch mode {
 	case PullFFOnly:
 		args = append(args, "--ff-only")

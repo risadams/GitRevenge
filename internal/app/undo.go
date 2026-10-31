@@ -27,6 +27,8 @@ type undoEntry struct {
 	// kindBranchCreate / kindBranchDelete.
 	Ref    string
 	Commit string
+	// Branches are the branches deleted together, for kindBranchesDelete.
+	Branches []branchAt
 }
 
 type undoKind string
@@ -40,6 +42,8 @@ const (
 	kindCheckout     undoKind = "checkout"
 	kindBranchCreate undoKind = "branch-create"
 	kindBranchDelete undoKind = "branch-delete"
+	// kindBranchesDelete is cleanup on pull: several branches deleted at once.
+	kindBranchesDelete undoKind = "branches-delete"
 )
 
 // undoStacks holds undo and redo history per repository.
@@ -187,6 +191,23 @@ func apply(ctx context.Context, g *git.Repo, e undoEntry, undo bool) error {
 		expect, target = e.Before, e.After
 	}
 	switch e.Kind {
+	case kindBranchesDelete:
+		// Undo recreates every branch; redo deletes them again. A branch that came back some
+		// other way in between is left alone.
+		for _, b := range e.Branches {
+			_, missing := g.Read(ctx, "rev-parse", "--verify", "-q", "refs/heads/"+b.Name)
+			var err error
+			switch {
+			case undo && missing != nil:
+				err = g.CreateBranch(ctx, b.Name, b.Commit, false)
+			case !undo && missing == nil && g.Head(ctx).Branch != b.Name:
+				err = g.DeleteBranch(ctx, b.Name, true)
+			}
+			if err != nil {
+				return friendlyUndo(err)
+			}
+		}
+		return nil
 	case kindBranchCreate, kindBranchDelete:
 		create := (e.Kind == kindBranchCreate) != undo // redo create, or undo delete
 		if create {
