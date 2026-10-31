@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/risadams/gitrevenge/internal/branchkind"
+	"github.com/risadams/gitrevenge/internal/session"
 	"github.com/risadams/gitrevenge/internal/settings"
 )
 
@@ -85,7 +86,72 @@ func (a *App) SetRepoPreferences(path string, p RepoPreferences) error {
 	if err != nil {
 		return err
 	}
-	return m.Settings().Update(func(s *settings.Settings) { s.SetRepo(rs) })
+	if err := m.Settings().Update(func(s *settings.Settings) { s.SetRepo(rs) }); err != nil {
+		return err
+	}
+	if r := m.Get(path); r != nil {
+		r.ReloadGraph()
+	}
+	return nil
+}
+
+// HideBranch hides a branch (named without its remote) in the repository at path, or
+// unhides it, by adding or removing that exact name in the hide patterns. Unhiding a branch
+// that a wider pattern hides isn't possible here; the error names the pattern to change.
+func (a *App) HideBranch(path, name string, hide bool) error {
+	name = strings.TrimSpace(name)
+	if err := branchkind.CheckPattern(name); err != nil {
+		return userError("Can't hide that branch: " + err.Error() + ".")
+	}
+	m, err := a.sessions()
+	if err != nil {
+		return err
+	}
+	var wider string
+	err = m.Settings().Update(func(s *settings.Settings) {
+		rs := s.Repo(path)
+		rs.Hide = slices.DeleteFunc(rs.Hide, func(p string) bool { return p == name })
+		if hide {
+			rs.Hide = append(rs.Hide, name)
+		} else {
+			for _, p := range rs.Hide {
+				if branchkind.Match(p, name) {
+					wider = p
+				}
+			}
+		}
+		s.SetRepo(rs)
+	})
+	if err != nil {
+		return err
+	}
+	if r := m.Get(path); r != nil {
+		r.ReloadGraph()
+	}
+	if wider != "" {
+		return userError(name + " is still hidden by the pattern " + wider + ". Change it in Settings, under This repository.")
+	}
+	return nil
+}
+
+// SetShowHidden shows the hidden branches of the repository at path again, or hides them,
+// for this session only.
+func (a *App) SetShowHidden(path string, show bool) error {
+	r, err := a.openRepo(path)
+	if err != nil {
+		return err
+	}
+	r.SetShowHidden(show)
+	return nil
+}
+
+// ShowingHidden reports whether the repository at path is showing its hidden branches.
+func (a *App) ShowingHidden(path string) (bool, error) {
+	r, err := a.openRepo(path)
+	if err != nil {
+		return false, err
+	}
+	return r.ShowingHidden(), nil
 }
 
 // branchRules returns the kind and hide rules for the repository at path.
@@ -94,12 +160,7 @@ func (a *App) branchRules(path string) branchkind.Rules {
 	if err != nil {
 		return branchkind.New(nil, nil)
 	}
-	rs := m.Settings().Get().Repo(path)
-	overrides := map[branchkind.Kind][]string{}
-	for k, p := range rs.Kinds {
-		overrides[branchkind.Kind(k)] = p
-	}
-	return branchkind.New(overrides, rs.Hide)
+	return session.Rules(m.Settings().Get().Repo(path))
 }
 
 // cleanPatterns trims patterns, drops blanks and duplicates, and checks each one.

@@ -30,6 +30,11 @@ type LogOptions struct {
 	Revs []string
 	// Extra revisions are added to the default starting points (used for stash commits).
 	Extra []string
+	// Exclude lists glob patterns of branches to leave out of the default starting points,
+	// matched against the branch name without refs/heads/ or the remote (see Remotes).
+	Exclude []string
+	// Remotes are the remote names, so Exclude also applies to remote-tracking branches.
+	Remotes []string
 	// MaxCount limits the number of commits; 0 means no limit.
 	MaxCount int
 }
@@ -105,7 +110,22 @@ const maxTagTips = 500
 func (r *Repo) logRevs(ctx context.Context, opts LogOptions) []string {
 	var args []string
 	if len(opts.Revs) == 0 {
-		args = append(args, "--branches", "--remotes")
+		// Each --exclude applies to the next --branches or --remotes only.
+		for _, p := range opts.Exclude {
+			args = append(args, "--exclude="+p)
+		}
+		args = append(args, "--branches")
+		if len(opts.Exclude) > 0 {
+			for _, rm := range opts.Remotes {
+				// A remote's HEAD names one of its branches, which is listed anyway; leaving it
+				// out keeps a hidden default branch hidden.
+				args = append(args, "--exclude="+rm+"/HEAD")
+				for _, p := range opts.Exclude {
+					args = append(args, "--exclude="+rm+"/"+p)
+				}
+			}
+		}
+		args = append(args, "--remotes")
 		// HEAD is only valid once it points at a commit (not in an empty repo or on an
 		// orphan branch).
 		if _, err := r.Read(ctx, "rev-parse", "--verify", "-q", "HEAD"); err == nil {

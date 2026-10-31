@@ -88,6 +88,8 @@ export function GroupDashboard(arg1:string):Promise<Array<app.GroupRepo>>;
 
 export function Groups():Promise<Array<settings.Group>>;
 
+export function HideBranch(arg1:string,arg2:string,arg3:boolean):Promise<void>;
+
 export function Init(arg1:string,arg2:string):Promise<string>;
 
 export function InsightsBranches(arg1:string,arg2:app.InsightsInputs):Promise<app.AttentionResult>;
@@ -200,6 +202,8 @@ export function SetPreferences(arg1:app.Preferences):Promise<void>;
 
 export function SetRepoPreferences(arg1:string,arg2:app.RepoPreferences):Promise<void>;
 
+export function SetShowHidden(arg1:string,arg2:boolean):Promise<void>;
+
 export function SetStagedContent(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
 export function SetTheme(arg1:string):Promise<void>;
@@ -207,6 +211,8 @@ export function SetTheme(arg1:string):Promise<void>;
 export function SetUpdateChecks(arg1:boolean):Promise<void>;
 
 export function SetWorkTreeContent(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
+
+export function ShowingHidden(arg1:string):Promise<boolean>;
 
 export function StageFiles(arg1:string,arg2:Array<string>):Promise<void>;
 

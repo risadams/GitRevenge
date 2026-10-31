@@ -38,6 +38,9 @@ type Ref struct {
 	Behind   int    `json:"behind"`
 	// Gone means the upstream is configured but no longer exists.
 	Gone bool `json:"gone"`
+	// Hidden marks a branch the repository's hide patterns match (set by the session, not
+	// by git).
+	Hidden bool `json:"hidden,omitempty"`
 	// Subject is the stash message, for stashes.
 	Subject string `json:"subject,omitempty"`
 }
