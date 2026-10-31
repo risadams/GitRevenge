@@ -160,6 +160,8 @@ export function ReplaceGitConfigValue(arg1:string,arg2:string,arg3:string,arg4:s
 
 export function RepoInfo(arg1:string):Promise<app.RepoTab>;
 
+export function RepoPreferences(arg1:string):Promise<app.RepoPreferences>;
+
 export function RepoState(arg1:string):Promise<app.RepoState>;
 
 export function ResolveConflict(arg1:string,arg2:string,arg3:string):Promise<void>;
@@ -195,6 +197,8 @@ export function SetInsightsThresholds(arg1:string,arg2:app.Thresholds):Promise<v
 export function SetKeybindings(arg1:Record<string, string>):Promise<void>;
 
 export function SetPreferences(arg1:app.Preferences):Promise<void>;
+
+export function SetRepoPreferences(arg1:string,arg2:app.RepoPreferences):Promise<void>;
 
 export function SetStagedContent(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
