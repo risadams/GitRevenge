@@ -168,9 +168,9 @@
         </h1>
         <p class="lede">Open a repository, clone one, or start fresh.{session.recent.length ? ' Your recent work is below.' : ''}</p>
         <div class="actions">
-          <InkButton arrow onclick={() => session.choose()}>Open repository</InkButton>
-          <InkButton variant="ghost" onclick={() => (commands.cloneOpen = true)}>Clone a repository</InkButton>
-          <InkButton variant="ghost" onclick={newRepo}>New repository</InkButton>
+          <InkButton size="lg" arrow onclick={() => session.choose()}>Open repository</InkButton>
+          <InkButton variant="secondary" size="lg" onclick={() => (commands.cloneOpen = true)}>Clone a repository</InkButton>
+          <InkButton variant="secondary" size="lg" onclick={newRepo}>New repository</InkButton>
         </div>
       </header>
 

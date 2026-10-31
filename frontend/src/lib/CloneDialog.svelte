@@ -87,8 +87,8 @@
     {/if}
     {#if error}<p class="form-error" role="alert">{error}</p>{/if}
     <div class="form-actions">
-      <InkButton variant="ghost" onclick={cancel}>{running ? 'Stop' : 'Cancel'}</InkButton>
-      <InkButton type="submit" arrow disabled={running || !url.trim() || !parent.trim() || !name.trim()}>Clone</InkButton>
+      <InkButton variant="secondary" onclick={cancel}>{running ? 'Stop' : 'Cancel'}</InkButton>
+      <InkButton type="submit" disabled={running || !url.trim() || !parent.trim() || !name.trim()}>Clone</InkButton>
     </div>
   </form>
 </Modal>

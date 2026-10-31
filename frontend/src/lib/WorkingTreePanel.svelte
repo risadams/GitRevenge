@@ -325,7 +325,7 @@
     {/if}
     <div class="commit-row">
       <span class="hint meta">Ctrl+Enter</span>
-      <InkButton type="submit" arrow disabled={!canCommit}>
+      <InkButton type="submit" size="lg" arrow disabled={!canCommit}>
         {amend ? 'Amend commit' : `Commit ${staged.length} ${staged.length === 1 ? 'file' : 'files'}`}
       </InkButton>
     </div>

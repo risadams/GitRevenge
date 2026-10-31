@@ -11,6 +11,24 @@
   --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace;
   --ease-ink: cubic-bezier(0.2, 0.6, 0.2, 1);
 
+  /* Button sizes: height, side padding, label size, radius, icon size. Size alone sets
+     these; no component overrides them. md is the default. */
+  --btn-h-sm: 28px;
+  --btn-h-md: 32px;
+  --btn-h-lg: 40px;
+  --btn-px-sm: 12px;
+  --btn-px-md: 14px;
+  --btn-px-lg: 20px;
+  --btn-fs-sm: 13px;
+  --btn-fs-md: 14px;
+  --btn-fs-lg: 15px;
+  --btn-r-sm: 7px;
+  --btn-r-md: 8px;
+  --btn-r-lg: 10px;
+  --btn-ic-sm: 14px;
+  --btn-ic-md: 16px;
+  --btn-ic-lg: 18px;
+
   /* Raw inks, the same in both themes. Fills and marks; text uses the themed tokens. */
   --ink-rose: #cb0162;
   --ink-rose-soft: #e24a8a;
@@ -297,6 +315,284 @@ textarea {
   }
 }
 
+/* The button family: one shape in three sizes (sm, md, lg) and five variants (primary,
+   secondary, quiet, text, danger). InkButton renders these classes; a plain <button> can
+   use them too. Primary and danger draw their body in ::after and a small ink bleed in
+   ::before, both behind the label inside the button's own stacking context. */
+.btn {
+  --h: var(--btn-h-md);
+  --px: var(--btn-px-md);
+  --fs: var(--btn-fs-md);
+  --r: var(--btn-r-md);
+  --ic: var(--btn-ic-md);
+  position: relative;
+  z-index: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--h);
+  min-width: 72px;
+  padding: 0 var(--px);
+  background: none;
+  border: none;
+  border-radius: var(--r);
+  font-family: var(--font-serif);
+  font-size: var(--fs);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 0.2s var(--ease-ink),
+    background-color 0.12s,
+    color 0.12s,
+    box-shadow 0.2s var(--ease-ink),
+    opacity 0.12s;
+}
+
+.btn.sm {
+  --h: var(--btn-h-sm);
+  --px: var(--btn-px-sm);
+  --fs: var(--btn-fs-sm);
+  --r: var(--btn-r-sm);
+  --ic: var(--btn-ic-sm);
+}
+
+.btn.lg {
+  --h: var(--btn-h-lg);
+  --px: var(--btn-px-lg);
+  --fs: var(--btn-fs-lg);
+  --r: var(--btn-r-lg);
+  --ic: var(--btn-ic-lg);
+}
+
+.btn svg {
+  width: var(--ic);
+  height: var(--ic);
+  flex-shrink: 0;
+}
+
+/* Icon-only: a square of the size's height. Needs an aria-label. */
+.btn.icon {
+  min-width: 0;
+  width: var(--h);
+  padding: 0;
+}
+
+.btn:focus-visible {
+  outline-offset: 3px;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+  transition-duration: 0.12s;
+}
+
+/* Primary and danger: a clean body with an ink bleed behind it. */
+.btn.primary,
+.btn.danger {
+  --fill: var(--accent);
+  color: var(--on-accent);
+  background: none;
+}
+
+.btn.danger {
+  --fill: var(--danger);
+}
+
+.btn.primary::before,
+.btn.primary::after,
+.btn.danger::before,
+.btn.danger::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  background: var(--fill);
+  pointer-events: none;
+}
+
+.btn.primary::after,
+.btn.danger::after {
+  inset: 0;
+  border-radius: var(--r);
+}
+
+.btn.primary::before,
+.btn.danger::before {
+  inset: 3px -4px -5px 4px;
+  border-radius: 45% 55% 50% 50% / 55% 45%;
+  filter: url(#ink-bleed);
+  opacity: 0.28;
+  mix-blend-mode: multiply;
+  transition:
+    transform 0.28s var(--ease-ink),
+    opacity 0.2s;
+}
+
+:root[data-theme='dark'] .btn.primary::before,
+:root[data-theme='dark'] .btn.danger::before {
+  mix-blend-mode: screen;
+}
+
+.btn.primary:hover:not(:disabled)::before,
+.btn.danger:hover:not(:disabled)::before {
+  transform: translate(1px, 2px) scale(1.06);
+  opacity: 0.4;
+}
+
+.btn.primary:active:not(:disabled)::before,
+.btn.danger:active:not(:disabled)::before {
+  transform: scale(0.96);
+  opacity: 0.18;
+}
+
+.btn.primary:disabled::before,
+.btn.danger:disabled::before {
+  opacity: 0;
+}
+
+/* Secondary: an ink outline, beside a primary. */
+.btn.secondary {
+  box-shadow: inset 0 0 0 1.25px var(--ink);
+}
+
+.btn.secondary:hover:not(:disabled) {
+  background: var(--wash-hover);
+}
+
+/* Quiet: toolbars, rows and icon-only buttons. A wash on hover. */
+.btn.quiet {
+  color: var(--ink-soft);
+}
+
+.btn.quiet:hover:not(:disabled) {
+  background: var(--wash-hover);
+  color: var(--ink);
+}
+
+.btn.quiet[aria-pressed='true'] {
+  background: var(--selected);
+  color: var(--link);
+}
+
+/* Text: an italic link with a painterly bar under the label. */
+.btn.text {
+  min-width: 0;
+  padding: 0 4px;
+  color: var(--link);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.btn.text::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 2px;
+  right: 2px;
+  bottom: calc(50% - 0.75em);
+  height: 0.4em;
+  border-radius: 3px 6px 4px 5px;
+  background: var(--accent);
+  opacity: 0.18;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.btn.text:hover:not(:disabled) {
+  background: none;
+  color: var(--link-hover);
+}
+
+.btn.text:hover:not(:disabled)::after,
+.btn.text:focus-visible::after {
+  opacity: 0.4;
+}
+
+/* The Caveat arrow on an lg primary that leads somewhere. */
+.btn .arrow {
+  font-family: var(--font-hand);
+  font-size: 1.45em;
+  font-style: normal;
+  line-height: 0;
+  transition: transform 0.2s var(--ease-ink);
+}
+
+.btn:hover:not(:disabled) .arrow {
+  transform: translateX(3px);
+}
+
+/* Busy: the label and width stay; three ink dots pulse before it. */
+.btn[aria-busy='true'] {
+  cursor: progress;
+}
+
+.btn .busy {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.btn .busy i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: btn-busy 1.2s var(--ease-ink) infinite;
+}
+
+.btn .busy i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.btn .busy i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes btn-busy {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+
+  40% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .btn::before,
+  .btn::after,
+  .btn .arrow {
+    transition: none;
+  }
+
+  .btn:hover:not(:disabled),
+  .btn:active:not(:disabled),
+  .btn:hover:not(:disabled)::before,
+  .btn:active:not(:disabled)::before,
+  .btn:hover:not(:disabled) .arrow {
+    transform: none;
+  }
+
+  .btn .busy i {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
 /* The header strip over a file view: back, mono path, badges, actions. */
 .view-head {
   display: flex;
@@ -334,22 +630,32 @@ textarea {
   color: var(--danger);
 }
 
-/* Two or three options in a row, one pressed. */
+/* A few options in a row, one pressed: a md-height track (32px) holding 28px options, the
+   pressed one raised on paper. One form for every picker; `.pills` is kept as an alias
+   until the callers drop it. */
 .segmented {
   display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: var(--btn-h-md);
   padding: 2px;
-  border-radius: 6px;
-  background: var(--wash-hover);
+  border-radius: 9px;
+  background: var(--paper-deep);
 }
 
 .segmented button {
-  height: 26px;
-  padding: 0 10px;
+  height: var(--btn-h-sm);
+  padding: 0 12px;
   background: none;
   border: none;
-  border-radius: 4px;
-  font-size: 13px;
+  border-radius: var(--btn-r-sm);
+  font-family: var(--font-serif);
+  font-size: var(--btn-fs-sm);
   color: var(--ink-mute);
+  transition:
+    background-color 0.2s var(--ease-ink),
+    color 0.12s,
+    box-shadow 0.2s var(--ease-ink);
 }
 
 .segmented button:hover:not(:disabled) {
@@ -360,28 +666,13 @@ textarea {
 .segmented button[aria-pressed='true'] {
   background: var(--paper);
   color: var(--ink);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-}
-
-/* The pill form, for a value picked from a few: rounded track, the choice raised on paper. */
-.segmented.pills {
-  padding: 3px;
-  gap: 2px;
-  border-radius: 999px;
-  background: var(--paper-deep);
-}
-
-.segmented.pills button {
-  height: 28px;
-  padding: 0 14px;
-  border-radius: 999px;
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  color: var(--ink-soft);
-}
-
-.segmented.pills button[aria-pressed='true'] {
   box-shadow: 0 0 0 1px var(--paper-edge);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segmented button {
+    transition: none;
+  }
 }
 
 /* An on/off switch: a real checkbox inside, the track drawn after it. */

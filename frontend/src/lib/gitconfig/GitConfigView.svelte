@@ -104,7 +104,7 @@
             <span class="unsaved">unsaved changes</span>
           {/if}
           {#if doc?.dirty}
-            <InkButton variant="ghost" disabled={gitConfig.busy} onclick={() => gitConfig.reload()}>Discard</InkButton>
+            <InkButton variant="secondary" disabled={gitConfig.busy} onclick={() => gitConfig.reload()}>Discard</InkButton>
           {/if}
           <InkButton disabled={!doc?.dirty || gitConfig.busy || !!doc?.problem} onclick={() => gitConfig.save()}>
             Save <kbd>{formatShortcut('Mod+S')}</kbd>

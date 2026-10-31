@@ -66,7 +66,7 @@
     {/each}
     {#if error}<p class="form-error" role="alert">{error}</p>{/if}
     <div class="form-actions">
-      <InkButton variant="ghost" onclick={onClose} disabled={busy}>Cancel</InkButton>
+      <InkButton variant="secondary" onclick={onClose} disabled={busy}>Cancel</InkButton>
       <InkButton type="submit" variant={spec.danger ? 'danger' : 'primary'} disabled={busy}>{spec.submit}</InkButton>
     </div>
   </form>

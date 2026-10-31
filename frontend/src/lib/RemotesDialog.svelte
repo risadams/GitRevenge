@@ -94,14 +94,14 @@
       <label class="form-field"><span>URL</span><input bind:value={url} placeholder="git@github.com:you/repo.git" /></label>
       {#if error}<p class="form-error" role="alert">{error}</p>{/if}
       <div class="form-actions">
-        <InkButton variant="ghost" onclick={() => (editing = null)}>Cancel</InkButton>
+        <InkButton variant="secondary" onclick={() => (editing = null)}>Cancel</InkButton>
         <InkButton type="submit">{editing === '' ? 'Add remote' : 'Save'}</InkButton>
       </div>
     </form>
   {:else}
     {#if error}<p class="form-error" role="alert">{error}</p>{/if}
     <div class="form-actions">
-      <InkButton variant="ghost" onclick={() => startEdit()}>Add remote…</InkButton>
+      <InkButton variant="secondary" onclick={() => startEdit()}>Add remote…</InkButton>
       <InkButton onclick={onClose}>Done</InkButton>
     </div>
   {/if}
