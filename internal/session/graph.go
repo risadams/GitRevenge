@@ -288,6 +288,7 @@ func (l *graphLoader) reload() {
 			stashes[id] = true
 		}
 		hidden := map[string]bool{}
+		g.Pin(TrunkTips(ctx, l.repo, rules, remotes, show))
 		opts := git.LogOptions{Extra: stashIDs}
 		if !show {
 			opts.Exclude, opts.Remotes = rules.Hide(), remotes

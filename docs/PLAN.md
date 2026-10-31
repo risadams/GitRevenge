@@ -126,6 +126,8 @@ It reports time to the first 100 rows, full load, heap in use, window reads, sea
 
 **Date order (#275).** The graph moved from `--topo-order` to `--date-order` so parallel lines of history (an orphan `gh-pages`, long-running branches) interleave as they happened instead of stacking as blocks. On the kernel that puts thousands of lanes side by side instead of about 800. Snapshotting every 128 rows then took the full-history heap to 641 MB, so snapshots now spread out once the graph is wider than 1,024 lanes (`checkpointGap`), which brought it back to 469 MB. The cost is a slower full load (16.3 s → 22.0 s, since each row steps through more lanes) and slower window reads, both within target. The topo-order run from 2026-10-29 measured 328 ms, 15.5 s, 467 MB and avg 0.74 ms for the same rows.
 
+**Pinned Trunk lanes (#282).** With the default Trunk patterns pinning `master` to column 0, merges converge into the spine instead of opening new columns, and the kernel graph narrows a lot. Same machine, same day, against `main` without pinning: full load 20.0 s → 15.2 s, heap 471 MB → 426 MB, 100-row window avg 3.8 ms → 0.8 ms (worst 10.1 → 4.4 ms). First 100 rows went from 301 ms to 387 ms, the cost of resolving the Trunk tips before `git log` starts. `TestTargets` now pins Trunk lanes as the app does.
+
 Two fixes from this run (#78): `git log` starts only from tags HEAD can't reach, because with all 953 tags as starting points `--topo-order` walked down from each and the first rows took 1.1 s. And checkpoints store each lane as a parent position instead of a 32-byte ID, which took the full-history heap from 857 MB to 467 MB.
 
 **What the measurements so far show:**

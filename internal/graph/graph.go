@@ -143,6 +143,7 @@ type Graph struct {
 	nodeColor []uint16
 
 	cur         state
+	pins        *pinning     // Trunk lanes held in the leftmost columns, or nil
 	checkpoints []checkpoint // in row order; the first is before row 0
 	nextCP      int          // the row before which the next checkpoint is taken
 }
@@ -154,6 +155,49 @@ func New() *Graph {
 		index:        map[oid]int32{},
 		authorLookup: map[string]int32{},
 	}
+}
+
+// pinning holds Trunk lanes in the leftmost columns (ADR 0009). Columns below n only ever
+// hold a pinned lane, so whether a lane is pinned follows from its column and checkpoints
+// don't need to store it.
+type pinning struct {
+	tips map[oid]int // a Trunk branch's tip → its column
+	n    int
+}
+
+// Pin holds the lanes of the given commits, Trunk branch tips in order, in columns 0, 1, …
+// from their tip down their first parents: main reads as a straight spine at the left. It
+// must be called before the first Add; duplicates and unknown IDs are ignored.
+func (g *Graph) Pin(ids []string) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if len(g.ids) > 0 {
+		return
+	}
+	p := &pinning{tips: map[oid]int{}}
+	for _, id := range ids {
+		o, err := parseOID(id)
+		if err != nil {
+			continue
+		}
+		if _, dup := p.tips[o]; !dup {
+			p.tips[o] = p.n
+			p.n++
+		}
+	}
+	if p.n > 0 {
+		g.pins = p
+		// Colour 0 is the first Trunk's; other lanes start from the next one.
+		g.cur.nextColor = 1
+	}
+}
+
+// reserved is how many leftmost columns pinned lanes own.
+func (p *pinning) reserved() int {
+	if p == nil {
+		return 0
+	}
+	return p.n
 }
 
 // Add appends the next commit (children before parents) and lays out its row.
@@ -194,7 +238,7 @@ func (g *Graph) Add(c git.LogCommit) error {
 	g.times = append(g.times, c.AuthorTime)
 	g.subjects = append(g.subjects, c.Subject)
 
-	col, color := step(&g.cur, id, ps, base, nil)
+	col, color := step(&g.cur, g.pins, id, ps, base, nil)
 	g.nodeCol = append(g.nodeCol, uint16(min(col, 0xffff)))
 	g.nodeColor = append(g.nodeColor, uint16(color%0x10000))
 	return nil
@@ -240,12 +284,12 @@ func (g *Graph) Rows(start, count int) []Row {
 	for i := cp.row; i < end; i++ {
 		ps := g.parents[g.parentStart[i]:g.parentStart[i+1]]
 		if i < start {
-			step(&st, g.ids[i], ps, g.parentStart[i], nil)
+			step(&st, g.pins, g.ids[i], ps, g.parentStart[i], nil)
 			continue
 		}
 		// Empty, not nil: the frontend iterates these, and nil marshals to JSON null.
 		r := Row{Index: i, Up: []Seg{}, Down: []Seg{}}
-		r.Col, r.Color = step(&st, g.ids[i], ps, g.parentStart[i], &r)
+		r.Col, r.Color = step(&st, g.pins, g.ids[i], ps, g.parentStart[i], &r)
 		r.ID = hex.EncodeToString(g.ids[i][:g.hashLen])
 		r.Parents = len(ps)
 		r.Author = g.authors[g.authorIdx[i]]
@@ -261,8 +305,11 @@ func (g *Graph) Rows(start, count int) []Row {
 // the segments drawn in this row are recorded in it. It returns the node column and color.
 //
 // Lanes keep their column while active, so lines run straight down; a freed column is
-// reused by the next new lane.
-func step(st *state, id oid, ps []oid, base int32, row *Row) (col, color int) {
+// reused by the next new lane. With pins, the leftmost columns belong to Trunk lanes: a
+// Trunk tip takes its column even if a branch above reached it first, its first parent
+// always continues there, and other lanes start to the right.
+func step(st *state, pins *pinning, id oid, ps []oid, base int32, row *Row) (col, color int) {
+	reserved := pins.reserved()
 	col = -1
 	for i, l := range st.lanes {
 		if l.used && l.want == id {
@@ -270,11 +317,23 @@ func step(st *state, id oid, ps []oid, base int32, row *Row) (col, color int) {
 			break
 		}
 	}
-	if col < 0 {
+	pinCol, isTip := -1, false
+	if pins != nil {
+		pinCol, isTip = pins.tips[id]
+	}
+	switch {
+	case isTip && col != pinCol:
+		// A Trunk tip: its own column, with any lanes waiting for it converging there.
+		for len(st.lanes) <= pinCol {
+			st.lanes = append(st.lanes, lane{})
+		}
+		col = pinCol
+		color = pinColor(st, pinCol)
+	case col < 0:
 		// A branch tip nothing above points to: start a new lane.
-		col = st.freeSlot(0)
+		col = st.freeSlot(reserved)
 		color = st.newColor()
-	} else {
+	default:
 		color = st.lanes[col].color
 	}
 
@@ -299,6 +358,20 @@ func step(st *state, id oid, ps []oid, base int32, row *Row) (col, color int) {
 	var created []int // lanes started by this commit; tiny, so a slice beats a map
 	for pi, p := range ps {
 		target, tcolor := -1, 0
+		if pi == 0 && col < reserved {
+			// A Trunk lane holds its column: its first parent continues here even if another
+			// lane already waits for it (that lane converges here when the parent arrives).
+			target, tcolor = col, color
+			// The Up pass cleared this column, so the lane starts again here for the parent.
+			if l := st.lanes[col]; !l.used || l.want != p {
+				st.lanes[target] = lane{want: p, pos: base + int32(pi), color: tcolor, used: true}
+				created = append(created, target)
+			}
+			if row != nil {
+				row.Down = append(row.Down, Seg{From: col, To: target, Color: color})
+			}
+			continue
+		}
 		for i, l := range st.lanes {
 			if l.used && l.want == p {
 				target, tcolor = i, l.color
@@ -309,7 +382,7 @@ func step(st *state, id oid, ps []oid, base int32, row *Row) (col, color int) {
 			if pi == 0 {
 				target, tcolor = col, color
 			} else {
-				target, tcolor = st.freeSlot(col+1), st.newColor()
+				target, tcolor = st.freeSlot(max(col+1, reserved)), st.newColor()
 			}
 			st.lanes[target] = lane{want: p, pos: base + int32(pi), color: tcolor, used: true}
 			created = append(created, target)
@@ -338,6 +411,15 @@ func step(st *state, id oid, ps []oid, base int32, row *Row) (col, color int) {
 		st.lanes = st.lanes[:len(st.lanes)-1]
 	}
 	return col, color
+}
+
+// pinColor is the colour of a pinned lane: the first Trunk wears colour 0 (the theme's
+// rose --lane-0), the others the next colours in turn.
+func pinColor(st *state, pinCol int) int {
+	if pinCol == 0 {
+		return 0
+	}
+	return st.newColor()
 }
 
 // freeSlot returns the first unused lane at or after from, growing the lanes if needed.
