@@ -173,7 +173,7 @@
     align-items: flex-start;
     padding: 12vh 16px 16px;
     background: var(--scrim);
-    animation: fade 0.18s var(--ease-ink);
+    animation: fade-in var(--dur-base) var(--ease-ink);
   }
 
   .palette {
@@ -186,7 +186,7 @@
     border-radius: 12px;
     box-shadow: var(--shadow);
     overflow: hidden;
-    animation: rise 0.22s var(--ease-ink);
+    animation: drop-in var(--dur-move) var(--ease-ink);
   }
 
   .field {
@@ -272,19 +272,6 @@
     padding: 18px 12px;
     font-style: italic;
     color: var(--ink-mute);
-  }
-
-  @keyframes fade {
-    from {
-      opacity: 0;
-    }
-  }
-
-  @keyframes rise {
-    from {
-      opacity: 0;
-      transform: translateY(-6px);
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {

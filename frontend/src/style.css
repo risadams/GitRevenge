@@ -29,6 +29,14 @@
   --btn-ic-md: 16px;
   --btn-ic-lg: 18px;
 
+  /* Motion. Four durations and two curves cover the app: things arrive with --ease-ink and
+     leave with --ease-exit at about 0.7x the time. Reduced motion zeroes them all. */
+  --dur-quick: 120ms;
+  --dur-base: 200ms;
+  --dur-move: 280ms;
+  --dur-enter: 420ms;
+  --ease-exit: cubic-bezier(0.4, 0, 0.6, 1);
+
   /* Raw inks, the same in both themes. Fills and marks; text uses the themed tokens. */
   --ink-rose: #cb0162;
   --ink-rose-soft: #e24a8a;
@@ -286,8 +294,8 @@ textarea {
   font-size: 14px;
   white-space: nowrap;
   transition:
-    background-color 0.2s,
-    transform 0.25s var(--ease-ink);
+    background-color var(--dur-base),
+    transform var(--dur-base) var(--ease-ink);
 }
 
 .tool:hover:not(:disabled) {
@@ -346,11 +354,11 @@ textarea {
   color: var(--ink);
   cursor: pointer;
   transition:
-    transform 0.2s var(--ease-ink),
-    background-color 0.12s,
-    color 0.12s,
-    box-shadow 0.2s var(--ease-ink),
-    opacity 0.12s;
+    transform var(--dur-base) var(--ease-ink),
+    background-color var(--dur-quick),
+    color var(--dur-quick),
+    box-shadow var(--dur-base) var(--ease-ink),
+    opacity var(--dur-quick);
 }
 
 .btn.sm {
@@ -397,7 +405,7 @@ textarea {
 
 .btn:active:not(:disabled) {
   transform: scale(0.98);
-  transition-duration: 0.12s;
+  transition-duration: var(--dur-quick);
 }
 
 /* Primary and danger: a clean body with an ink bleed behind it. */
@@ -437,8 +445,8 @@ textarea {
   opacity: 0.28;
   mix-blend-mode: multiply;
   transition:
-    transform 0.28s var(--ease-ink),
-    opacity 0.2s;
+    transform var(--dur-move) var(--ease-ink),
+    opacity var(--dur-base);
 }
 
 :root[data-theme='dark'] .btn.primary::before,
@@ -508,7 +516,7 @@ textarea {
   background: var(--accent);
   opacity: 0.18;
   pointer-events: none;
-  transition: opacity 0.2s;
+  transition: opacity var(--dur-base);
 }
 
 .btn.text:hover:not(:disabled) {
@@ -527,7 +535,7 @@ textarea {
   font-size: 1.45em;
   font-style: normal;
   line-height: 0;
-  transition: transform 0.2s var(--ease-ink);
+  transition: transform var(--dur-base) var(--ease-ink);
 }
 
 .btn:hover:not(:disabled) .arrow {
@@ -653,9 +661,9 @@ textarea {
   font-size: var(--btn-fs-sm);
   color: var(--ink-mute);
   transition:
-    background-color 0.2s var(--ease-ink),
-    color 0.12s,
-    box-shadow 0.2s var(--ease-ink);
+    background-color var(--dur-base) var(--ease-ink),
+    color var(--dur-quick),
+    box-shadow var(--dur-base) var(--ease-ink);
 }
 
 .segmented button:hover:not(:disabled) {
@@ -698,7 +706,7 @@ textarea {
   border: 1px solid var(--paper-edge);
   border-radius: 999px;
   background: var(--paper-deep);
-  transition: background-color 0.25s var(--ease-ink);
+  transition: background-color var(--dur-base) var(--ease-ink);
 }
 
 .switch .track::after {
@@ -710,7 +718,7 @@ textarea {
   height: 16px;
   border-radius: 50%;
   background: var(--ink-mute);
-  transition: transform 0.25s var(--ease-ink);
+  transition: transform var(--dur-move) var(--ease-ink);
 }
 
 .switch input:checked + .track {
@@ -739,7 +747,7 @@ textarea {
   border-radius: 6px;
   font-family: var(--font-mono);
   font-size: 13px;
-  transition: border-color 0.2s;
+  transition: border-color var(--dur-base);
 }
 
 .field:focus {
@@ -815,7 +823,7 @@ textarea {
   padding: 7px 10px;
   font-size: 14px;
   border-radius: 5px;
-  transition: border-color 0.2s;
+  transition: border-color var(--dur-base);
 }
 
 .form-field textarea {
@@ -866,6 +874,69 @@ textarea {
   align-items: center;
   gap: 10px;
   margin-top: 4px;
+}
+
+/* Shared motion. Arrivals: ink-in (fade, 6px blur to sharp, 6px rise) for dialogs, toasts
+   and the palette; fade-up (4px) for panels and list rows; drop-in (3px down) for menus;
+   row-land for a row that moved here, a rose wash that fades so the eye follows it. */
+@keyframes ink-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(6px);
+  }
+}
+
+@keyframes ink-out {
+  to {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes row-land {
+  0% {
+    opacity: 0;
+    transform: translateX(-6px);
+    background-color: var(--selected);
+  }
+
+  40% {
+    opacity: 1;
+    transform: none;
+    background-color: var(--selected);
+  }
+}
+
+/* Reduced motion: every token goes to zero, so nothing moves, blurs or lingers. Loops
+   (spinners, busy dots) switch themselves off where they're defined. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-quick: 0ms;
+    --dur-base: 0ms;
+    --dur-move: 0ms;
+    --dur-enter: 0ms;
+  }
 }
 
 /* Syntax colors for @lezer/highlight's classHighlighter, used by both diff views. */

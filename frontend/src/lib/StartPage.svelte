@@ -413,7 +413,7 @@
     border: none;
     border-radius: 0;
     text-align: left;
-    transition: transform 0.3s var(--ease-ink);
+    transition: transform var(--dur-base) var(--ease-ink);
   }
 
   .row:hover:not(:disabled) {
@@ -434,7 +434,7 @@
     font-weight: 500;
     letter-spacing: -0.01em;
     white-space: nowrap;
-    transition: color 0.3s;
+    transition: color var(--dur-base);
   }
 
   .path {
@@ -462,7 +462,7 @@
     border-radius: 50%;
     color: var(--ink-mute);
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity var(--dur-base);
   }
 
   li:hover > .forget,
@@ -591,8 +591,8 @@
     color: var(--link);
     background: linear-gradient(var(--link), var(--link)) 0 100% / 100% 1px no-repeat;
     transition:
-      background-size 0.3s,
-      color 0.3s;
+      background-size var(--dur-base),
+      color var(--dur-base);
   }
 
   .link:hover:not(:disabled) {

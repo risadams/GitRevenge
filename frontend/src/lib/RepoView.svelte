@@ -265,7 +265,7 @@
     border-bottom: 1px dashed var(--hairline);
     border-radius: 0;
     text-align: left;
-    transition: background-color 0.2s;
+    transition: background-color var(--dur-base);
   }
 
   .wip:hover:not(:disabled) {

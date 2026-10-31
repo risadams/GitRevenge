@@ -553,8 +553,8 @@
     border-radius: 4px;
     text-align: left;
     transition:
-      background-color 0.2s,
-      transform 0.3s var(--ease-ink);
+      background-color var(--dur-base),
+      transform var(--dur-base) var(--ease-ink);
   }
 
   .files button:hover:not(:disabled) {

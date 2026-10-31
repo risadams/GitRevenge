@@ -138,8 +138,8 @@
     font-size: 14px;
     border-radius: 6px 6px 0 0;
     transition:
-      color 0.2s,
-      background-color 0.2s;
+      color var(--dur-base),
+      background-color var(--dur-base);
   }
 
   .tab:hover {
@@ -202,7 +202,7 @@
     border-radius: 50%;
     color: var(--ink-mute);
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity var(--dur-base);
   }
 
   .tab:hover .close,
@@ -264,7 +264,7 @@
     opacity: 0;
     filter: url(#wc-edge);
     border-radius: 45% 55% 50% 50% / 55% 45%;
-    transition: opacity 0.3s;
+    transition: opacity var(--dur-base);
   }
 
   .theme:hover::before {

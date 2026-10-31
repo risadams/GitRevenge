@@ -250,7 +250,7 @@
     place-items: center;
     width: 12px;
     color: var(--ink-mute);
-    transition: transform 0.2s var(--ease-ink);
+    transition: transform var(--dur-base) var(--ease-ink);
   }
 
   .caret.open {
@@ -280,8 +280,8 @@
     font-size: 14px;
     color: var(--ink-soft);
     transition:
-      background-color 0.2s,
-      transform 0.3s var(--ease-ink);
+      background-color var(--dur-base),
+      transform var(--dur-base) var(--ease-ink);
   }
 
   .ref:hover:not(:disabled) {
