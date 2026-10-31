@@ -334,6 +334,10 @@ export function ResolveConflict(arg1, arg2, arg3) {
   return window['go']['app']['App']['ResolveConflict'](arg1, arg2, arg3);
 }
 
+export function Restack(arg1, arg2) {
+  return window['go']['app']['App']['Restack'](arg1, arg2);
+}
+
 export function RestoreGitConfig(arg1, arg2) {
   return window['go']['app']['App']['RestoreGitConfig'](arg1, arg2);
 }
