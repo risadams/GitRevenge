@@ -62,6 +62,7 @@ const sidebars = {
             { type: 'doc', id: 'adr/docs-site', label: 'ADR-0006 The docs site' },
             { type: 'doc', id: 'adr/git-config-editing', label: 'ADR-0007 Editing git config' },
             { type: 'doc', id: 'adr/insights-from-repository-state', label: 'ADR-0008 Reproducible insights' },
+            { type: 'doc', id: 'adr/branch-kinds', label: 'ADR-0009 Branch kinds' },
           ],
         },
       ],
