@@ -236,6 +236,43 @@ func (a *App) SetKindVisible(path, kind string, visible bool) error {
 	return nil
 }
 
+// SetStackParent sets the branch a local branch is stacked on, in the repository at path:
+// parent names a local branch, "" means not stacked, and auto drops the override so the
+// stack is inferred again.
+func (a *App) SetStackParent(path, branch, parent string, auto bool) error {
+	path = a.repoKey(path)
+	branch, parent = strings.TrimSpace(branch), strings.TrimSpace(parent)
+	if branch == "" || branch == parent {
+		return userError("A branch can't be stacked on itself.")
+	}
+	m, err := a.sessions()
+	if err != nil {
+		return err
+	}
+	err = m.Settings().Update(func(s *settings.Settings) {
+		rs := s.Repo(path)
+		if rs.StackParents == nil {
+			rs.StackParents = map[string]string{}
+		}
+		if auto {
+			delete(rs.StackParents, branch)
+		} else {
+			rs.StackParents[branch] = parent
+		}
+		if len(rs.StackParents) == 0 {
+			rs.StackParents = nil
+		}
+		s.SetRepo(rs)
+	})
+	if err != nil {
+		return err
+	}
+	if r := m.Get(path); r != nil {
+		r.ReloadGraph()
+	}
+	return nil
+}
+
 // SetShowHidden shows the hidden branches of the repository at path again, or hides them,
 // for this session only.
 func (a *App) SetShowHidden(path string, show bool) error {

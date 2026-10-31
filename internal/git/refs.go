@@ -44,6 +44,12 @@ type Ref struct {
 	// BranchKind is the branch's kind from the repository's patterns ("trunk", "release",
 	// "environment", "docs", "bot"), or "" for an ordinary branch (set by the session).
 	BranchKind string `json:"branchKind,omitempty"`
+	// StackParent is the local branch this one is stacked on, inferred or set by the user
+	// (set by the session). StackDepth is its place in the stack, 1 for the branch at the
+	// bottom, and StackSize the stack's height; both 0 when it isn't in a stack.
+	StackParent string `json:"stackParent,omitempty"`
+	StackDepth  int    `json:"stackDepth,omitempty"`
+	StackSize   int    `json:"stackSize,omitempty"`
 	// Subject is the stash message, for stashes.
 	Subject string `json:"subject,omitempty"`
 }

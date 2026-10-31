@@ -401,7 +401,7 @@ function drawLabels(
     const more = remaining > 1 ? ` +${remaining - 1}` : ''
     const prefix = r.kind === 'tag' ? '◆ ' : r.kind === 'stash' ? '≡ ' : ''
     const text = prefix + r.short
-    const extra = 14 + (labelKind(r) ? KIND_ICON_W : 0)
+    const extra = 14 + (labelKind(r) ? KIND_ICON_W : 0) + (r.stackDepth ? KIND_ICON_W : 0)
     let w = ctx.measureText(text).width + extra
     if (x + w > end) {
       // Out of room: one clipped label that also counts the rest.
@@ -467,6 +467,20 @@ function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, mid: 
     ctx.restore()
   }
   if (kind) tx += KIND_ICON_W - 1
+  const stack = r.stackDepth ? iconPath('stack') : undefined
+  if (stack) {
+    const size = 11
+    ctx.save()
+    ctx.translate(tx - 1, mid - size / 2)
+    ctx.scale(size / 24, size / 24)
+    ctx.lineWidth = 2.4
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.strokeStyle = r.head ? theme.bg : theme.muted
+    ctx.stroke(stack)
+    ctx.restore()
+    tx += KIND_ICON_W
+  }
   const weight = r.head || kind?.kind === 'trunk' ? '600 ' : ''
   setFont(ctx, `${weight}${kind?.kind === 'bot' ? 9.5 : 10.5}px ${MONO}`)
   ctx.fillStyle = r.head ? theme.bg : r.kind === 'remote' || kind?.kind === 'bot' ? theme.muted : theme.fg

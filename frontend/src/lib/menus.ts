@@ -1,4 +1,4 @@
-import { BranchAction, HideBranch, Integrate, MarkBranchKind, PushRef, Refs, StashAction } from '../../wailsjs/go/app/App.js'
+import { BranchAction, HideBranch, Integrate, MarkBranchKind, PushRef, Refs, SetStackParent, StashAction } from '../../wailsjs/go/app/App.js'
 import { CONFIRM_DELETE, KINDS, kindWarning } from './branchKinds'
 import type { MenuItem } from './ContextMenu.svelte'
 import type { DialogSpec } from './Dialog.svelte'
@@ -90,6 +90,41 @@ function markItem(ctx: MenuContext, ref: Ref, name: string): MenuItem {
   }
 }
 
+/** Set which branch a local branch is stacked on, or let Git Revenge work it out. */
+function stackItem(ctx: MenuContext, ref: Ref): MenuItem {
+  return {
+    label: 'Stacked on…',
+    icon: 'stack',
+    run: async () => {
+      const refs = ((await session.run(() => Refs(ctx.path))) as Ref[] | undefined) ?? []
+      const others = refs.filter((r) => r.kind === 'local' && r.short !== ref.short).map((r) => r.short)
+      ctx.openDialog({
+        title: `${ref.short} is stacked on`,
+        message: 'Git Revenge works this out from history. Set it here when the guess is wrong; it stays on this computer.',
+        fields: [
+          {
+            key: 'parent',
+            label: 'Parent branch',
+            type: 'select',
+            value: '\u0000auto',
+            options: [
+              { value: '\u0000auto', label: `Detect automatically${ref.stackParent ? ` (now ${ref.stackParent})` : ''}` },
+              { value: '', label: 'Not stacked' },
+              ...others.map((n) => ({ value: n, label: n })),
+            ],
+          },
+        ],
+        submit: 'Save',
+        run: (v) => {
+          const parent = String(v.parent)
+          const auto = parent === '\u0000auto'
+          return attempt(() => SetStackParent(ctx.path, ref.short, auto ? '' : parent, auto))
+        },
+      })
+    },
+  }
+}
+
 /** Menu items for one ref (branch, remote branch, tag or stash). */
 export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
   const { path, openDialog } = ctx
@@ -151,7 +186,7 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
             },
           },
         ],
-        [markItem(ctx, ref, ref.short), hideItem(ctx, ref, ref.short)],
+        [markItem(ctx, ref, ref.short), stackItem(ctx, ref), hideItem(ctx, ref, ref.short)],
         [
           {
             label: `Delete ${ref.short}…`,

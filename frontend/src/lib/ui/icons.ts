@@ -32,6 +32,8 @@ export const ICONS = {
   server: [rr(3.5, 4, 17, 7, 2), rr(3.5, 13, 17, 7, 2), dot(7, 7.5), dot(7, 16.5), 'M11 7.5h6', 'M11 16.5h6'],
   // Docs: an open book.
   book: ['M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5', 'M12 6.5c2-1.5 5-2 8.5-1.5v13c-3.5-.5-6.5 0-8.5 1.5', 'M12 6.5v13'],
+  // Stacked branches: three layers, one on another.
+  stack: ['M12 3 3.5 7.5 12 12l8.5-4.5z', 'm3.5 12 8.5 4.5 8.5-4.5', 'm3.5 16.5 8.5 4.5 8.5-4.5'],
   // Bot: a robot's head, antenna up.
   bot: [rr(4.5, 8, 15, 11, 3), 'M12 8V5.5', c(12, 4, 1.5), dot(9.5, 13), dot(14.5, 13), 'M10 16h4', 'M2.5 12v3', 'M21.5 12v3'],
   stash: [

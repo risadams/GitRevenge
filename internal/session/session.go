@@ -233,6 +233,7 @@ func (m *Manager) Open(ctx context.Context, path string) (*Repo, error) {
 		})
 		store := m.settings
 		r.graph.rules = func() branchkind.Rules { return Rules(store.Get().Repo(root)) }
+		r.graph.stackOverrides = func() map[string]string { return store.Get().Repo(root).StackParents }
 		r.graph.reload()
 		r.watcher = m.watchLocked(r)
 		m.repos = append(m.repos, r)

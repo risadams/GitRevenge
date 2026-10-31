@@ -410,6 +410,10 @@ export function SetShowHidden(arg1, arg2) {
   return window['go']['app']['App']['SetShowHidden'](arg1, arg2);
 }
 
+export function SetStackParent(arg1, arg2, arg3, arg4) {
+  return window['go']['app']['App']['SetStackParent'](arg1, arg2, arg3, arg4);
+}
+
 export function SetStagedContent(arg1, arg2, arg3, arg4) {
   return window['go']['app']['App']['SetStagedContent'](arg1, arg2, arg3, arg4);
 }

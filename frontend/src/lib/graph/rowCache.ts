@@ -38,6 +38,11 @@ export interface Ref {
   hidden?: boolean
   /** The branch's kind (ADR 0009), or empty for an ordinary branch. */
   branchKind?: string
+  /** The local branch this one is stacked on; depth is its place in the stack (1 at the
+   * bottom) and size the stack's height. */
+  stackParent?: string
+  stackDepth?: number
+  stackSize?: number
   subject?: string
 }
 
