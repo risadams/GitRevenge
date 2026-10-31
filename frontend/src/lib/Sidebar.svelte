@@ -99,9 +99,9 @@
           <span class="meta count">{items.length.toLocaleString()}</span>
         </button>
         {#if g.kind === 'local' && onNewBranch}
-          <button class="add" onclick={onNewBranch} title="New branch from HEAD" aria-label="New branch"><Icon name="plus" size={14} /></button>
+          <button class="btn sm quiet icon add" onclick={onNewBranch} title="New branch from HEAD" aria-label="New branch"><Icon name="plus" size={14} /></button>
         {:else if g.kind === 'remote' && onManageRemotes}
-          <button class="add" onclick={onManageRemotes} title="Add, edit or remove remotes" aria-label="Manage remotes"><Icon name="gear" size={14} /></button>
+          <button class="btn sm quiet icon add" onclick={onManageRemotes} title="Add, edit or remove remotes" aria-label="Manage remotes"><Icon name="gear" size={14} /></button>
         {/if}
         {#if open[g.kind] || filter}
           <ul>
@@ -233,16 +233,8 @@
 
   .add {
     position: absolute;
-    right: 46px;
-    top: 6px;
-    width: auto;
-    padding: 3px 5px;
-    border-radius: 4px;
-    color: var(--ink-mute);
-  }
-
-  .add:hover:not(:disabled) {
-    color: var(--ink);
+    right: 42px;
+    top: 4px;
   }
 
   .caret {

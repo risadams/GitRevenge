@@ -48,7 +48,7 @@
     {/if}
     <span class="actions">
       {#each opState.actions as action (action)}
-        <button class="tool" class:primary={action === 'continue'} disabled={busy} onclick={() => act(action)}>
+        <button class={['btn sm', action === 'continue' ? 'primary' : 'secondary']} disabled={busy} onclick={() => act(action)}>
           {action === 'abort' && opState.operation === 'bisect' ? 'Stop bisect' : action[0].toUpperCase() + action.slice(1)}
         </button>
       {/each}
@@ -83,14 +83,5 @@
     margin-left: auto;
     display: flex;
     gap: 4px;
-  }
-
-  .primary {
-    background: var(--accent);
-    color: var(--on-accent);
-  }
-
-  .primary:hover:not(:disabled) {
-    background: var(--accent);
   }
 </style>

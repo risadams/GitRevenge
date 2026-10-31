@@ -100,18 +100,18 @@
 </script>
 
 <div class="toolbar" role="toolbar" aria-label="Repository actions">
-  <button class="tool" disabled={!undoLabel || !!running} onclick={undo} title={undoLabel ? `Undo: ${undoLabel} (${formatShortcut('Mod+Z')})` : 'Nothing to undo'}>
+  <button class="btn quiet" disabled={!undoLabel || !!running} onclick={undo} title={undoLabel ? `Undo: ${undoLabel} (${formatShortcut('Mod+Z')})` : 'Nothing to undo'}>
     <Icon name="undo" />Undo
   </button>
-  <button class="tool" disabled={!redoLabel || !!running} onclick={redo} title={redoLabel ? `Redo: ${redoLabel} (${formatShortcut('Mod+Shift+Z')})` : 'Nothing to redo'}>
+  <button class="btn quiet" disabled={!redoLabel || !!running} onclick={redo} title={redoLabel ? `Redo: ${redoLabel} (${formatShortcut('Mod+Shift+Z')})` : 'Nothing to redo'}>
     <Icon name="redo" />Redo
   </button>
   <span class="sep" aria-hidden="true"></span>
-  <button class="tool" disabled={!!running} onclick={fetchAll} title="Fetch all remotes ({formatShortcut('Mod+Shift+F')})"><Icon name="fetch" />Fetch</button>
+  <button class="btn quiet" disabled={!!running} onclick={fetchAll} title="Fetch all remotes ({formatShortcut('Mod+Shift+F')})"><Icon name="fetch" />Fetch</button>
   <span class="split">
-    <button class="tool" disabled={!!running} onclick={() => pull('')} title="Pull using your git config (pull.rebase) ({formatShortcut('Mod+Shift+L')})"><Icon name="pull" />Pull</button>
+    <button class="btn quiet" disabled={!!running} onclick={() => pull('')} title="Pull using your git config (pull.rebase) ({formatShortcut('Mod+Shift+L')})"><Icon name="pull" />Pull</button>
     <button
-      class="tool caret"
+      class="btn quiet caret"
       disabled={!!running}
       aria-label="Pull options"
       onclick={(e) =>
@@ -123,9 +123,9 @@
     >
   </span>
   <span class="split">
-    <button class="tool" disabled={!!running} onclick={() => push(false)} title="Push the current branch ({formatShortcut('Mod+Shift+U')})"><Icon name="push" />Push</button>
+    <button class="btn quiet" disabled={!!running} onclick={() => push(false)} title="Push the current branch ({formatShortcut('Mod+Shift+U')})"><Icon name="push" />Push</button>
     <button
-      class="tool caret"
+      class="btn quiet caret"
       disabled={!!running}
       aria-label="Push options"
       onclick={(e) => dropdown(e, [{ label: 'Force push (with lease)', icon: 'push', danger: true, run: () => push(true) }])}><Icon name="chevron" size={13} /></button
@@ -136,7 +136,7 @@
     <span class="progress" role="status">
       <span class="spinner" aria-hidden="true"></span>
       <span class="text">{labels[running]}{progress ? `: ${progress}` : '…'}</span>
-      <button class="tool cancel" onclick={() => CancelNetwork(path)}>Cancel</button>
+      <button class="btn text cancel" onclick={() => CancelNetwork(path)}>Cancel</button>
     </span>
   {/if}
 </div>
@@ -161,8 +161,11 @@
     display: inline-flex;
   }
 
+  /* The caret half of a split button: narrow, tucked against its action. */
   .caret {
-    padding: 0 6px;
+    min-width: 0;
+    width: 22px;
+    padding: 0;
     margin-left: -4px;
   }
 
@@ -195,8 +198,6 @@
 
   .cancel {
     flex-shrink: 0;
-    font-family: var(--font-serif);
-    color: var(--link);
   }
 
   .spinner {
