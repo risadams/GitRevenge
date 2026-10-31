@@ -96,3 +96,25 @@ func TestHideBranch(t *testing.T) {
 		t.Fatalf("hide = %v", p.Hide)
 	}
 }
+
+func TestRefKinds(t *testing.T) {
+	a := newTestApp(t)
+	fx := gittest.New(t)
+	fx.CommitFile("a.txt", "1", "base")
+	fx.Branch("release/1.0")
+	fx.Branch("gh-pages")
+	fx.Branch("feature/x")
+	fx.Checkout("main")
+	tab, err := a.OpenRepo(fx.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	loadedPage(t, a, tab.Path)
+	refs, _ := a.Refs(tab.Path)
+	want := map[string]string{"main": "trunk", "release/1.0": "release", "gh-pages": "docs", "feature/x": ""}
+	for _, r := range refs {
+		if w, ok := want[r.Short]; ok && r.BranchKind != w {
+			t.Errorf("%s kind = %q, want %q", r.Short, r.BranchKind, w)
+		}
+	}
+}

@@ -91,19 +91,20 @@ func newRefIndex(refs []git.Ref) *RefIndex {
 	return idx
 }
 
-// markHidden flags the branches the rules hide. Unless they're being shown, hidden
-// branches stay in All (the sidebar counts them) but get no label in the graph.
-func (idx *RefIndex) markHidden(rules branchkind.Rules, remotes []string, show bool) {
-	if len(rules.Hide()) == 0 {
-		return
-	}
+// annotate sets each branch's kind and whether the rules hide it. Unless they're being
+// shown, hidden branches stay in All (the sidebar counts them) but get no label in the
+// graph.
+func (idx *RefIndex) annotate(rules branchkind.Rules, remotes []string, show bool) {
 	idx.ByCommit = make(map[string][]git.Ref, len(idx.All))
 	for i, r := range idx.All {
+		name := r.Short
 		switch r.Kind {
-		case git.LocalBranch:
-			idx.All[i].Hidden = rules.Hidden(r.Short)
 		case git.RemoteBranch:
-			idx.All[i].Hidden = rules.Hidden(branchkind.Strip(r.Short, remotes))
+			name = branchkind.Strip(r.Short, remotes)
+			fallthrough
+		case git.LocalBranch:
+			idx.All[i].Hidden = rules.Hidden(name)
+			idx.All[i].BranchKind = string(rules.Kind(name))
 		}
 		if !idx.All[i].Hidden || show {
 			idx.ByCommit[r.Commit] = append(idx.ByCommit[r.Commit], idx.All[i])
@@ -256,7 +257,7 @@ func (l *graphLoader) reload() {
 		go func() {
 			list, err := l.repo.Refs(ctx)
 			idx := newRefIndex(list)
-			idx.markHidden(rules, remotes, show)
+			idx.annotate(rules, remotes, show)
 			first := false
 			l.mu.Lock()
 			if l.refs == nil && ctx.Err() == nil {

@@ -230,6 +230,10 @@ export function LastCommitMessage(arg1) {
   return window['go']['app']['App']['LastCommitMessage'](arg1);
 }
 
+export function MarkBranchKind(arg1, arg2, arg3) {
+  return window['go']['app']['App']['MarkBranchKind'](arg1, arg2, arg3);
+}
+
 export function OpenGitConfig(arg1) {
   return window['go']['app']['App']['OpenGitConfig'](arg1);
 }

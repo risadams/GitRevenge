@@ -1,4 +1,5 @@
-import { BranchAction, HideBranch, Integrate, PushRef, Refs, StashAction } from '../../wailsjs/go/app/App.js'
+import { BranchAction, HideBranch, Integrate, MarkBranchKind, PushRef, Refs, StashAction } from '../../wailsjs/go/app/App.js'
+import { KINDS } from './branchKinds'
 import type { MenuItem } from './ContextMenu.svelte'
 import type { DialogSpec } from './Dialog.svelte'
 import type { Ref, Row } from './graph/rowCache'
@@ -65,6 +66,30 @@ function hideItem(ctx: MenuContext, ref: Ref, name: string): MenuItem {
   }
 }
 
+/** Mark a branch (named without its remote) as one of the kinds, or ordinary. */
+function markItem(ctx: MenuContext, ref: Ref, name: string): MenuItem {
+  return {
+    label: 'Mark as…',
+    icon: 'tag',
+    run: () =>
+      ctx.openDialog({
+        title: `Mark ${name}`,
+        message: 'Kinds change how a branch looks and is treated, in this repository on this computer. Settings, This repository, has the patterns.',
+        fields: [
+          {
+            key: 'kind',
+            label: 'Kind',
+            type: 'select',
+            value: ref.branchKind ?? '',
+            options: [{ value: '', label: 'Ordinary branch' }, ...Object.entries(KINDS).map(([value, k]) => ({ value, label: k.label }))],
+          },
+        ],
+        submit: 'Mark',
+        run: (v) => attempt(() => MarkBranchKind(ctx.path, name, String(v.kind))),
+      }),
+  }
+}
+
 /** Menu items for one ref (branch, remote branch, tag or stash). */
 export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
   const { path, openDialog } = ctx
@@ -126,7 +151,7 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
             },
           },
         ],
-        [hideItem(ctx, ref, ref.short)],
+        [markItem(ctx, ref, ref.short), hideItem(ctx, ref, ref.short)],
         [
           {
             label: `Delete ${ref.short}…`,
@@ -149,7 +174,7 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
         const [remote, ...rest] = ref.short.split('/')
         return groups(
           [{ label: `Checkout ${ref.short}`, icon: 'branch', run: () => session.run(() => branch(path, 'checkout', ref.short)) }, ...integrateItems(ctx, ref.short, ref.short)],
-          [hideItem(ctx, ref, rest.join('/'))],
+          [markItem(ctx, ref, rest.join('/')), hideItem(ctx, ref, rest.join('/'))],
           [{ label: `Delete ${ref.short} from ${remote}`, icon: 'trash', danger: true, run: push(path, remote, 'delete-branch', rest.join('/')) }],
         )
       }

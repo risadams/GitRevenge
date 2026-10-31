@@ -105,3 +105,39 @@ func TestRepoPreferencesValidation(t *testing.T) {
 		t.Error("accepted no repository")
 	}
 }
+
+func TestMarkBranchKind(t *testing.T) {
+	a := newTestApp(t)
+	repo := t.TempDir()
+	if err := a.MarkBranchKind(repo, "production", "environment"); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.MarkBranchKind(repo, "website", "docs"); err != nil {
+		t.Fatal(err)
+	}
+	r := a.branchRules(repo)
+	if r.Kind("production") != branchkind.Environment || r.Kind("website") != branchkind.Docs || r.Kind("gh-pages") != branchkind.Docs {
+		t.Fatal("docs should keep its defaults plus the new name")
+	}
+	// Moving it to another kind takes it out of the first.
+	if err := a.MarkBranchKind(repo, "website", "release"); err != nil {
+		t.Fatal(err)
+	}
+	if a.branchRules(repo).Kind("website") != branchkind.Release {
+		t.Fatal("website should now be a release branch")
+	}
+	p, _ := a.RepoPreferences(repo)
+	if docs := kindOf(p, branchkind.Docs); docs.Custom {
+		t.Fatalf("docs is back to its defaults, so it shouldn't be custom: %+v", docs)
+	}
+	// Ordinary: the exact name goes; a default pattern still claiming it is reported.
+	if err := a.MarkBranchKind(repo, "production", ""); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.MarkBranchKind(repo, "release/2.0", ""); err == nil {
+		t.Fatal("release/2.0 matches release/*, so it can't become ordinary by name")
+	}
+	if err := a.MarkBranchKind(repo, "x", "nightly"); err == nil {
+		t.Fatal("accepted an unknown kind")
+	}
+}
