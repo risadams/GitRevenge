@@ -452,7 +452,7 @@
       <span class="meta">{total.toLocaleString()} commits</span>
     {/if}
     <button
-      class="tool density"
+      class="btn sm quiet density"
       onclick={() => session.run(() => colorTheme.toggleDensity())}
       title={density === 'compact' ? 'Show the timeline: two-line rows with authors' : 'Show compact single-line rows'}
       aria-pressed={density === 'compact'}
@@ -475,10 +475,10 @@
         <span class="count">
           {#if matchTotal === 0}No matches{:else}{currentMatch >= 0 ? `${currentMatch + 1} of ` : ''}{matchTotal.toLocaleString()}{/if}
         </span>
-        <button class="tool step up" onclick={() => jump(-1)} disabled={!matchTotal} aria-label="Previous match" title="Previous match (Shift+Enter)"
+        <button class="btn sm quiet icon step up" onclick={() => jump(-1)} disabled={!matchTotal} aria-label="Previous match" title="Previous match (Shift+Enter)"
           ><Icon name="chevron" size={13} /></button
         >
-        <button class="tool step" onclick={() => jump(1)} disabled={!matchTotal} aria-label="Next match" title="Next match (Enter)"><Icon name="chevron" size={13} /></button>
+        <button class="btn sm quiet icon step" onclick={() => jump(1)} disabled={!matchTotal} aria-label="Next match" title="Next match (Enter)"><Icon name="chevron" size={13} /></button>
       {/if}
     </span>
   </div>
@@ -565,13 +565,6 @@
     border-bottom: 1px solid var(--paper-edge);
   }
 
-  .density {
-    height: 26px;
-    padding: 0 8px;
-    font-size: 13px;
-    color: var(--ink-soft);
-  }
-
   .search {
     margin-left: auto;
     display: flex;
@@ -592,11 +585,6 @@
     border-color: var(--link);
     outline: none;
     box-shadow: 0 0 0 3px var(--selection);
-  }
-
-  .step {
-    height: 26px;
-    padding: 0 5px;
   }
 
   .step.up {

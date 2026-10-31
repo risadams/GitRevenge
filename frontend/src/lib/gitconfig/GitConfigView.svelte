@@ -120,21 +120,21 @@
       <div class="banner caution" role="alert">
         <Icon name="warning" size={16} />
         <span class="message"><strong>Something else changed this file</strong> while you were editing it. Keep your version and save it over theirs, or reload and lose your edits.</span>
-        <button class="pill" onclick={() => gitConfig.reload()}>Reload theirs</button>
-        <button class="pill" onclick={() => gitConfig.keepMine()}>Keep mine</button>
+        <button class="btn secondary" onclick={() => gitConfig.reload()}>Reload theirs</button>
+        <button class="btn secondary" onclick={() => gitConfig.keepMine()}>Keep mine</button>
       </div>
     {/if}
     {#if gitConfig.error}
       <div class="banner danger" role="alert">
         <Icon name="warning" size={16} />
         <span class="message">{gitConfig.error}</span>
-        <button class="pill" onclick={() => (gitConfig.error = '')}>Dismiss</button>
+        <button class="btn secondary" onclick={() => (gitConfig.error = '')}>Dismiss</button>
       </div>
     {:else if doc?.problem && gitConfig.view !== 'raw'}
       <div class="banner danger" role="alert">
         <Icon name="warning" size={16} />
         <span class="message">Git can't read this file ({problemText(doc.problem)}), so its settings can't be shown or saved.</span>
-        <button class="pill" onclick={() => (gitConfig.view = 'raw')}>Fix it in raw text</button>
+        <button class="btn secondary" onclick={() => (gitConfig.view = 'raw')}>Fix it in raw text</button>
       </div>
     {/if}
 
@@ -161,7 +161,7 @@
     </p>
     <pre class="disk" aria-label="The file on disk now">{gitConfig.conflict.disk}</pre>
     <div class="form-actions">
-      <button class="textbtn" onclick={() => gitConfig.reload()}>Discard mine and reload</button>
+      <button class="btn text" onclick={() => gitConfig.reload()}>Discard mine and reload</button>
       <InkButton onclick={() => gitConfig.save(true)}>Save mine</InkButton>
     </div>
   </Modal>
@@ -388,15 +388,6 @@
 
   .message strong {
     font-weight: 600;
-  }
-
-  .pill {
-    min-height: 34px;
-    padding: 0 16px;
-    background: var(--paper);
-    border: 1px solid var(--paper-edge);
-    border-radius: 999px;
-    font-size: 14px;
   }
 
   code,

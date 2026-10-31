@@ -45,20 +45,20 @@
 
 <section class="dashboard">
   <header>
-    <button class="tool back" onclick={onClose} title="Back to the start page"><Icon name="back" />Back</button>
+    <button class="btn quiet back" onclick={onClose} title="Back to the start page"><Icon name="back" />Back</button>
     <div class="title">
       <span class="hand">dashboard</span>
       <h2>{name}</h2>
     </div>
     <span class="spacer"></span>
-    <button class="tool" disabled={!!running} onclick={refresh}><Icon name="refresh" />Refresh</button>
-    <button class="tool" disabled={!!running || rows.length === 0} onclick={() => batch('fetch')}
+    <button class="btn quiet" disabled={!!running} onclick={refresh}><Icon name="refresh" />Refresh</button>
+    <button class="btn quiet" disabled={!!running || rows.length === 0} onclick={() => batch('fetch')}
       ><Icon name="fetch" />{running === 'fetch' ? 'Fetching…' : 'Fetch all'}</button
     >
-    <button class="tool" disabled={!!running || rows.length === 0} onclick={() => batch('pull')} title="Fast-forward only: diverged repositories are reported, never merged"
+    <button class="btn quiet" disabled={!!running || rows.length === 0} onclick={() => batch('pull')} title="Fast-forward only: diverged repositories are reported, never merged"
       ><Icon name="pull" />{running === 'pull' ? 'Pulling…' : 'Pull all'}</button
     >
-    <button class="tool" disabled={rows.length === 0} onclick={openAll}><Icon name="folder" />Open all as tabs</button>
+    <button class="btn quiet" disabled={rows.length === 0} onclick={openAll}><Icon name="folder" />Open all as tabs</button>
   </header>
 
   {#if loading && rows.length === 0}
@@ -95,7 +95,7 @@
               {:else if r.error}
                 <span class="bad">{r.error}</span>
               {:else}
-                <button class="tool open" onclick={() => session.open(r.path)}>Open</button>
+                <button class="btn sm text" onclick={() => session.open(r.path)}>Open</button>
               {/if}
             </td>
           </tr>
@@ -183,11 +183,6 @@
 
   td.action {
     white-space: normal;
-  }
-
-  .open {
-    color: var(--link);
-    font-style: italic;
   }
 
   tr.missing {

@@ -107,11 +107,11 @@
       <header>
         <span class="mono">{header(h)}</span>
         {#if actions.apply}
-          <button disabled={busy} onclick={() => run('apply', inHunk(h), 'h' + h.start)}>{actions.apply.label} hunk</button>
+          <button class="btn sm secondary" disabled={busy} onclick={() => run('apply', inHunk(h), 'h' + h.start)}>{actions.apply.label} hunk</button>
         {/if}
         {#if actions.revert}
           <button
-            class:danger={actions.revert.danger}
+            class={['btn sm', actions.revert.danger && confirming === 'h' + h.start ? 'danger' : 'quiet']}
             disabled={busy}
             onclick={() => run('revert', inHunk(h), 'h' + h.start)}
             >{confirming === 'h' + h.start ? `Really ${actions.revert.label.toLowerCase()}?` : `${actions.revert.label} hunk`}</button
@@ -143,14 +143,17 @@
     <footer>
       <span>{selected.size} {selected.size === 1 ? 'line' : 'lines'} selected</span>
       {#if actions.apply}
-        <button disabled={busy} onclick={() => run('apply', (i) => selected.has(i), 'sel')}>{actions.apply.label} lines</button>
+        <button class="btn sm secondary" disabled={busy} onclick={() => run('apply', (i) => selected.has(i), 'sel')}>{actions.apply.label} lines</button>
       {/if}
       {#if actions.revert}
-        <button class:danger={actions.revert.danger} disabled={busy} onclick={() => run('revert', (i) => selected.has(i), 'sel')}
+        <button
+          class={['btn sm', actions.revert.danger && confirming === 'sel' ? 'danger' : 'quiet']}
+          disabled={busy}
+          onclick={() => run('revert', (i) => selected.has(i), 'sel')}
           >{confirming === 'sel' ? `Really ${actions.revert.label.toLowerCase()}?` : `${actions.revert.label} lines`}</button
         >
       {/if}
-      <button onclick={() => selected.clear()}>Clear</button>
+      <button class="btn sm text" onclick={() => selected.clear()}>Clear</button>
     </footer>
   {/if}
 </div>
@@ -187,27 +190,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  button {
-    height: 24px;
-    padding: 0 10px;
-    background: none;
-    border: 1px solid var(--paper-edge);
-    border-radius: 4px;
-    font-family: var(--font-serif);
-    font-size: 13px;
-    color: var(--ink);
-    white-space: nowrap;
-  }
-
-  button:hover:not(:disabled) {
-    background: var(--wash-hover);
-  }
-
-  .danger {
-    border-color: var(--danger);
-    color: var(--danger);
   }
 
   table {

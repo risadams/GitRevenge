@@ -43,7 +43,7 @@
 
 <Modal title="Copy summary" eyebrow="for the sprint review" width={760} {onClose}>
   <div class="options">
-    <span class="segmented pills" role="group" aria-label="Include">
+    <span class="segmented" role="group" aria-label="Include">
       <button aria-pressed={shipped} onclick={() => (shipped = !shipped)}>shipped</button>
       <button aria-pressed={needsAttention} onclick={() => (needsAttention = !needsAttention)}>needs attention</button>
       <button aria-pressed={hotspots} onclick={() => (hotspots = !hotspots)}>hotspots</button>
@@ -62,7 +62,7 @@
 
   <div class="form-actions">
     <span class="note">{status || 'The inputs at the top let anyone with these commits get the same summary.'}</span>
-    <button class="textbtn" onclick={save}>Save as .md</button>
+    <button class="btn text" onclick={save}>Save as .md</button>
     <InkButton onclick={copy}>Copy</InkButton>
   </div>
 </Modal>

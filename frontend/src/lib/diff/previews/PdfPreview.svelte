@@ -88,16 +88,16 @@
     <p class="muted">Opening…</p>
   {:else}
     <div class="bar" role="toolbar" aria-label="PDF pages and zoom">
-      <button class="tool" disabled={page <= 1} onclick={() => page--} aria-label="Previous page"><Icon name="back" size={14} /></button>
+      <button class="btn quiet" disabled={page <= 1} onclick={() => page--} aria-label="Previous page"><Icon name="back" size={14} /></button>
       <label class="pages">
         Page <input type="number" min="1" max={doc.numPages} bind:value={page} aria-label="Page number" /> of {doc.numPages}
       </label>
-      <button class="tool" disabled={page >= doc.numPages} onclick={() => page++} aria-label="Next page"><Icon name="right" size={14} /></button>
+      <button class="btn quiet" disabled={page >= doc.numPages} onclick={() => page++} aria-label="Next page"><Icon name="right" size={14} /></button>
       <span class="sep" aria-hidden="true"></span>
-      <button class="tool" onclick={() => step(-1)} aria-label="Zoom out"><Icon name="minus" size={14} /></button>
+      <button class="btn quiet" onclick={() => step(-1)} aria-label="Zoom out"><Icon name="minus" size={14} /></button>
       <span class="meta">{zoom === 'fit' ? 'Fit width' : `${Math.round(zoom * 100)}%`}</span>
-      <button class="tool" onclick={() => step(1)} aria-label="Zoom in"><Icon name="plus" size={14} /></button>
-      <button class="tool" aria-pressed={zoom === 'fit'} onclick={() => (zoom = 'fit')}>Fit</button>
+      <button class="btn quiet" onclick={() => step(1)} aria-label="Zoom in"><Icon name="plus" size={14} /></button>
+      <button class="btn quiet" aria-pressed={zoom === 'fit'} onclick={() => (zoom = 'fit')}>Fit</button>
     </div>
     <div class="page"><canvas bind:this={canvas} aria-label="Page {page} of {doc.numPages}"></canvas></div>
   {/if}

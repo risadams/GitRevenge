@@ -82,7 +82,7 @@
       <input type="search" placeholder="Find a command" aria-label="Find a command" bind:value={query} />
     </label>
     {#if Object.keys(commands.overrides).length}
-      <button class="tool" onclick={() => Object.keys(commands.overrides).forEach((id) => void save(id, null))}>Reset all</button>
+      <button class="btn quiet" onclick={() => Object.keys(commands.overrides).forEach((id) => void save(id, null))}>Reset all</button>
     {/if}
   </div>
   {#if error}<p class="error" role="alert">{error}</p>{/if}
@@ -92,8 +92,8 @@
       <span>
         <kbd>{formatShortcut(pending.keys)}</kbd> is already used by {pending.others.map((o) => o.title).join(', ')}.
       </span>
-      <button class="tool" onclick={() => pending && assign(pending.id, pending.keys, pending.others)}>Use it here</button>
-      <button class="tool" onclick={() => (pending = null)}>Cancel</button>
+      <button class="btn quiet" onclick={() => pending && assign(pending.id, pending.keys, pending.others)}>Use it here</button>
+      <button class="btn quiet" onclick={() => (pending = null)}>Cancel</button>
     </div>
   {/if}
   <p class="form-note">Choose Change, then press the keys. Escape cancels; Backspace removes the shortcut.</p>
@@ -114,9 +114,9 @@
               {/if}
             </td>
             <td class="actions">
-              <button class="tool" onclick={() => (recording = recording === c.id ? '' : c.id)}>{recording === c.id ? 'Cancel' : 'Change'}</button>
+              <button class="btn sm quiet" onclick={() => (recording = recording === c.id ? '' : c.id)}>{recording === c.id ? 'Cancel' : 'Change'}</button>
               {#if changed(c)}
-                <button class="tool" onclick={() => save(c.id, null)} title={c.defaultShortcut ? `Back to ${formatShortcut(c.defaultShortcut)}` : 'Back to no shortcut'}>Reset</button>
+                <button class="btn sm quiet" onclick={() => save(c.id, null)} title={c.defaultShortcut ? `Back to ${formatShortcut(c.defaultShortcut)}` : 'Back to no shortcut'}>Reset</button>
               {/if}
             </td>
           </tr>
@@ -185,11 +185,6 @@
     width: 1%;
     white-space: nowrap;
     text-align: right;
-  }
-
-  .actions .tool {
-    height: 26px;
-    font-size: 13px;
   }
 
   kbd {

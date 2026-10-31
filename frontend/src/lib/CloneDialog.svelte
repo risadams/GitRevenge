@@ -75,7 +75,7 @@
       <span>Into folder</span>
       <span class="row">
         <input bind:value={parent} disabled={running} placeholder="Choose a folder" />
-        <button type="button" class="tool" disabled={running} onclick={browse}><Icon name="folder" />Browse…</button>
+        <button type="button" class="btn quiet" disabled={running} onclick={browse}><Icon name="folder" />Browse…</button>
       </span>
     </label>
     <label class="form-field">

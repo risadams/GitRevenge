@@ -138,23 +138,23 @@
 
 <div class="diffview">
   <header class="view-head">
-    <button class="tool" onclick={onClose} title="Back to the graph"><Icon name="back" />Back</button>
+    <button class="btn quiet" onclick={onClose} title="Back to the graph"><Icon name="back" />Back</button>
     <span class="view-file" title={target.file}
       >{target.oldPath && target.oldPath !== target.file ? `${target.oldPath} → ` : ''}{target.file}</span
     >
     {#if modeLabel[target.mode]}<span class="view-badge">{modeLabel[target.mode]}</span>{/if}
     <span class="spacer"></span>
     {#if onOpen}
-      <button class="tool" onclick={() => onOpen({ mode: 'history', file: target.file })}>History</button>
+      <button class="btn quiet" onclick={() => onOpen({ mode: 'history', file: target.file })}>History</button>
       <button
-        class="tool"
+        class="btn quiet"
         onclick={() =>
           onOpen({ mode: 'blame', file: target.file, commit: target.mode === 'commit' ? target.commit : undefined })}
         >Blame</button
       >
     {/if}
     {#if contents?.kind === 'text'}
-      <button class="tool" aria-pressed={wrap.on} onclick={toggleWrap} title="Wrap long lines ({formatShortcut('Alt+Z')})"
+      <button class="btn quiet" aria-pressed={wrap.on} onclick={toggleWrap} title="Wrap long lines ({formatShortcut('Alt+Z')})"
       ><Icon name="wrap" />Wrap</button
     >
       <span class="segmented" role="group" aria-label="Diff layout">
@@ -180,7 +180,7 @@
           This file is large ({(Math.max(contents.old.size, contents.new.size) / (1 << 20)).toFixed(1)} MB). Showing it may be
           slow.
         </p>
-        <button onclick={() => (force = true)}>Load anyway</button>
+        <button class="btn secondary" onclick={() => (force = true)}>Load anyway</button>
       </div>
     {:else if contents.kind === 'binary' && previewer?.binary && contents.new.exists}
       {#key target.file + (target.commit ?? '') + target.mode}
