@@ -148,7 +148,7 @@ func (a *App) InsightsBranches(path string, in InsightsInputs) (AttentionResult,
 		if err != nil {
 			return AttentionResult{}, err
 		}
-		open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches, notDocs(rules))
+		open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches, endStates(rules))
 		if err != nil {
 			return AttentionResult{}, err
 		}
@@ -246,9 +246,14 @@ func (a *App) InsightsHotspots(path string, in InsightsInputs) (HotspotsResult, 
 	return cachedInsight(ctx, a, g, root, "hotspots", in, func() (HotspotsResult, error) { return hotspots(ctx, g, in, rules) })
 }
 
-// notDocs leaves Docs branches (a published site, not code) out of branch signals.
-func notDocs(rules branchkind.Rules) func(string) bool {
-	return func(name string) bool { return rules.Kind(name) == branchkind.Docs }
+// endStates leaves Docs and Release branches out of branch signals and conflict checks.
+// They are end states (a published site, a release being maintained), expected to drift
+// from the target, not working copies waiting to merge (ADR 0009).
+func endStates(rules branchkind.Rules) func(string) bool {
+	return func(name string) bool {
+		k := rules.Kind(name)
+		return k == branchkind.Docs || k == branchkind.Release
+	}
 }
 
 func hotspots(ctx context.Context, g *git.Repo, in InsightsInputs, rules branchkind.Rules) (HotspotsResult, error) {
@@ -261,7 +266,7 @@ func hotspots(ctx context.Context, g *git.Repo, in InsightsInputs, rules branchk
 	if err != nil {
 		return HotspotsResult{}, err
 	}
-	open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches, notDocs(rules))
+	open, err := g.OpenBranches(ctx, w.Target, git.MaxSignalBranches, endStates(rules))
 	if err != nil {
 		return HotspotsResult{}, err
 	}

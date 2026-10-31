@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"slices"
 	"strings"
 
@@ -34,6 +35,7 @@ type RepoPreferences struct {
 
 // RepoPreferences returns the settings for the repository at path.
 func (a *App) RepoPreferences(path string) (RepoPreferences, error) {
+	path = a.repoKey(path)
 	m, err := a.sessions()
 	if err != nil {
 		return RepoPreferences{}, err
@@ -59,6 +61,7 @@ func (a *App) SetRepoPreferences(path string, p RepoPreferences) error {
 	if strings.TrimSpace(path) == "" {
 		return userError("No repository is open.")
 	}
+	path = a.repoKey(path)
 	rs := settings.RepoSettings{Path: path, CleanupOnPull: p.CleanupOnPull, SyncNotes: p.SyncNotes}
 	for _, kp := range p.Kinds {
 		k := branchkind.Kind(kp.Kind)
@@ -109,6 +112,7 @@ func (a *App) SetRepoPreferences(path string, p RepoPreferences) error {
 // unhides it, by adding or removing that exact name in the hide patterns. Unhiding a branch
 // that a wider pattern hides isn't possible here; the error names the pattern to change.
 func (a *App) HideBranch(path, name string, hide bool) error {
+	path = a.repoKey(path)
 	name = strings.TrimSpace(name)
 	if err := branchkind.CheckPattern(name); err != nil {
 		return userError("Can't hide that branch: " + err.Error() + ".")
@@ -149,6 +153,7 @@ func (a *App) HideBranch(path, name string, hide bool) error {
 // taking it out of the others. A kind that was using its defaults keeps them, plus the name.
 // If a wider pattern of another kind still claims the branch, the error says which.
 func (a *App) MarkBranchKind(path, name, kind string) error {
+	path = a.repoKey(path)
 	name = strings.TrimSpace(name)
 	if err := branchkind.CheckPattern(name); err != nil {
 		return userError("Can't mark that branch: " + err.Error() + ".")
@@ -206,6 +211,7 @@ func (a *App) MarkBranchKind(path, name, kind string) error {
 // SetKindVisible shows or hides every branch of a kind in the repository at path, as the
 // graph's "Show docs branches" and "Show bot branches" toggles do.
 func (a *App) SetKindVisible(path, kind string, visible bool) error {
+	path = a.repoKey(path)
 	if !branchkind.Valid(branchkind.Kind(kind)) {
 		return userError("Unknown branch kind " + kind + ".")
 	}
@@ -250,8 +256,26 @@ func (a *App) ShowingHidden(path string) (bool, error) {
 	return r.ShowingHidden(), nil
 }
 
+// repoKey is the path a repository's settings are kept under: its work tree root, so a
+// path inside the repository, a symlinked temp folder or a Windows short name all find the
+// same settings. A path that isn't a repository is used as it is.
+func (a *App) repoKey(path string) string {
+	m, err := a.sessions()
+	if err != nil {
+		return path
+	}
+	if r := m.Get(path); r != nil {
+		return r.Path
+	}
+	if root, err := m.Resolve(context.Background(), path); err == nil {
+		return root
+	}
+	return path
+}
+
 // repoSettings returns the stored settings of the repository at path.
 func (a *App) repoSettings(path string) settings.RepoSettings {
+	path = a.repoKey(path)
 	m, err := a.sessions()
 	if err != nil {
 		return settings.RepoSettings{Path: path}
@@ -261,6 +285,7 @@ func (a *App) repoSettings(path string) settings.RepoSettings {
 
 // branchRules returns the kind and hide rules for the repository at path.
 func (a *App) branchRules(path string) branchkind.Rules {
+	path = a.repoKey(path)
 	m, err := a.sessions()
 	if err != nil {
 		return branchkind.New(nil, nil)
