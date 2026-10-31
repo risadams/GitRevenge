@@ -456,7 +456,7 @@
     align-items: start;
     padding: 14px 8px 14px 22px;
     border-top: 1px dashed var(--hairline);
-    transition: background-color 0.2s;
+    transition: background-color var(--dur-base);
   }
 
   .row:hover {

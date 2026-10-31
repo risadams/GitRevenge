@@ -422,7 +422,7 @@
     align-items: center;
     padding-right: 6px;
     border-radius: 4px;
-    transition: background-color 0.15s;
+    transition: background-color var(--dur-quick);
   }
 
   li:hover {
@@ -471,7 +471,7 @@
     border-radius: 4px;
     color: var(--ink-mute);
     opacity: 0;
-    transition: opacity 0.15s;
+    transition: opacity var(--dur-quick);
   }
 
   li:hover .icon,

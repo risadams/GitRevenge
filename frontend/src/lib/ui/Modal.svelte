@@ -88,7 +88,7 @@
     place-items: center;
     padding: 16px;
     background: var(--scrim);
-    animation: fade 0.25s var(--ease-ink);
+    animation: fade-in var(--dur-base) var(--ease-ink);
   }
 
   .panel {
@@ -104,7 +104,7 @@
     border-radius: 10px;
     box-shadow: var(--shadow);
     outline: none;
-    animation: rise 0.35s var(--ease-ink);
+    animation: ink-in var(--dur-enter) var(--ease-ink);
   }
 
   /* A torn rose stroke along the top edge, like the active tab's. */
@@ -142,20 +142,6 @@
     font-variation-settings:
       'SOFT' 50,
       'WONK' 1;
-  }
-
-  @keyframes fade {
-    from {
-      opacity: 0;
-    }
-  }
-
-  @keyframes rise {
-    from {
-      opacity: 0;
-      transform: translateY(8px);
-      filter: blur(6px);
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {

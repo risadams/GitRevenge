@@ -138,7 +138,7 @@
     border-radius: 8px;
     box-shadow: var(--shadow);
     outline: none;
-    animation: open 0.16s var(--ease-ink);
+    animation: drop-in var(--dur-base) var(--ease-ink);
   }
 
   .item {
@@ -220,13 +220,6 @@
     height: 1px;
     margin: 4px 8px;
     background: var(--paper-edge);
-  }
-
-  @keyframes open {
-    from {
-      opacity: 0;
-      transform: translateY(-3px);
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {

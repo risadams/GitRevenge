@@ -198,7 +198,7 @@
     place-items: center;
     width: 12px;
     color: var(--ink-mute);
-    transition: transform 0.2s var(--ease-ink);
+    transition: transform var(--dur-base) var(--ease-ink);
   }
 
   .caret.open {

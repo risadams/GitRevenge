@@ -164,7 +164,7 @@
   }
 
   tbody tr {
-    transition: background-color 0.2s;
+    transition: background-color var(--dur-base);
   }
 
   tbody tr:hover {
