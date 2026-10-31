@@ -105,8 +105,9 @@ func Strip(name string, remotes []string) string {
 }
 
 // Match reports whether name matches pattern. `*` matches any run of characters, slashes
-// included, so dependabot/* matches dependabot/npm_and_yarn/vite-7.1; `?` matches one
-// character other than a slash. Everything else matches itself.
+// included, so dependabot/* matches dependabot/npm_and_yarn/vite-7.1, and `?` matches any
+// one character. Everything else matches itself. This is git's wildmatch without
+// WM_PATHNAME, which `git log --exclude` uses, so hiding a branch here and in git agree.
 func Match(pattern, name string) bool {
 	p, n := 0, 0
 	star, mark := -1, 0
@@ -115,7 +116,7 @@ func Match(pattern, name string) bool {
 		case p < len(pattern) && pattern[p] == '*':
 			star, mark = p, n
 			p++
-		case p < len(pattern) && (pattern[p] == name[n] || pattern[p] == '?' && name[n] != '/'):
+		case p < len(pattern) && (pattern[p] == name[n] || pattern[p] == '?'):
 			p++
 			n++
 		case star >= 0:

@@ -220,3 +220,37 @@ func TestLogIncludesTagsOutsideBranches(t *testing.T) {
 		t.Fatalf("count = %d, %v; want 3", n, err)
 	}
 }
+
+// Excluded branches leave the default starting points, local and remote-tracking, while
+// HEAD stays even when it matches.
+func TestLogExcludesHiddenBranches(t *testing.T) {
+	origin := gittest.New(t)
+	origin.CommitFile("a.txt", "1", "base")
+	origin.Branch("wip/try")
+	origin.CommitFile("b.txt", "1", "wip only")
+	origin.Checkout("main")
+	fx := gittest.Clone(t, origin)
+	fx.Git("branch", "wip/local", "origin/wip/try")
+
+	subjects := func(opts LogOptions) []string {
+		var out []string
+		for _, c := range readLog(t, fx, opts) {
+			out = append(out, c.Subject)
+		}
+		return out
+	}
+	if got := subjects(LogOptions{}); len(got) != 2 {
+		t.Fatalf("without excludes = %v", got)
+	}
+	if got := subjects(LogOptions{Exclude: []string{"wip/*"}, Remotes: []string{"origin"}}); len(got) != 1 || got[0] != "base" {
+		t.Fatalf("with wip/* excluded = %v", got)
+	}
+	// Excluding only local names leaves the remote-tracking branch in.
+	if got := subjects(LogOptions{Exclude: []string{"wip/*"}}); len(got) != 2 {
+		t.Fatalf("local-only exclude = %v", got)
+	}
+	fx.Checkout("wip/local")
+	if got := subjects(LogOptions{Exclude: []string{"wip/*"}, Remotes: []string{"origin"}}); len(got) != 2 {
+		t.Fatalf("HEAD on a hidden branch should keep it: %v", got)
+	}
+}

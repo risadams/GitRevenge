@@ -166,6 +166,10 @@ export function Groups() {
   return window['go']['app']['App']['Groups']();
 }
 
+export function HideBranch(arg1, arg2, arg3) {
+  return window['go']['app']['App']['HideBranch'](arg1, arg2, arg3);
+}
+
 export function Init(arg1, arg2) {
   return window['go']['app']['App']['Init'](arg1, arg2);
 }
@@ -390,6 +394,10 @@ export function SetRepoPreferences(arg1, arg2) {
   return window['go']['app']['App']['SetRepoPreferences'](arg1, arg2);
 }
 
+export function SetShowHidden(arg1, arg2) {
+  return window['go']['app']['App']['SetShowHidden'](arg1, arg2);
+}
+
 export function SetStagedContent(arg1, arg2, arg3, arg4) {
   return window['go']['app']['App']['SetStagedContent'](arg1, arg2, arg3, arg4);
 }
@@ -404,6 +412,10 @@ export function SetUpdateChecks(arg1) {
 
 export function SetWorkTreeContent(arg1, arg2, arg3, arg4) {
   return window['go']['app']['App']['SetWorkTreeContent'](arg1, arg2, arg3, arg4);
+}
+
+export function ShowingHidden(arg1) {
+  return window['go']['app']['App']['ShowingHidden'](arg1);
 }
 
 export function StageFiles(arg1, arg2) {
