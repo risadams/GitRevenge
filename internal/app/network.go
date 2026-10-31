@@ -181,7 +181,11 @@ func (a *App) cancelNetwork(key string) {
 func (a *App) Fetch(path, remote string) error {
 	return a.runNetwork(path, "fetch", func(ctx context.Context, r *session.Repo, o git.NetOptions) error {
 		a.upstreams.remember(ctx, r.Path, r.Git)
-		return r.Git.Fetch(ctx, remote, o)
+		if err := r.Git.Fetch(ctx, remote, o); err != nil {
+			return err
+		}
+		a.syncNotesIn(ctx, r, remotesFor(ctx, r.Git, remote), o)
+		return nil
 	})
 }
 
@@ -193,6 +197,7 @@ func (a *App) Pull(path, mode string) error {
 			return err
 		}
 		a.cleanupAfterPull(ctx, r)
+		a.syncNotesIn(ctx, r, []string{pullRemote(ctx, r.Git)}, o)
 		return nil
 	})
 }
@@ -230,7 +235,11 @@ func (a *App) PushCurrent(path string, force bool) error {
 			p.SetUpstream = true
 		}
 		p.ForceWithLease = force
-		return r.Git.Push(ctx, p, o)
+		if err := r.Git.Push(ctx, p, o); err != nil {
+			return err
+		}
+		a.pushNotesTo(ctx, r, p.Remote, o)
+		return nil
 	})
 }
 

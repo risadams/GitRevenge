@@ -216,6 +216,13 @@
             Deletes a local branch once its upstream is deleted, if it has nothing unpushed. Trunk, Release, Environment and Docs branches, the branch
             you're on and worktree branches are always kept. Undo brings them back.
           </p>
+          <label class="check">
+            <input type="checkbox" bind:checked={repo.syncNotes} />
+            Sync notes on fetch, pull and push
+          </label>
+          <p class="hint">
+            Brings the remote's notes in on fetch and pull, and sends yours when you push. Notes that have diverged are left alone, with a note saying so.
+          </p>
           <label class="form-field">
             <span>Hidden branches</span>
             <input bind:value={hideText} placeholder="For example wip/*, gh-pages" spellcheck="false" autocomplete="off" />

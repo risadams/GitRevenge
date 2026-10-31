@@ -29,6 +29,12 @@ class Toasts {
 
 export const toasts = new Toasts()
 
+/** Something worth knowing that isn't an error in what the user asked for, such as notes
+ * that couldn't sync. */
+EventsOn('notice', (e: { path: string; message: string }) => {
+  toasts.show(e.message)
+})
+
 /** Cleanup on pull: say what was deleted, with Undo while it's still the next undo. */
 EventsOn('branches:cleaned', (e: { path: string; branches: string[]; undoLabel: string }) => {
   const n = e.branches.length
