@@ -103,8 +103,28 @@
     await refresh()
   }
 
-  const stage = (paths: string[]) => act(() => StageFiles(path, paths))
-  const unstage = (paths: string[]) => act(() => UnstageFiles(path, paths))
+  // Rows that just moved between the lists land with a rose wash that fades, so the eye
+  // follows them (the row-land keyframes in style.css).
+  let landed = $state<{ staged: boolean; paths: Set<string> } | null>(null)
+  let landedTimer: ReturnType<typeof setTimeout> | undefined
+
+  function land(staged: boolean, paths: string[]) {
+    clearTimeout(landedTimer)
+    landed = { staged, paths: new Set(paths) }
+    landedTimer = setTimeout(() => (landed = null), 1000)
+  }
+
+  async function stage(paths: string[]) {
+    const moving = paths.length ? paths : unstaged.filter((f) => !f.conflicted).map((f) => f.path)
+    await act(() => StageFiles(path, paths))
+    land(true, moving)
+  }
+
+  async function unstage(paths: string[]) {
+    const moving = paths.length ? paths : staged.map((f) => f.path)
+    await act(() => UnstageFiles(path, paths))
+    land(false, moving)
+  }
 
   async function discard(paths: string[]) {
     confirmDiscard = null
@@ -176,7 +196,7 @@
 
 {#snippet fileRow(f: git.FileStatus, inStaged: boolean)}
   {@const st = status(f, inStaged)}
-  <li class:active={isOpen(f, inStaged)}>
+  <li class:active={isOpen(f, inStaged)} class:landed={landed?.staged === inStaged && landed.paths.has(f.path)}>
     <button class="name" onclick={() => show(f, inStaged)} title={f.origPath ? `${f.origPath} → ${f.path}` : f.path}>
       <span class="code s-{st.kind}" title={st.label}><Icon name={st.icon} size={14} /><span class="visually-hidden">{st.label}</span></span>
       <span class="path">{f.origPath ? `${f.origPath} → ${f.path}` : f.path}</span>
@@ -458,6 +478,10 @@
   }
 
   /* Row actions appear on hover or focus, so the list reads calmly. */
+  .landed {
+    animation: row-land calc(var(--dur-enter) * 2) var(--ease-ink);
+  }
+
   /* Row actions (stage, unstage, discard) show on hover, focus or selection. */
   .row-act {
     opacity: 0;

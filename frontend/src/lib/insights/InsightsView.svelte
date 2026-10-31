@@ -205,7 +205,7 @@
       </section>
 
       <div class="columns">
-        <section class="list" aria-labelledby="attn">
+        <section class="list cascade" aria-labelledby="attn">
           <h2 id="attn">Needs attention <button class="btn text all" onclick={() => insights.setView('attention')}>all {t.attention} →</button></h2>
           {#each flagged.slice(0, 5) as b (b.repo + b.value.name)}
             <div class="row">
@@ -223,7 +223,7 @@
           {/each}
         </section>
 
-        <section class="list" aria-labelledby="latest">
+        <section class="list cascade" aria-labelledby="latest">
           <h2 id="latest">Latest ships <button class="btn text all" onclick={() => insights.setView('shipped')}>all {t.shipped} →</button></h2>
           {#each ships.slice(0, 5) as s (s.repo + s.value.sha)}
             <div class="row">

@@ -28,11 +28,39 @@
     }
   }
 
+  // One torn rose bar under the active tab. It travels between tabs instead of each tab
+  // drawing its own, so switching tabs reads as a single movement.
+  let scroller: HTMLDivElement
+  let bar = $state<{ x: number; w: number } | null>(null)
+  let barReady = $state(false)
+
+  function placeBar() {
+    const el = scroller?.querySelector<HTMLElement>('.tab.active')
+    bar = el ? { x: el.offsetLeft + 10, w: Math.max(el.offsetWidth - 20, 8) } : null
+  }
+
+  $effect(() => {
+    // Re-measure when the active tab, the set of tabs or their labels change.
+    void [session.active, session.tabs.map((t) => t.name + t.head), gitConfig.open, insights.open]
+    queueMicrotask(placeBar)
+  })
+
+  $effect(() => {
+    const ro = new ResizeObserver(placeBar)
+    ro.observe(scroller)
+    // Place the first bar without sliding in from the left edge.
+    const id = requestAnimationFrame(() => (barReady = true))
+    return () => {
+      ro.disconnect()
+      cancelAnimationFrame(id)
+    }
+  })
+
   let toggleLabel = $derived(theme.resolved === 'dark' ? 'Switch to the light theme' : 'Switch to the dark theme')
 </script>
 
 <nav class="tabs" aria-label="Open repositories">
-  <div class="scroll">
+  <div class="scroll" bind:this={scroller}>
     <button class="tab home" class:active={session.active === ''} onclick={() => session.select('')} title="Start page" aria-label="Start page">
       <Mark size={18} />
     </button>
@@ -75,6 +103,9 @@
         </button>
       </div>
     {/if}
+    {#if bar}
+      <span class="ink-bar" class:ready={barReady} aria-hidden="true" style:width="{bar.w}px" style:transform="translateX({bar.x}px)"></span>
+    {/if}
     <button class="tab add" onclick={() => session.choose()} title="Open repository" aria-label="Open repository">
       <Icon name="plus" />
     </button>
@@ -107,6 +138,7 @@
   }
 
   .scroll {
+    position: relative;
     flex: 1;
     min-width: 0;
     display: flex;
@@ -152,12 +184,10 @@
     background: var(--paper);
   }
 
-  /* The active tab wears the navbar's torn rose bar. */
-  .tab.active::after {
-    content: '';
+  /* The active tab wears the navbar's torn rose bar, which travels between tabs. */
+  .ink-bar {
     position: absolute;
-    left: 10px;
-    right: 10px;
+    left: 0;
     bottom: 2px;
     height: 3px;
     background: var(--link);
@@ -165,6 +195,12 @@
     opacity: 0.85;
     border-radius: 45% 55% 50% 50% / 55% 45%;
     pointer-events: none;
+  }
+
+  .ink-bar.ready {
+    transition:
+      transform var(--dur-move) var(--ease-ink),
+      width var(--dur-move) var(--ease-ink);
   }
 
   .label {

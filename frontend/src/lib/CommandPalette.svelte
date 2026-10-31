@@ -3,6 +3,7 @@
   import { commands, formatShortcut, type Command } from './commands.svelte'
   import { fuzzy } from './fuzzy'
   import Icon from './ui/Icon.svelte'
+  import { menuOut, scrim } from './ui/motion'
 
   /** Sections in the order they're listed when nothing is typed. */
   const GROUP_ORDER = ['Repository', 'Branch', 'Go to', 'Tabs', 'Recent', 'View', 'App']
@@ -114,8 +115,8 @@
 </script>
 
 {#if commands.paletteOpen}
-  <div class="scrim" role="presentation" onmousedown={(e) => e.target === e.currentTarget && close()}>
-    <div class="palette" role="dialog" aria-modal="true" aria-label="Command palette">
+  <div class="scrim" role="presentation" out:scrim={{ out: true }} onmousedown={(e) => e.target === e.currentTarget && close()}>
+    <div class="palette" out:menuOut role="dialog" aria-modal="true" aria-label="Command palette">
       <label class="field">
         <Icon name="search" size={17} />
         <input

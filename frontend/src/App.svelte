@@ -27,6 +27,7 @@
   import InkFilters from './lib/ui/InkFilters.svelte'
   import Mark from './lib/ui/Mark.svelte'
   import Modal from './lib/ui/Modal.svelte'
+  import { reveal } from './lib/ui/motion'
 
   let version = $state('')
   let env = $state<app.Environment | null>(null)
@@ -182,14 +183,14 @@
   {:else if env}
     <TabBar />
     {#if session.error}
-      <div class="banner" role="alert">
+      <div class="banner" role="alert" in:reveal out:reveal={{ out: true }}>
         <Icon name="warning" />
         <span class="message">{session.error}</span>
         <button class="btn sm quiet" onclick={() => (session.error = '')}>Dismiss</button>
       </div>
     {/if}
     {#if update.available || update.upToDate}
-      <div class="banner notice" role="status">
+      <div class="banner notice" role="status" in:reveal out:reveal={{ out: true }}>
         <Icon name="update" />
         {#if update.available}
           <span class="message">Git Revenge {update.available.latest} is available. You have {update.available.current}.</span>
