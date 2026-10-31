@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/risadams/gitrevenge/internal/branchkind"
 	"github.com/risadams/gitrevenge/internal/git"
 	"github.com/risadams/gitrevenge/internal/graph"
 )
@@ -40,13 +41,18 @@ type graphLoader struct {
 	repo       *git.Repo
 	onProgress func(GraphProgress)
 	ahead      int
+	// rules returns the repository's current branch rules (hide patterns, kinds); nil means
+	// the defaults.
+	rules func() branchkind.Rules
 
-	mu       sync.Mutex
-	current  *graph.Graph
-	refs     *RefIndex
-	loading  bool
-	paused   bool
-	estimate int
+	mu sync.Mutex
+	// showHidden puts hidden branches back in the graph, for this session only.
+	showHidden bool
+	current    *graph.Graph
+	refs       *RefIndex
+	loading    bool
+	paused     bool
+	estimate   int
 	// want is the furthest row the UI has asked for.
 	want int
 	// unbounded counts callers that need the reader to keep going (finding a commit,
@@ -83,6 +89,44 @@ func newRefIndex(refs []git.Ref) *RefIndex {
 		idx.ByCommit[r.Commit] = append(idx.ByCommit[r.Commit], r)
 	}
 	return idx
+}
+
+// markHidden flags the branches the rules hide. Unless they're being shown, hidden
+// branches stay in All (the sidebar counts them) but get no label in the graph.
+func (idx *RefIndex) markHidden(rules branchkind.Rules, remotes []string, show bool) {
+	if len(rules.Hide()) == 0 {
+		return
+	}
+	idx.ByCommit = make(map[string][]git.Ref, len(idx.All))
+	for i, r := range idx.All {
+		switch r.Kind {
+		case git.LocalBranch:
+			idx.All[i].Hidden = rules.Hidden(r.Short)
+		case git.RemoteBranch:
+			idx.All[i].Hidden = rules.Hidden(branchkind.Strip(r.Short, remotes))
+		}
+		if !idx.All[i].Hidden || show {
+			idx.ByCommit[r.Commit] = append(idx.ByCommit[r.Commit], idx.All[i])
+		}
+	}
+}
+
+// SetShowHidden shows or hides the hidden branches again, and reloads the graph.
+func (l *graphLoader) SetShowHidden(show bool) {
+	l.mu.Lock()
+	changed := l.showHidden != show
+	l.showHidden = show
+	l.mu.Unlock()
+	if changed {
+		l.reload()
+	}
+}
+
+// ShowingHidden reports whether hidden branches are being shown.
+func (l *graphLoader) ShowingHidden() bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.showHidden
 }
 
 // refResult is a load's refs, or the error reading them.
@@ -191,15 +235,28 @@ func (l *graphLoader) reload() {
 		l.current = g
 	}
 	l.loading = true
+	show := l.showHidden
 	l.mu.Unlock()
+	rules := branchkind.New(nil, nil)
+	if l.rules != nil {
+		rules = l.rules()
+	}
 
 	l.wg.Go(func() {
+		var remotes []string
+		if rs, err := l.repo.Remotes(ctx); err == nil {
+			for _, r := range rs {
+				remotes = append(remotes, r.Name)
+			}
+		}
+
 		// Read refs alongside the log rather than before it: with thousands of refs they can
 		// take longer than the first screen of history.
 		refsCh := make(chan refResult, 1)
 		go func() {
 			list, err := l.repo.Refs(ctx)
 			idx := newRefIndex(list)
+			idx.markHidden(rules, remotes, show)
 			first := false
 			l.mu.Lock()
 			if l.refs == nil && ctx.Err() == nil {
@@ -231,6 +288,9 @@ func (l *graphLoader) reload() {
 		}
 		hidden := map[string]bool{}
 		opts := git.LogOptions{Extra: stashIDs}
+		if !show {
+			opts.Exclude, opts.Remotes = rules.Hide(), remotes
+		}
 
 		// The size of the whole history, for the scrollbar while the reader is paused. It
 		// slightly overcounts (stash snapshots are hidden), so the UI calls it approximate.

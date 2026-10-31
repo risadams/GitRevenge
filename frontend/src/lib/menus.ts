@@ -1,4 +1,4 @@
-import { BranchAction, Integrate, PushRef, Refs, StashAction } from '../../wailsjs/go/app/App.js'
+import { BranchAction, HideBranch, Integrate, PushRef, Refs, StashAction } from '../../wailsjs/go/app/App.js'
 import type { MenuItem } from './ContextMenu.svelte'
 import type { DialogSpec } from './Dialog.svelte'
 import type { Ref, Row } from './graph/rowCache'
@@ -54,6 +54,16 @@ function remoteOf(ref: Ref): { remote: string; branch: string } {
 }
 
 const push = (path: string, remote: string, kind: string, name: string) => () => session.run(() => PushRef(path, remote, kind, name))
+
+/** Hide or unhide a branch by its name without the remote, so origin/wip and wip go
+ * together. */
+function hideItem(ctx: MenuContext, ref: Ref, name: string): MenuItem {
+  return {
+    label: ref.hidden ? `Unhide ${name}` : `Hide ${name}`,
+    icon: 'eye',
+    run: () => session.run(() => HideBranch(ctx.path, name, !ref.hidden)),
+  }
+}
 
 /** Menu items for one ref (branch, remote branch, tag or stash). */
 export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
@@ -116,6 +126,7 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
             },
           },
         ],
+        [hideItem(ctx, ref, ref.short)],
         [
           {
             label: `Delete ${ref.short}…`,
@@ -138,6 +149,7 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
         const [remote, ...rest] = ref.short.split('/')
         return groups(
           [{ label: `Checkout ${ref.short}`, icon: 'branch', run: () => session.run(() => branch(path, 'checkout', ref.short)) }, ...integrateItems(ctx, ref.short, ref.short)],
+          [hideItem(ctx, ref, rest.join('/'))],
           [{ label: `Delete ${ref.short} from ${remote}`, icon: 'trash', danger: true, run: push(path, remote, 'delete-branch', rest.join('/')) }],
         )
       }

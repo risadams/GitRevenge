@@ -30,6 +30,8 @@ export interface Ref {
   ahead: number
   behind: number
   gone: boolean
+  /** A branch the repository's hide patterns match. */
+  hidden?: boolean
   subject?: string
 }
 

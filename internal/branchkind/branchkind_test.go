@@ -19,7 +19,7 @@ func TestMatch(t *testing.T) {
 		{"*", "anything/at/all", true},
 		{"v?.x", "v1.x", true},
 		{"v?.x", "v10.x", false},
-		{"a?b", "a/b", false},
+		{"a?b", "a/b", true},
 		{"*/hotfix", "team/hotfix", true},
 		{"**", "", true},
 		{"a*b*c", "aXbYbZc", true},

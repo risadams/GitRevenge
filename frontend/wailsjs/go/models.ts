@@ -1222,6 +1222,7 @@ export namespace git {
 	    ahead: number;
 	    behind: number;
 	    gone: boolean;
+	    hidden?: boolean;
 	    subject?: string;
 	
 	    static createFrom(source: any = {}) {
@@ -1239,6 +1240,7 @@ export namespace git {
 	        this.ahead = source["ahead"];
 	        this.behind = source["behind"];
 	        this.gone = source["gone"];
+	        this.hidden = source["hidden"];
 	        this.subject = source["subject"];
 	    }
 	}

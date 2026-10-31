@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/risadams/gitrevenge/internal/branchkind"
 	"github.com/risadams/gitrevenge/internal/fsutil"
 	"github.com/risadams/gitrevenge/internal/git"
 	"github.com/risadams/gitrevenge/internal/graph"
@@ -72,6 +73,26 @@ func (r *Repo) FullGraph(ctx context.Context) (*graph.Graph, error) {
 
 // Name is the folder name shown on the tab.
 func (r *Repo) Name() string { return filepath.Base(r.Path) }
+
+// ReloadGraph reloads the commit graph, for a change git can't see, such as new hide
+// patterns.
+func (r *Repo) ReloadGraph() { r.graph.reload() }
+
+// SetShowHidden shows the repository's hidden branches again (or hides them), for this
+// session only, and reloads the graph.
+func (r *Repo) SetShowHidden(show bool) { r.graph.SetShowHidden(show) }
+
+// ShowingHidden reports whether hidden branches are being shown.
+func (r *Repo) ShowingHidden() bool { return r.graph.ShowingHidden() }
+
+// Rules returns the branch rules (kinds and hide patterns) in a repository's settings.
+func Rules(rs settings.RepoSettings) branchkind.Rules {
+	overrides := map[branchkind.Kind][]string{}
+	for k, p := range rs.Kinds {
+		overrides[branchkind.Kind(k)] = p
+	}
+	return branchkind.New(overrides, rs.Hide)
+}
 
 func (r *Repo) close() {
 	if r.watcher != nil {
@@ -206,6 +227,8 @@ func (m *Manager) Open(ctx context.Context, path string) (*Repo, error) {
 				onGraph(root, p)
 			}
 		})
+		store := m.settings
+		r.graph.rules = func() branchkind.Rules { return Rules(store.Get().Repo(root)) }
 		r.graph.reload()
 		r.watcher = m.watchLocked(r)
 		m.repos = append(m.repos, r)

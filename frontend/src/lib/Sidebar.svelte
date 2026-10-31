@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Refs } from '../../wailsjs/go/app/App.js'
+  import { Refs, SetShowHidden, ShowingHidden } from '../../wailsjs/go/app/App.js'
   import { EventsOn } from '../../wailsjs/runtime/runtime.js'
   import { onMount } from 'svelte'
   import type { DialogSpec } from './Dialog.svelte'
@@ -35,6 +35,16 @@
 
   let refs = $state<Ref[]>([])
   let filter = $state('')
+  // Hidden branches (Settings, This repository) leave the list and the graph until shown
+  // again for this session.
+  let showingHidden = $state(false)
+  let hiddenCount = $derived(refs.filter((r) => r.hidden).length)
+
+  async function toggleHidden() {
+    const next = !showingHidden
+    await session.run(() => SetShowHidden(path, next))
+    showingHidden = next
+  }
   let open = $state<Record<string, boolean>>({ local: true, remote: false, tag: false, stash: true })
 
   const groups: { kind: Ref['kind']; title: string }[] = [
@@ -48,6 +58,7 @@
     const q = filter.trim().toLowerCase()
     const out: Record<string, Ref[]> = { local: [], remote: [], tag: [], stash: [] }
     for (const r of refs) {
+      if (r.hidden && !showingHidden) continue
       if (!q || r.short.toLowerCase().includes(q)) out[r.kind].push(r)
     }
     out.local.sort((a, b) => Number(b.head) - Number(a.head) || a.short.localeCompare(b.short, undefined, { numeric: true }))
@@ -71,6 +82,7 @@
 
   async function load() {
     refs = ((await session.run(() => Refs(path))) as Ref[] | undefined) ?? []
+    showingHidden = (await session.run(() => ShowingHidden(path))) ?? false
   }
 
   onMount(() => {
@@ -111,6 +123,7 @@
                 <button
                   class="ref"
                   class:head={r.head}
+                  class:hidden-ref={r.hidden}
                   onclick={() => onPick(r)}
                   ondblclick={() => onActivate?.(r)}
                   oncontextmenu={(e) => {
@@ -122,6 +135,7 @@
                 >
                   {#if r.head}<span class="here" aria-label="checked out"></span>{/if}
                   <span class="name">{r.kind === 'stash' ? r.subject : r.short}</span>
+                  {#if r.hidden}<span class="track" title="Hidden: shown for now">hidden</span>{/if}
                   {#if r.gone}
                     <span class="track" title="Upstream branch was deleted">gone</span>
                   {:else if r.ahead || r.behind}
@@ -139,11 +153,29 @@
         {/if}
       </section>
     {/each}
+    {#if hiddenCount > 0}
+      <p class="hidden-note">
+        <span class="meta">{hiddenCount.toLocaleString()} hidden</span>
+        <button class="btn sm text" onclick={toggleHidden}>{showingHidden ? 'Hide them again' : 'Show them'}</button>
+      </p>
+    {/if}
     <RepoExtras {path} {openDialog} />
   </div>
 </aside>
 
 <style>
+  .hidden-note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 12px 0 26px;
+  }
+
+  .hidden-ref .name {
+    color: var(--ink-mute);
+    font-style: italic;
+  }
+
   .sidebar {
     display: flex;
     flex-direction: column;
