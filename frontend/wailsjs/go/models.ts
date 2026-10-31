@@ -1247,6 +1247,7 @@ export namespace git {
 	    stackParent?: string;
 	    stackDepth?: number;
 	    stackSize?: number;
+	    stackParentMerged?: boolean;
 	    subject?: string;
 	
 	    static createFrom(source: any = {}) {
@@ -1269,6 +1270,7 @@ export namespace git {
 	        this.stackParent = source["stackParent"];
 	        this.stackDepth = source["stackDepth"];
 	        this.stackSize = source["stackSize"];
+	        this.stackParentMerged = source["stackParentMerged"];
 	        this.subject = source["subject"];
 	    }
 	}

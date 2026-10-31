@@ -77,10 +77,17 @@ func annotateStacks(refs []git.Ref, parents map[string]string) {
 			height[root(b)] = d
 		}
 	}
+	gone := map[string]bool{}
+	for _, r := range refs {
+		if r.Kind == git.LocalBranch && r.Gone {
+			gone[r.Short] = true
+		}
+	}
 	for i, r := range refs {
 		if r.Kind != git.LocalBranch || (parents[r.Short] == "" && !children[r.Short]) {
 			continue
 		}
+		refs[i].StackParentMerged = gone[parents[r.Short]]
 		refs[i].StackParent = parents[r.Short]
 		refs[i].StackDepth = depth(r.Short)
 		refs[i].StackSize = height[root(r.Short)]

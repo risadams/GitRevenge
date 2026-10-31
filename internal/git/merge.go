@@ -40,6 +40,12 @@ func (r *Repo) CherryPick(ctx context.Context, commits ...string) error {
 	return r.conflictAware(ctx, Cmd{Args: append([]string{"cherry-pick"}, commits...), Env: []string{"GIT_EDITOR=true"}})
 }
 
+// RebaseOnto moves the current branch's commits after upstream onto onto: `git rebase
+// --onto onto upstream`. Restacking uses it to drop a merged parent's old commits.
+func (r *Repo) RebaseOnto(ctx context.Context, onto, upstream string) error {
+	return r.conflictAware(ctx, Cmd{Args: []string{"rebase", "--onto", onto, upstream}, Env: []string{"GIT_EDITOR=true"}})
+}
+
 // Rebase replays the current branch's commits onto ref.
 func (r *Repo) Rebase(ctx context.Context, onto string) error {
 	return r.conflictAware(ctx, Cmd{Args: []string{"rebase", onto}, Env: []string{"GIT_EDITOR=true"}})

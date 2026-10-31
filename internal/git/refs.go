@@ -50,6 +50,9 @@ type Ref struct {
 	StackParent string `json:"stackParent,omitempty"`
 	StackDepth  int    `json:"stackDepth,omitempty"`
 	StackSize   int    `json:"stackSize,omitempty"`
+	// StackParentMerged means the parent's upstream is gone (merged and deleted on the
+	// host), so this branch still carries the parent's old commits: time to restack.
+	StackParentMerged bool `json:"stackParentMerged,omitempty"`
 	// Subject is the stash message, for stashes.
 	Subject string `json:"subject,omitempty"`
 }

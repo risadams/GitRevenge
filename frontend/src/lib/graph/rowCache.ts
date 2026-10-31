@@ -43,6 +43,8 @@ export interface Ref {
   stackParent?: string
   stackDepth?: number
   stackSize?: number
+  /** The parent was merged and deleted upstream: this branch needs restacking. */
+  stackParentMerged?: boolean
   subject?: string
 }
 

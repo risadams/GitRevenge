@@ -1,4 +1,4 @@
-import { BranchAction, HideBranch, Integrate, MarkBranchKind, PushRef, Refs, SetStackParent, StashAction } from '../../wailsjs/go/app/App.js'
+import { BranchAction, HideBranch, Integrate, MarkBranchKind, PushRef, Refs, Restack, SetStackParent, StashAction } from '../../wailsjs/go/app/App.js'
 import { CONFIRM_DELETE, KINDS, kindWarning } from './branchKinds'
 import type { MenuItem } from './ContextMenu.svelte'
 import type { DialogSpec } from './Dialog.svelte'
@@ -186,6 +186,9 @@ export function refItems(ref: Ref, ctx: MenuContext): MenuItem[] {
             },
           },
         ],
+        ref.stackParentMerged
+          ? [{ label: `Restack ${ref.short} (${ref.stackParent} was merged)`, icon: 'rebase', run: () => session.run(() => Restack(ctx.path, ref.short)) }]
+          : [],
         [markItem(ctx, ref, ref.short), stackItem(ctx, ref), hideItem(ctx, ref, ref.short)],
         [
           {

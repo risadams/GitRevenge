@@ -172,6 +172,8 @@ export function RepoState(arg1:string):Promise<app.RepoState>;
 
 export function ResolveConflict(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function Restack(arg1:string,arg2:string):Promise<void>;
+
 export function RestoreGitConfig(arg1:string,arg2:string):Promise<app.ConfigDoc>;
 
 export function RestoreSession():Promise<app.SessionState>;
