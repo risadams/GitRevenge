@@ -193,6 +193,7 @@ func (a *App) GroupBatch(name, op string) ([]BatchResult, error) {
 		}
 		if err == nil && !res.Skipped {
 			o := git.NetOptions{Env: env}
+			a.upstreams.remember(ctx, p, g)
 			if op == "fetch" {
 				err = g.Fetch(ctx, "", o)
 			} else {
