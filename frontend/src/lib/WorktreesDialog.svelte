@@ -154,7 +154,7 @@
         </label>
         <span class="buttons">
           <InkButton type="submit" disabled={busy || !dir.trim()}>Add worktree</InkButton>
-          <InkButton variant="ghost" onclick={() => (adding = false)}>Cancel</InkButton>
+          <InkButton variant="secondary" onclick={() => (adding = false)}>Cancel</InkButton>
         </span>
       </form>
     {:else}

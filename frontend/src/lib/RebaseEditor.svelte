@@ -95,8 +95,8 @@
       <span class="meta">Onto {base.slice(0, 7)} · {items.length} {items.length === 1 ? 'commit' : 'commits'} · newest first</span>
     </div>
     <span class="spacer"></span>
-    <InkButton variant="ghost" onclick={onClose}>Cancel</InkButton>
-    <InkButton arrow disabled={busy || !!problem || items.length === 0} onclick={start} title={problem}>Start rebase</InkButton>
+    <InkButton variant="secondary" onclick={onClose}>Cancel</InkButton>
+    <InkButton disabled={busy || !!problem || items.length === 0} onclick={start} title={problem}>Start rebase</InkButton>
   </header>
   {#if error}<p class="form-error banner" role="alert">{error}</p>{:else if problem}<p class="warn" role="status">{problem}</p>{/if}
 

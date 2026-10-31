@@ -11,6 +11,12 @@
       <feTurbulence type="fractalNoise" baseFrequency="0.008" numOctaves="2" seed="7" result="noise" />
       <feDisplacementMap in="SourceGraphic" in2="noise" scale="40" />
     </filter>
+    <!-- The small bleed behind a primary or danger button: gentle enough for a 28px button. -->
+    <filter id="ink-bleed" x="-20%" y="-30%" width="140%" height="160%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" />
+      <feGaussianBlur stdDeviation="0.8" />
+    </filter>
     <filter id="paper-grain">
       <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" />
       <feColorMatrix type="saturate" values="0" />

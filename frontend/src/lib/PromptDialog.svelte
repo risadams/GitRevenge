@@ -56,7 +56,7 @@
           <pre>{current.text}</pre>
           <p class="form-note">Only continue if the fingerprint matches the one your Git host publishes. The key is then saved to known_hosts.</p>
           <div class="form-actions">
-            <InkButton variant="ghost" onclick={() => answer(false)}>Cancel</InkButton>
+            <InkButton variant="secondary" onclick={() => answer(false)}>Cancel</InkButton>
             <InkButton type="submit">Trust and connect</InkButton>
           </div>
         {:else}
@@ -70,7 +70,7 @@
           </label>
           <p class="form-note">Git Revenge passes this to git and doesn't store it.</p>
           <div class="form-actions">
-            <InkButton variant="ghost" onclick={() => answer(false)}>Cancel</InkButton>
+            <InkButton variant="secondary" onclick={() => answer(false)}>Cancel</InkButton>
             <InkButton type="submit">Continue</InkButton>
           </div>
         {/if}
